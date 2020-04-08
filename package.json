@@ -13,7 +13,8 @@
   },
   "homepage": "https://github.com/hoangvvo/graphyne#readme",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ],
   "scripts": {
     "lint": "eslint packages/*/src/**/*.{js,ts}"

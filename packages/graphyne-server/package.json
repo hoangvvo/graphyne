@@ -1,0 +1,26 @@
+{
+  "name": "graphyne-server",
+  "version": "0.0.1",
+  "description": "Lightning-fast JavaScript GraphQL Server",
+  "repository": "git+https://github.com/hoangvvo/graphyne.git",
+  "author": "Hoang Vo (https://www.hoangvvo.com)",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@polka/url": "^1.0.0-next.11",
+    "graphyne-core": "0.0.1"
+  },
+  "peerDependencies": {
+    "graphql": "^15.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^13.11.0"
+  }
+}

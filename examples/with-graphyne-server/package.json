@@ -1,0 +1,14 @@
+{
+  "name": "with-graphyne",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "graphql": "^15.0.0",
+    "graphql-tools": "^4.0.7",
+    "graphyne-server": "0.0.1"
+  },
+  "license": "ISC"
+}
