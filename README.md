@@ -1,1 +1,1 @@
-../packages/graphyne-server/README.md
+packages/graphyne-server/README.md
