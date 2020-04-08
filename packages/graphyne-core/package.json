@@ -17,8 +17,7 @@
     "lib"
   ],
   "scripts": {
-    "build": "tsc",
-    "lint": "eslint . --ext .ts"
+    "build": "tsc"
   },
   "license": "MIT",
   "dependencies": {
