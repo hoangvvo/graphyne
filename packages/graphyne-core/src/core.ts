@@ -8,7 +8,7 @@ import {
   ExecutionResult,
 } from 'graphql';
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
-import { Lru } from 'tiny-lru';
+import lru, { Lru } from 'tiny-lru';
 import {
   Config,
   QueryCache,
@@ -20,9 +20,9 @@ import {
 function buildCache(opts: Config) {
   if (typeof opts.cache === 'number' || typeof opts.cache === 'boolean')
     throw new TypeError('opts.cache must either be a number or boolean');
-  if (typeof opts.cache === 'number') return new Lru(opts.cache);
+  if (typeof opts.cache === 'number') return lru(opts.cache);
   else if (opts.cache === false) return null;
-  else return new Lru(1024);
+  else return lru(1024);
 }
 
 function createResponse(
@@ -71,6 +71,15 @@ export abstract class GraphyneServerBase {
       context: integrationContext,
       http: { method },
     } = requestCtx;
+
+    if (!query) {
+      return createResponse(
+        400,
+        { errors: [new GraphQLError('request does not contain query')] },
+        headers
+      );
+    }
+
     const { context: contextFn, rootValue: rootValueFn } = this.options;
 
     // Get graphql-jit compiled query and parsed document

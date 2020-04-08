@@ -15,6 +15,16 @@ export interface Config<TContext = Record<string, any>, TRootValue = any> {
   cache?: number | boolean;
 }
 
+interface GraphiQLConfig {
+  path: string;
+  defaultQuery?: string;
+}
+
+export interface HandlerConfig {
+  path?: string;
+  graphiql?: boolean | GraphiQLConfig;
+}
+
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
 
 interface HTTPRequest {
@@ -24,10 +34,13 @@ interface HTTPRequest {
 
 export type VariableValues = { [name: string]: any };
 
-export interface HttpQueryRequest {
-  query: string;
+export interface HTTPQueryBody {
+  query?: string;
   variables?: VariableValues;
   operationName?: string;
+}
+
+export interface HttpQueryRequest extends HTTPQueryBody {
   context: IntegrationContext;
   http: HTTPRequest;
 }
