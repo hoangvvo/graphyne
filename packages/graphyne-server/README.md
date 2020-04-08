@@ -54,12 +54,7 @@ const { GraphyneServer } = require('graphyne-server');
 const graphyne = new GraphyneServer(options);
 
 const server = http.createServer(
-  graphyne.createHandler({
-    path: '/api',
-    graphiql: {
-      path: '/graphiql',
-    },
-  })
+  graphyne.createHandler()
 );
 
 server.listen(3000, () => {
@@ -83,17 +78,14 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 - `context`: An object or function called to creates a context shared accross resolvers per request. The function accepts an integration context signature depends on which integration packages is used. If not provided, the context will be the one provided by integration packages
 - `rootValue`: A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor.
 - `cache`: `GraphyneServer` creates **two** in-memory LRU cache: One for compiled queries and another for invalid queries. This value defines max items to hold in **each** cache. Pass `false` to disable cache.
-
-### `GraphyneServer.createHandler(options)`
-
-Create a handler for incoming requests using respective integration packages. It accepts the following options:
-
 - `path`: Specify a custom path for the GraphQL endpoint. It defaults to `/graphql` if no path is specified.
 - `graphiql`: Present [GraphiQL](https://github.com/graphql/graphiql) when being loaded in a browser. Alterntive, you can also pass in an options object:
   - `path`: Specify a custom path for `GraphiQL`. It defaults to `/___graphql` if no path is specified.
   - `defaultQuery`: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session.
 
-For additional options, refer to respective packages' documentation.
+### `GraphyneServer.createHandler(options)`
+
+Create a handler for incoming requests using respective integration packages. The accepted `options` depends on the integration package used. Refer to respective documentations for more information.
 
 ### `GraphyneServer.listen(port)`
 

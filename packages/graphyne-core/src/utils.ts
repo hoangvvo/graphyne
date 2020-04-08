@@ -23,3 +23,7 @@ export function getGraphQLParams({
     queryParams.operationName;
   return { query, variables, operationName };
 }
+
+export function safeSerialize(data?: string) {
+  return data ? JSON.stringify(data).replace(/\//g, '\\/') : '';
+}

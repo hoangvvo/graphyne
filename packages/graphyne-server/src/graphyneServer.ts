@@ -7,9 +7,9 @@ import {
 import {
   GraphyneServerBase,
   Config,
-  HandlerConfig,
   HTTPQueryBody,
   getGraphQLParams,
+  renderGraphiQL,
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
@@ -45,7 +45,7 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(options?: HandlerConfig): RequestListener {
+  createHandler(): RequestListener {
     return async (req: IncomingMessage, res: ServerResponse) => {
       const { pathname, query: queryObj } = parseUrl(req, true) || {};
       const queryParams: Record<string, string> = queryObj || {};
@@ -58,8 +58,12 @@ export class GraphyneServer extends GraphyneServerBase {
         queryParams,
         body,
       });
-
-      const path = options?.path || '/graphql';
+      const path = this.options?.path || '/graphql';
+      const graphiql = this.options?.graphiql;
+      const graphiqlPath =
+        graphiql &&
+        ((typeof graphiql === 'object' ? graphiql.path : null) ||
+          '/___graphql');
       if (pathname === path) {
         // serve GraphQL API
         return this.runHTTPQuery({
@@ -80,6 +84,15 @@ export class GraphyneServer extends GraphyneServerBase {
           res.statusCode = status;
           res.end(JSON.stringify(body));
         });
+      } else if (
+        graphiql &&
+        req.method === 'GET' &&
+        pathname === graphiqlPath
+      ) {
+        const defaultQuery =
+          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(renderGraphiQL({ path, defaultQuery }));
       } else {
         res.statusCode = 404;
         res.end('not found');

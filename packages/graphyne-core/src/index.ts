@@ -1,3 +1,4 @@
 export { GraphyneServerBase } from './core';
 export * from './types';
-export * from './utils';
+export { getGraphQLParams } from './utils';
+export { renderGraphiQL } from './graphiql';

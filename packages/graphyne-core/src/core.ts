@@ -41,7 +41,7 @@ export abstract class GraphyneServerBase {
   private lru: Lru<Pick<QueryCache, 'document' | 'compiledQuery'>> | null;
   private lruErrors: Lru<Pick<QueryCache, 'document' | 'errors'>> | null;
   private schema: GraphQLSchema;
-  private options: Config;
+  protected options: Config;
   constructor(options: Config) {
     this.options = options;
     this.lru = buildCache(this.options);

@@ -13,16 +13,13 @@ export interface Config<TContext = Record<string, any>, TRootValue = any> {
   context?: TContext | ((intergrationContext: IntegrationContext) => TContext);
   rootValue?: (parsedQuery: DocumentNode) => TRootValue | TRootValue;
   cache?: number | boolean;
-}
-
-interface GraphiQLConfig {
-  path: string;
-  defaultQuery?: string;
-}
-
-export interface HandlerConfig {
   path?: string;
   graphiql?: boolean | GraphiQLConfig;
+}
+
+export interface GraphiQLConfig {
+  path: string;
+  defaultQuery?: string;
 }
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
