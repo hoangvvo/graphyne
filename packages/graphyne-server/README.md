@@ -21,15 +21,16 @@ npm i graphyne-server graphql
 yarn add graphyne-server graphql
 ```
 
-In addition, Graphyne Server integration packages can also be used with specific frameworks and runtimes:
+In addition, instead of the above, Graphyne Server integration packages can also be used with specific frameworks and runtimes:
 
 ```shell
+npm i graphyne-{integration} graphql
+// or
 yarn add graphyne-{integration} graphql
 ```
 
 Available packages are:
 
-- [Node.js HTTP](/packages/graphyne-server)
 - [Express](/packages/graphyne-express)
 
 ## Usage
@@ -40,12 +41,12 @@ You can quick start a GraphQL server with `graphyne-server`:
 const { GraphyneServer } = require('graphyne-server');
 
 const graphyne = new GraphyneServer(options);
-graphyne.listen(3000).then(() => {
+graphyne.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);
-});
+})
 ```
 
-If you want more control over the server, use Node.js `http` module:
+If you want more control over the `http` server, use `GraphyneServer#createHandler`:
 
 ```javascript
 const http = require('http');
@@ -62,7 +63,7 @@ server.listen(3000, () => {
 });
 ```
 
-Check out [examples](examples) to learn how to use `graphyne`.
+Check out [examples](/examples) to learn how to use `graphyne`.
 
 ### Integration
 
@@ -83,12 +84,6 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
   - `path`: Specify a custom path for `GraphiQL`. It defaults to `/___graphql` if no path is specified.
   - `defaultQuery`: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session.
 
-### `GraphyneServer.createHandler(options)`
+### `GraphyneServer#createHandler(options)`
 
 Create a handler for incoming requests using respective integration packages. The accepted `options` depends on the integration package used. Refer to respective documentations for more information.
-
-### `GraphyneServer.listen(port)`
-
-*This applies to `graphyne-server` only*
-
-Start a configless GraphQL server in specified `port` at `/graphql`. Returns a promise when the server is ready.

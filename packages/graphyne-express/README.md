@@ -1,6 +1,6 @@
 # Graphyne Server Express
 
-The Express and Connect integration of [Graphyne](https://github.com/hoangvvo/graphyne).
+The Express and Connect integration of [Graphyne](/).
 
 ## Install
 
@@ -12,18 +12,16 @@ yarn add graphyne-express graphql
 
 ## Usage
 
-Check out the [example](https://github.com/hoangvvo/graphyne/tree/master/examples/with-express).
+Check out the [example](/examples/with-express).
 
 ```javascript
 const express = require('express');
-const bodyParser = require('body-parser');
 const { GraphyneServer } = require('graphyne-express');
 
-const gqlServer = new GraphyneServer(options);
+const graphyne = new GraphyneServer(options);
 
 var app = express();
-app.use(bodyParser.json()); // bodyParser is required to parse incoming request
-app.all('/graphql', gqlServer.createHandler());
+app.all('/graphql', graphyne.createHandler());
 app.listen(4000);
 console.log('Running a GraphQL API server at http://localhost:4000/graphql');
 ```
@@ -32,23 +30,27 @@ console.log('Running a GraphQL API server at http://localhost:4000/graphql');
 
 ### `new GraphyneServer(options)`
 
-Constructing a Graphyne GraphQL server. `graphyne-express` extends [Graphyne](https://github.com/hoangvvo/graphyne), which means it shares the same [API](https://github.com/hoangvvo/graphyne#api).
+Constructing a Graphyne GraphQL server. `graphyne-express` extends [Graphyne](/), which means it shares the same [API](/#api).
 
-`graphyne-express` does not respect `options.path` and `options.graphiql.path` because it is handled by Express/Connect router. However, if you want to use GraphiQL, you must set `options.path`.
+In Express, you may not need to set `options.path` and `options.graphiql.path` because its router can match against exact URL. In Connect, however, you should set `options.path` and/or `options.graphiql.path` because its router only matches against the beginning of the URL.
+
+Nevertheless, if you use `GraphiQL`, you **must** set `options.path`.
 
 ### `GraphyneServer.createHandler(handlerOpts)`
 
 Create a handler for Express/Connect Router. `handlerOpts` accepts:
 
-- `graphiql`: A boolean that determines if this handler is for GraphiQL. Make sure options.graphiql and options.path is set.`
+- `graphiql`: A boolean that determines if this handler is for GraphiQL. Make sure options.graphiql and options.path is set.
 
 ```javascript
-// Create a route for GraphiQL
-app.get('/___graphql', gqlServer.createrHandler({
+// This serve GraphQL API
+app.all('/graphql', graphyne.createHandler());
+// This serve GraphiQL
+app.get('/___graphql', graphyne.createHandler({
   graphiql: true,
 }));
 ```
 
 ## License
 
-[MIT](https://github.com/hoangvvo/graphyne/blob/master/LICENSE)
+[MIT](/LICENSE)
