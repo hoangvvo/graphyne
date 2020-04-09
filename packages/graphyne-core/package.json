@@ -26,5 +26,8 @@
   },
   "peerDependencies": {
     "graphql": "^15.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^13.11.1"
   }
 }

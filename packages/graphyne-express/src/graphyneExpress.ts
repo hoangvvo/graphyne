@@ -3,8 +3,9 @@ import {
   Config,
   getGraphQLParams,
   renderGraphiQL,
+  parseNodeRequest,
 } from 'graphyne-core';
-import { Request, Response, RequestHandler } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 export class GraphyneServer extends GraphyneServerBase {
   constructor(options: Config) {
@@ -12,48 +13,57 @@ export class GraphyneServer extends GraphyneServerBase {
   }
 
   createHandler(handlerOpts?: { graphiql?: boolean }): RequestHandler {
-    return (req: Request, res: Response) => {
-      const graphiql = this.options?.graphiql;
+    return async (req: Request, res: Response, next: NextFunction) => {
+      const path = this.options.path;
 
-      if (handlerOpts?.graphiql) {
-        if (req.method !== 'GET') {
-          return res
-            .status(405)
-            .send('Only GET request is accepted for GraphiQL');
-        }
-        if (!this.options.path || !graphiql) {
-          return res.end(
+      // serve GraphiQL
+      const graphiql = this.options.graphiql;
+      const graphiqlPath = typeof graphiql === 'object' ? graphiql.path : null;
+      if (
+        handlerOpts?.graphiql &&
+        (!graphiqlPath || req.path === graphiqlPath)
+      ) {
+        if (!path || !graphiql) {
+          return res.send(
             'To use GraphiQL, both options.path and options.graphiql must be set when initializing GraphyneServer'
           );
         }
         const defaultQuery =
           typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.send(
-          renderGraphiQL({ path: this.options.path, defaultQuery })
-        );
+        return res.send(renderGraphiQL({ path, defaultQuery }));
       }
 
-      const context: Record<string, any> = { req, res };
-      const { query, variables, operationName } =
-        getGraphQLParams({ body: req.body, queryParams: req.query }) || {};
-      return this.runHTTPQuery({
-        query,
-        context,
-        variables,
-        operationName,
-        http: {
-          headers: req.headers,
-          method: req.method,
-        },
-      }).then(({ status, body, headers }) => {
-        // set headers
-        for (const key in headers) {
-          const headVal = headers[key];
-          if (headVal) res.append(key, headers[key]);
-        }
-        res.status(status).json(body);
-      });
+      // serve GraphQL
+      if (!path || path === req.path) {
+        const context: Record<string, any> = { req, res };
+        const body = await parseNodeRequest(req);
+        const { query, variables, operationName } = getGraphQLParams({
+          body,
+          queryParams: req.query,
+        });
+
+        return this.runHTTPQuery({
+          query,
+          context,
+          variables,
+          operationName,
+          http: {
+            headers: req.headers,
+            method: req.method,
+          },
+        }).then(({ status, body, headers }) => {
+          // set headers
+          for (const key in headers) {
+            const headVal = headers[key];
+            if (headVal) res.append(key, headers[key]);
+          }
+          res.status(status).json(body);
+        });
+      }
+
+      // For connect, if path not matched
+      next();
     };
   }
 }

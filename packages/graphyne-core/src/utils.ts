@@ -1,3 +1,4 @@
+import { IncomingMessage, IncomingHttpHeaders } from 'http';
 import { VariableValues, HTTPQueryBody, HttpQueryRequest } from './types';
 
 type GraphQLParams = Partial<HttpQueryRequest>;
@@ -22,6 +23,57 @@ export function getGraphQLParams({
     (typeof body === 'object' && body.operationName) ||
     queryParams.operationName;
   return { query, variables, operationName };
+}
+
+export async function parseNodeRequest(
+  req: IncomingMessage & {
+    body?: any;
+  }
+): Promise<HTTPQueryBody> {
+  // If body has been parsed as a keyed object, use it.
+  if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {
+    return req.body;
+  }
+
+  // Skip requests without content types.
+  if (!req.headers['content-type']) {
+    return {};
+  }
+
+  // Parse content type
+  const oCtype = req.headers['content-type'];
+  const semiIndex = oCtype.indexOf(';');
+  const ctype = (semiIndex !== -1
+    ? oCtype.substring(0, semiIndex)
+    : oCtype
+  ).trim();
+
+  const rawBody: string = await new Promise((resolve) => {
+    let bits = '';
+    req
+      .on('data', (x) => {
+        bits += x;
+      })
+      .on('end', () => {
+        resolve(bits);
+      });
+  });
+
+  switch (ctype) {
+    case 'application/graphql':
+      return { query: rawBody };
+    case 'application/json':
+      try {
+        return JSON.parse(rawBody);
+      } catch (error) {
+        // Do nothing
+      }
+      // TODO: It might be better to throw an error
+      return {};
+    default:
+      // If no Content-Type header matches, parse nothing.
+      return {};
+  }
 }
 
 export function safeSerialize(data?: string) {
