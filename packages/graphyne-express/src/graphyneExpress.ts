@@ -40,7 +40,7 @@ export class GraphyneServer extends GraphyneServerBase {
         const body = await parseNodeRequest(req);
         const { query, variables, operationName } = getGraphQLParams({
           body,
-          queryParams: req.query,
+          queryParams: req.query as Record<string, string>,
         });
 
         return this.runHTTPQuery({
