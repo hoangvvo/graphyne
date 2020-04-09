@@ -1,5 +1,4 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const { GraphyneServer } = require('graphyne-express');
 const { makeExecutableSchema } = require('graphql-tools');
 
@@ -29,7 +28,6 @@ const graphyne = new GraphyneServer({
 });
 
 const app = express();
-app.use(bodyParser.json());
 app.all('/graphql', graphyne.createHandler());
 // Use GraphiQL
 app.get('/___graphql', graphyne.createHandler({ graphiql: true }));

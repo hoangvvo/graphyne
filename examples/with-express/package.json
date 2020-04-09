@@ -6,7 +6,6 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "body-parser": "^1.19.0",
     "graphql": "^15.0.0",
     "graphql-tools": "^4.0.7",
     "graphyne-express": "0.0.1"
