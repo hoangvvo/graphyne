@@ -13,10 +13,10 @@
   },
   "homepage": "https://github.com/hoangvvo/graphyne#readme",
   "workspaces": [
-    "packages/*",
-    "examples/*"
+    "packages/*"
   ],
   "scripts": {
+    "prepublish": "lerna run build",
     "lint": "eslint packages/*/src/**/*.{js,ts}"
   },
   "devDependencies": {
