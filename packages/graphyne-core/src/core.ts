@@ -18,11 +18,14 @@ import {
 } from './types';
 
 function buildCache(opts: Config) {
-  if (typeof opts.cache === 'number' || typeof opts.cache === 'boolean')
-    throw new TypeError('opts.cache must either be a number or boolean');
-  if (typeof opts.cache === 'number') return lru(opts.cache);
-  else if (opts.cache === false) return null;
-  else return lru(1024);
+  if (opts.cache) {
+    if (typeof opts.cache === 'number') return lru(opts.cache);
+    else if (typeof opts.cache === 'boolean')
+      return opts.cache ? lru(1024) : null;
+    else throw new TypeError('opts.cache must either be a number or boolean');
+  }
+  // Default
+  return lru(1024);
 }
 
 function createResponse(
@@ -43,7 +46,19 @@ export abstract class GraphyneServerBase {
   private schema: GraphQLSchema;
   protected options: Config;
   constructor(options: Config) {
+    // validate options
+    if (!options) {
+      throw new TypeError('Graphyne server must be initialized with options');
+    }
+    if (
+      options.context &&
+      typeof options.context !== 'function' &&
+      typeof options.context !== 'object'
+    ) {
+      throw new TypeError('opts.context must be an object or function');
+    }
     this.options = options;
+    // build cache
     this.lru = buildCache(this.options);
     this.lruErrors = buildCache(this.options);
     // construct schema and validate
@@ -97,13 +112,7 @@ export abstract class GraphyneServerBase {
       try {
         document = parse(query);
       } catch (syntaxErr) {
-        return createResponse(
-          400,
-          {
-            errors: [syntaxErr],
-          },
-          headers
-        );
+        return createResponse(400, { errors: [syntaxErr] }, headers);
       }
 
       const validationErrors = validate(this.schema, document);
@@ -115,19 +124,14 @@ export abstract class GraphyneServerBase {
             errors: validationErrors,
           });
         }
-        return createResponse(
-          400,
-          {
-            errors: validationErrors,
-          },
-          headers
-        );
+        return createResponse(400, { errors: validationErrors }, headers);
       }
 
       compiledQuery = compileQuery(this.schema, document, operationName);
     }
 
     if (!isCompiledQuery(compiledQuery)) {
+      // Query fail compiling
       return createResponse(500, compiledQuery, headers);
     }
 
@@ -140,8 +144,8 @@ export abstract class GraphyneServerBase {
       });
     }
 
-    // Mutation is not allowed with GET request
     if (method === 'GET') {
+      // Mutation is not allowed with GET request
       const operation = getOperationAST(document, operationName)?.operation;
       if (operation !== 'query') {
         return createResponse(
@@ -159,34 +163,30 @@ export abstract class GraphyneServerBase {
     }
 
     if (contextFn) {
-      try {
-        if (typeof contextFn === 'function') {
+      if (typeof contextFn === 'function') {
+        try {
           context = await contextFn(integrationContext);
-        } else if (typeof contextFn === 'object') {
-          context = contextFn;
-        } else {
-          throw new TypeError('opts.context must be an object or function');
+        } catch (err) {
+          // send statusCode attached to err if exists
+          err.message = `Error creating context: ${err.message}`;
+          return createResponse(err.status || 500, { errors: [err] }, headers);
         }
-      } catch (err) {
-        // send statusCode attached to err if exists
-        return createResponse(
-          err.status || 500,
-          {
-            errors: [err],
-          },
-          headers
-        );
       }
+      context = contextFn;
     } else {
       context = integrationContext;
     }
 
     if (rootValueFn) {
       if (typeof rootValueFn === 'function') {
-        rootValue = await rootValueFn(document);
-      } else {
-        rootValue = rootValueFn;
+        try {
+          rootValue = await rootValueFn(document);
+        } catch (err) {
+          err.message = `Error creating root value: ${err.message}`;
+          return createResponse(err.status || 500, { errors: [err] }, headers);
+        }
       }
+      rootValue = rootValueFn;
     }
 
     return createResponse(
