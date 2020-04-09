@@ -1,14 +1,14 @@
 {
   "name": "with-express",
   "private": true,
-  "version": "1.0.0",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
+    "express": "^4.17.1",
     "graphql": "^15.0.0",
     "graphql-tools": "^4.0.7",
-    "graphyne-express": "0.0.1"
+    "graphyne-express": "latest"
   },
   "license": "ISC"
 }

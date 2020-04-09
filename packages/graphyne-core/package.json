@@ -25,7 +25,7 @@
     "tiny-lru": "^7.0.2"
   },
   "peerDependencies": {
-    "graphql": "^15.0.0"
+    "graphql": "^14.0.0 || ^15.0.0"
   },
   "devDependencies": {
     "@types/node": "^13.11.1"
