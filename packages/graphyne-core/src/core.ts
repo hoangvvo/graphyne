@@ -72,7 +72,7 @@ export abstract class GraphyneServerBase {
   protected async runHTTPQuery(
     requestCtx: HttpQueryRequest
   ): Promise<HttpQueryResponse> {
-    let context;
+    let context: Record<string, any>;
     let rootValue = {};
     let document;
     let compiledQuery: CompiledQuery | ExecutionResult;
@@ -171,8 +171,7 @@ export abstract class GraphyneServerBase {
           err.message = `Error creating context: ${err.message}`;
           return createResponse(err.status || 500, { errors: [err] }, headers);
         }
-      }
-      context = contextFn;
+      } else context = contextFn;
     } else {
       context = integrationContext;
     }
@@ -185,8 +184,7 @@ export abstract class GraphyneServerBase {
           err.message = `Error creating root value: ${err.message}`;
           return createResponse(err.status || 500, { errors: [err] }, headers);
         }
-      }
-      rootValue = rootValueFn;
+      } else rootValue = rootValueFn;
     }
 
     return createResponse(
