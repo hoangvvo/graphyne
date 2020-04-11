@@ -86,7 +86,7 @@ export abstract class GraphyneServerBase {
       variables,
       operationName,
       context: integrationContext,
-      http: { method },
+      http: { request },
     } = requestCtx;
 
     if (!query) {
@@ -146,7 +146,7 @@ export abstract class GraphyneServerBase {
       });
     }
 
-    if (method === 'GET') {
+    if (request.method === 'GET') {
       // Mutation is not allowed with GET request
       const operation = getOperationAST(document, operationName)?.operation;
       if (operation !== 'query') {

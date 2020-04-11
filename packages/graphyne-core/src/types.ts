@@ -5,6 +5,7 @@ import {
   ExecutionResult,
 } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
+import { IncomingMessage, ServerResponse } from 'http';
 
 type IntegrationContext = Record<string, any>;
 
@@ -24,11 +25,6 @@ export interface GraphiQLConfig {
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
 
-interface HTTPRequest {
-  method?: string;
-  headers?: HTTPHeaders;
-}
-
 export type VariableValues = { [name: string]: any };
 
 export interface HTTPQueryBody {
@@ -39,7 +35,10 @@ export interface HTTPQueryBody {
 
 export interface HttpQueryRequest extends HTTPQueryBody {
   context: IntegrationContext;
-  http: HTTPRequest;
+  http: {
+    request: IncomingMessage;
+    response: ServerResponse;
+  };
 }
 
 export interface HttpQueryResponse {

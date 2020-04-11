@@ -52,8 +52,8 @@ export class GraphyneServer extends GraphyneServerBase {
           variables,
           operationName,
           http: {
-            headers: req.headers,
-            method: req.method,
+            request: req,
+            response: res,
           },
         }).then(({ status, body, headers }) => {
           // set headers
