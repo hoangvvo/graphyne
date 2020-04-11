@@ -21,32 +21,28 @@ export class GraphyneServer extends GraphyneServerBase {
 
   createHandler(): RequestListener {
     return async (req: IncomingMessage, res: ServerResponse) => {
-      const { pathname, query: queryObj } = parseUrl(req, true) || {};
+      const { pathname, query: queryParams } = parseUrl(req, true) || {};
       const path = this.options.path || this.DEFAULT_PATH;
 
       // serve GraphiQL
       const graphiql = this.options.graphiql;
       const graphiqlPath =
-        graphiql &&
-        ((typeof graphiql === 'object' ? graphiql.path : null) ||
-          this.DEFAULT_GRAPHIQL_PATH);
-      if (graphiql && req.method === 'GET' && pathname === graphiqlPath) {
+        (typeof graphiql === 'object' ? graphiql.path : null) ||
+        this.DEFAULT_GRAPHIQL_PATH;
+
+      if (graphiql && pathname === graphiqlPath) {
         const defaultQuery =
           typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         return res.end(renderGraphiQL({ path, defaultQuery }));
       }
 
       // serve GraphQL
       if (pathname === path) {
-        // query params
-        const queryParams: Record<string, string> = queryObj || {};
-        // parse body
-        const body = await parseNodeRequest(req);
-
         const context: Record<string, any> = { req, res };
+        const body = await parseNodeRequest(req);
         const { query, variables, operationName } = getGraphQLParams({
-          queryParams,
+          queryParams: queryParams || {},
           body,
         });
 
