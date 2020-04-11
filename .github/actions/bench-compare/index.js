@@ -1,9 +1,9 @@
 const core = require('@actions/core');
 const { context, GitHub } = require("@actions/github");
-const { runBench, allPackages } = require('../../bench/bench');
+const { runBench, allPackages } = require('../../../bench/bench');
 
 async function run() {
-  const results = await runBench({ packages: allPackages, duration, connections });
+  const results = await runBench({ packages: allPackages, duration: 5, connections: 5 });
   const tableMd = table(
     [
       ['Library', 'Requests/s', 'Latency'],
