@@ -46,7 +46,7 @@ export abstract class GraphyneServerBase {
   private schema: GraphQLSchema;
   protected options: Config;
   protected DEFAULT_PATH = '/graphql';
-  protected DEFAULT_GRAPHIQL_PATH = '/___graphiql';
+  protected DEFAULT_GRAPHIQL_PATH = '/___graphql';
   constructor(options: Config) {
     // validate options
     if (!options) {
