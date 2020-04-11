@@ -1,0 +1,41 @@
+# https://github.com/fastify/benchmarks/blob/master/.github/workflows/benchmarks.yml
+name: GraphQL Server benchmarks Cron
+on:
+  schedule:
+    - cron:  '0 0 1 * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - name: run benchmarks
+      run: |
+        yarn install
+        yarn bench --duration 20 --connections 100 --all-packages --write
+    - name: commit benchmarks
+      run: |
+        node_version=$(node --version)
+        benchmark_title=$(cat << EOF
+        # Benchmarks
+        * __Machine:__ $(uname -a) | $(node -r os -p "\`\${os.cpus().length} vCPUs | \${Math.ceil(os.totalmem() / (Math.pow(1024, 3)))}GB\`").
+        * __Method:__ \`autocannon -c 100 -d 40 -p 10 localhost:3000\` (two rounds; one to warm-up, one to measure).
+        * __Node:__ \`$node_version\`
+        * __Run:__ $(date)
+        EOF)
+        benchmark_table=$(node -r fs -p 'fs.readFileSync("./bench/results/table.md", "utf-8")')
+        strip_readme=$(node -r fs -p 'fs.readFileSync("./bench/README.md", "utf-8").split(/## Results/)[0]')
+        git checkout master
+        echo -e "${strip_readme:?}\n${benchmark_title:?}\n\n${benchmark_table}" > ./bench/README.md
+        git add ./bench/README.md
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "Update benchmark results" -a
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
