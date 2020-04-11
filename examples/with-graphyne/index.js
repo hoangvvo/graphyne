@@ -1,3 +1,4 @@
+const http = require('http');
 const { GraphyneServer } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 
@@ -20,11 +21,18 @@ var schema = makeExecutableSchema({
 const graphyne = new GraphyneServer({
   schema,
   context: () => ({ world: 'world' }),
-  graphiql: {
-    defaultQuery: 'query { hello }',
-  },
 });
 
-graphyne.listen(4000, () => {
-  console.log('Running a GraphQL API server at http://localhost:4000/graphql');
+const server = http.createServer(
+  graphyne.createHandler({
+    path: '/graphql',
+    graphiql: {
+      // path is not set, default to /___graphql
+      defaultQuery: 'query { hello }',
+    },
+  })
+);
+
+server.listen(3000, () => {
+  console.log(`🚀  Server ready at http://localhost:3000/api`);
 });
