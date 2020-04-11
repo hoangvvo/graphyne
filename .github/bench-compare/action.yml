@@ -1,0 +1,7 @@
+name: 'Benchmark & Compare GraphQL servers'
+inputs:
+  GITHUB_TOKEN:
+    default: ${{github.token}}
+runs:
+  using: 'node12'
+  main: 'index.js'
