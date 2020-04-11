@@ -5,16 +5,17 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "apollo-server-express": "latest",
     "autocannon": "^4.6.0",
     "express": "^4.17.1",
+    "express-graphql": "latest",
     "faker": "^4.1.0",
+    "graphyne-express": "latest",
+    "graphyne-server": "latest",
     "markdown-table": "^2.0.0",
     "md5": "^2.2.1",
     "ora": "^4.0.3",
     "prompts": "^2.3.2",
-    "apollo-server-express": "latest",
-    "express-graphql": "latest",
-    "graphyne-express": "latest",
-    "graphyne-server": "latest"
+    "yargs": "^15.3.1"
   }
 }

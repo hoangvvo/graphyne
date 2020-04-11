@@ -1,6 +1,14 @@
+#!/usr/bin/env node
 const prompts = require('prompts');
 const { runBench, allPackages } = require('./bench');
 const table = require('markdown-table');
+const { argv } = require('yargs');
+
+if (argv['all-packages']) {
+  argv.packages = allPackages;
+}
+
+prompts.override(argv);
 
 const questions = [
   {
