@@ -14,6 +14,11 @@ export class GraphyneServer extends GraphyneServerBase {
   }
 
   createHandler(options?: HandlerConfig): RequestHandler {
+    if (options?.graphiql && !options.path)
+      throw new Error(
+        'createHandler: options.path must be set to use options.graphiql'
+      );
+
     return async (req: Request, res: Response, next: NextFunction) => {
       const path = options?.path;
 
