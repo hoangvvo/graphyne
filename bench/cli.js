@@ -1,12 +1,6 @@
 const prompts = require('prompts');
-const { readdirSync } = require('fs');
-const { join } = require('path');
-const { runBench } = require('./bench');
+const { runBench, allPackages } = require('./bench');
 const table = require('markdown-table');
-
-const allPackages = readdirSync(join(__dirname, 'benchmarks')).map((x) =>
-  x.replace('.js', '')
-);
 
 const questions = [
   {

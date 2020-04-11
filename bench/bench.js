@@ -2,6 +2,11 @@ const autocannon = require('autocannon');
 const { fork } = require('child_process');
 const { join } = require('path');
 const ora = require('ora');
+const { readdirSync } = require('fs');
+
+exports.allPackages = readdirSync(join(__dirname, 'benchmarks')).map((x) =>
+  x.replace('.js', '')
+);
 
 const body = JSON.stringify({
   query: `{
