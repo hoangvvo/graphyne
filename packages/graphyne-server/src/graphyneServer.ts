@@ -73,9 +73,4 @@ export class GraphyneServer extends GraphyneServerBase {
       res.end('not found');
     };
   }
-
-  listen(...opts: any[]) {
-    const httpServer = createServer(this.createHandler());
-    httpServer.listen(...(opts.length ? opts : [{ port: 4000 }]));
-  }
 }
