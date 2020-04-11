@@ -22,14 +22,14 @@ export class GraphyneServer extends GraphyneServerBase {
   createHandler(): RequestListener {
     return async (req: IncomingMessage, res: ServerResponse) => {
       const { pathname, query: queryObj } = parseUrl(req, true) || {};
-      const path = this.options.path || '/graphql';
+      const path = this.options.path || this.DEFAULT_PATH;
 
       // serve GraphiQL
       const graphiql = this.options.graphiql;
       const graphiqlPath =
         graphiql &&
         ((typeof graphiql === 'object' ? graphiql.path : null) ||
-          '/___graphql');
+          this.DEFAULT_GRAPHIQL_PATH);
       if (graphiql && req.method === 'GET' && pathname === graphiqlPath) {
         const defaultQuery =
           typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
