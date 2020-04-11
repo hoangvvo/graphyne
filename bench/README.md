@@ -1,26 +1,35 @@
 # GraphQL Server Benchmarks
 
-This benchmarks GraphQL Servers to compare it with [graphyne](/)
+Benchmarks GraphQL Servers to compare it with [graphyne](/).
 
-## Methodology
+This benchmarks the servers using [autocannon](https://github.com/mcollina/autocannon). Each run includes two rounds: one 5-second round to warm up, one to measure. The benchmark is run once a day using Github Actions.
 
-This benchmarks the servers using [autocannon](https://github.com/mcollina/autocannon). Each run includes two round: one 5-second round to warm up, one to measure.
+Current packages that are being benchmarked:
+
+- `graphyne-server@latest`
+- `graphyne-express@latest`
+- `apollo-server-express@latest`
+- `express-graphql@latest`
+
+Also, a bare [`graphql-jit`](benchmarks/graphql-jit-str) with in-memory cache is benchmarked for personal references.
 
 ## Usage
 
-From this [repo root](/):
+[cli.js](cli.js) is a CLI that benchmarks the servers.
 
-```javascript
-yarn bench [arguments(optional)]
-// OR
-npm run bench [arguments(options)]
+```shell
+node cli [arguments(optional)]
 ```
 
-Arguments are:
+The following arguments are accepted:
 
 - `--duration`: Number of seconds to run
 - `--connections`: Number of concurrent connections
 
 If an option is not supplied, you will be walked through prompts.
+
+## Add a server
+
+Add a server simply by creating a file in [benchmarks](benchmarks). The server should listen to port `4001`.
 
 ## Results
