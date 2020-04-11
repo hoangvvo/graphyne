@@ -4,6 +4,7 @@ import {
   getGraphQLParams,
   renderGraphiQL,
   parseNodeRequest,
+  HandlerConfig,
 } from 'graphyne-core';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 
@@ -12,27 +13,14 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(handlerOpts?: { graphiql?: boolean }): RequestHandler {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      const path = this.options.path;
+  createHandler(options?: HandlerConfig): RequestHandler {
+    if (options?.graphiql && !options.path)
+      throw new Error(
+        'createHandler: options.path must be set to use options.graphiql'
+      );
 
-      // serve GraphiQL
-      const graphiql = this.options.graphiql;
-      const graphiqlPath = typeof graphiql === 'object' ? graphiql.path : null;
-      if (
-        handlerOpts?.graphiql &&
-        (!graphiqlPath || req.path === graphiqlPath)
-      ) {
-        if (!path || !graphiql) {
-          return res.send(
-            'To use GraphiQL, both options.path and options.graphiql must be set when initializing GraphyneServer'
-          );
-        }
-        const defaultQuery =
-          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.send(renderGraphiQL({ path, defaultQuery }));
-      }
+    return async (req: Request, res: Response, next: NextFunction) => {
+      const path = options?.path;
 
       // serve GraphQL
       if (!path || path === req.path) {
@@ -49,8 +37,8 @@ export class GraphyneServer extends GraphyneServerBase {
           variables,
           operationName,
           http: {
-            headers: req.headers,
-            method: req.method,
+            request: req,
+            response: res,
           },
         }).then(({ status, body, headers }) => {
           // set headers
@@ -62,7 +50,20 @@ export class GraphyneServer extends GraphyneServerBase {
         });
       }
 
-      // For connect, if path not matched
+      // serve GraphiQL
+      if (options?.graphiql) {
+        const graphiql = options.graphiql;
+        const graphiqlPath =
+          typeof graphiql === 'object' ? graphiql.path : null;
+        if (!graphiqlPath || req.path === graphiqlPath) {
+          const defaultQuery =
+            typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(renderGraphiQL({ path, defaultQuery }));
+        }
+      }
+
+      // If path not matched
       next();
     };
   }

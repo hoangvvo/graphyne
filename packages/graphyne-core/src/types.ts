@@ -5,6 +5,7 @@ import {
   ExecutionResult,
 } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
+import { IncomingMessage, ServerResponse } from 'http';
 
 type IntegrationContext = Record<string, any>;
 
@@ -13,21 +14,21 @@ export interface Config<TContext = Record<string, any>, TRootValue = any> {
   context?: TContext | ((intergrationContext: IntegrationContext) => TContext);
   rootValue?: (parsedQuery: DocumentNode) => TRootValue | TRootValue;
   cache?: number | boolean;
+}
+
+export interface HandlerConfig {
   path?: string;
   graphiql?: boolean | GraphiQLConfig;
 }
 
-export interface GraphiQLConfig {
-  path: string;
-  defaultQuery?: string;
-}
+export type GraphiQLConfig =
+  | boolean
+  | {
+      path?: string;
+      defaultQuery?: string;
+    };
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
-
-interface HTTPRequest {
-  method?: string;
-  headers?: HTTPHeaders;
-}
 
 export type VariableValues = { [name: string]: any };
 
@@ -39,7 +40,10 @@ export interface HTTPQueryBody {
 
 export interface HttpQueryRequest extends HTTPQueryBody {
   context: IntegrationContext;
-  http: HTTPRequest;
+  http: {
+    request: IncomingMessage;
+    response: ServerResponse;
+  };
 }
 
 export interface HttpQueryResponse {

@@ -45,6 +45,8 @@ export abstract class GraphyneServerBase {
   private lruErrors: Lru<Pick<QueryCache, 'document' | 'errors'>> | null;
   private schema: GraphQLSchema;
   protected options: Config;
+  protected DEFAULT_PATH = '/graphql';
+  protected DEFAULT_GRAPHIQL_PATH = '/___graphql';
   constructor(options: Config) {
     // validate options
     if (!options) {
@@ -72,7 +74,7 @@ export abstract class GraphyneServerBase {
   protected async runHTTPQuery(
     requestCtx: HttpQueryRequest
   ): Promise<HttpQueryResponse> {
-    let context;
+    let context: Record<string, any>;
     let rootValue = {};
     let document;
     let compiledQuery: CompiledQuery | ExecutionResult;
@@ -84,7 +86,7 @@ export abstract class GraphyneServerBase {
       variables,
       operationName,
       context: integrationContext,
-      http: { method },
+      http: { request },
     } = requestCtx;
 
     if (!query) {
@@ -144,7 +146,7 @@ export abstract class GraphyneServerBase {
       });
     }
 
-    if (method === 'GET') {
+    if (request.method === 'GET') {
       // Mutation is not allowed with GET request
       const operation = getOperationAST(document, operationName)?.operation;
       if (operation !== 'query') {
@@ -171,8 +173,7 @@ export abstract class GraphyneServerBase {
           err.message = `Error creating context: ${err.message}`;
           return createResponse(err.status || 500, { errors: [err] }, headers);
         }
-      }
-      context = contextFn;
+      } else context = contextFn;
     } else {
       context = integrationContext;
     }
@@ -185,8 +186,7 @@ export abstract class GraphyneServerBase {
           err.message = `Error creating root value: ${err.message}`;
           return createResponse(err.status || 500, { errors: [err] }, headers);
         }
-      }
-      rootValue = rootValueFn;
+      } else rootValue = rootValueFn;
     }
 
     return createResponse(

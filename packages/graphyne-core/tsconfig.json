@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2018",
+    "lib": ["es2018"],
     "module": "commonjs",
+    "target": "es2018",
     "rootDir": "src",
     "outDir": "lib",
     "strict": true,
-    "skipLibCheck": true,
     "declaration": true,
+    "skipLibCheck": true,
     "esModuleInterop": true
   },
   "include": ["./src/**/*"],

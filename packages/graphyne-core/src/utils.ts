@@ -1,4 +1,4 @@
-import { IncomingMessage, IncomingHttpHeaders } from 'http';
+import { IncomingMessage } from 'http';
 import { VariableValues, HTTPQueryBody, HttpQueryRequest } from './types';
 
 type GraphQLParams = Partial<HttpQueryRequest>;
@@ -48,28 +48,16 @@ export async function parseNodeRequest(
     : oCtype
   ).trim();
 
-  const rawBody: string = await new Promise((resolve) => {
-    let bits = '';
-    req
-      .on('data', (x) => {
-        bits += x;
-      })
-      .on('end', () => {
-        resolve(bits);
-      });
-  });
+  let rawBody = '';
+  for await (const chunk of req) {
+    rawBody += chunk;
+  }
 
   switch (ctype) {
     case 'application/graphql':
       return { query: rawBody };
     case 'application/json':
-      try {
-        return JSON.parse(rawBody);
-      } catch (error) {
-        // Do nothing
-      }
-      // TODO: It might be better to throw an error
-      return {};
+      return JSON.parse(rawBody);
     default:
       // If no Content-Type header matches, parse nothing.
       return {};

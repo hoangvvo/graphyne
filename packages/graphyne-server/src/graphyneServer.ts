@@ -10,6 +10,7 @@ import {
   parseNodeRequest,
   getGraphQLParams,
   renderGraphiQL,
+  HandlerConfig,
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
@@ -19,34 +20,17 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(): RequestListener {
+  createHandler(options?: HandlerConfig): RequestListener {
     return async (req: IncomingMessage, res: ServerResponse) => {
-      const { pathname, query: queryObj } = parseUrl(req, true) || {};
-      const path = this.options.path || '/graphql';
+      const path = options?.path || this.DEFAULT_PATH;
 
-      // serve GraphiQL
-      const graphiql = this.options.graphiql;
-      const graphiqlPath =
-        graphiql &&
-        ((typeof graphiql === 'object' ? graphiql.path : null) ||
-          '/___graphql');
-      if (graphiql && req.method === 'GET' && pathname === graphiqlPath) {
-        const defaultQuery =
-          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        return res.end(renderGraphiQL({ path, defaultQuery }));
-      }
-
+      const { pathname, query: queryParams } = parseUrl(req, true) || {};
       // serve GraphQL
       if (pathname === path) {
-        // query params
-        const queryParams: Record<string, string> = queryObj || {};
-        // parse body
-        const body = await parseNodeRequest(req);
-
         const context: Record<string, any> = { req, res };
+        const body = await parseNodeRequest(req);
         const { query, variables, operationName } = getGraphQLParams({
-          queryParams,
+          queryParams: queryParams || {},
           body,
         });
 
@@ -56,8 +40,8 @@ export class GraphyneServer extends GraphyneServerBase {
           variables,
           operationName,
           http: {
-            headers: req.headers,
-            method: req.method,
+            request: req,
+            response: res,
           },
         }).then(({ status, body, headers }) => {
           // set headers
@@ -70,14 +54,23 @@ export class GraphyneServer extends GraphyneServerBase {
         });
       }
 
+      // serve GraphiQL
+      if (options?.graphiql) {
+        const graphiql = options.graphiql;
+        const graphiqlPath =
+          (typeof graphiql === 'object' ? graphiql.path : null) ||
+          this.DEFAULT_GRAPHIQL_PATH;
+        if (pathname === graphiqlPath) {
+          const defaultQuery =
+            typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          return res.end(renderGraphiQL({ path, defaultQuery }));
+        }
+      }
+
       // serve 404
       res.statusCode = 404;
       res.end('not found');
     };
-  }
-
-  listen(...opts: any[]) {
-    const httpServer = createServer(this.createHandler());
-    httpServer.listen(...(opts.length ? opts : [{ port: 4000 }]));
   }
 }
