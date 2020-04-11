@@ -13,11 +13,13 @@
   },
   "homepage": "https://github.com/hoangvvo/graphyne#readme",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "bench"
   ],
   "scripts": {
     "prepublish": "lerna run build",
-    "lint": "eslint packages/*/src/**/*.{js,ts}"
+    "lint": "eslint packages/*/src/**/*.{js,ts}",
+    "bench-cli": "node bench/cli"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^2.27.0",

@@ -1,0 +1,20 @@
+{
+  "name": "graphyne-benchmark",
+  "version": "0.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "autocannon": "^4.6.0",
+    "express": "^4.17.1",
+    "faker": "^4.1.0",
+    "markdown-table": "^2.0.0",
+    "md5": "^2.2.1",
+    "ora": "^4.0.3",
+    "prompts": "^2.3.2",
+    "apollo-server-express": "latest",
+    "express-graphql": "latest",
+    "graphyne-express": "latest",
+    "graphyne-server": "latest"
+  }
+}
