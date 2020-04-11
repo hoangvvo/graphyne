@@ -34,5 +34,5 @@ const server = http.createServer(
 );
 
 server.listen(3000, () => {
-  console.log(`🚀  Server ready at http://localhost:3000/api`);
+  console.log(`🚀  Server ready at http://localhost:3000/graphql`);
 });
