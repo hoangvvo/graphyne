@@ -85,6 +85,7 @@ exports.runBench = async function run({ packages, duration, connections }) {
     });
     results.push(result);
   }
+  results.sort((a, b) => b.requests - a.requests);
   return results;
 };
 

@@ -34,7 +34,6 @@ const questions = [
   const { packages, duration, connections } = await prompts(questions);
   if (!packages || !duration || !connections) return;
   const results = await runBench({ packages, duration, connections });
-  results.sort((a, b) => b.requests - a.requests);
   const tableMd = table(
     [
       ['Library', 'Requests/s', 'Latency'],
