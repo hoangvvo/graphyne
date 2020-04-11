@@ -15,14 +15,14 @@ jobs:
     - name: run benchmarks
       run: |
         yarn install
-        yarn bench --duration 20 --connections 100 --all-packages --write
+        yarn bench --duration 40 --connections 100 --all-packages --write
     - name: commit benchmarks
       run: |
         node_version=$(node --version)
         benchmark_title=$(cat << EOF
         # Benchmarks
         * __Machine:__ $(uname -a) | $(node -r os -p "\`\${os.cpus().length} vCPUs | \${Math.ceil(os.totalmem() / (Math.pow(1024, 3)))}GB\`").
-        * __Method:__ \`autocannon -c 100 -d 40 -p 10 localhost:3000\` (two rounds; one to warm-up, one to measure).
+        * __Method:__ \`autocannon -c 100 -d 40 localhost:3000\` (two rounds; one to warm-up, one to measure).
         * __Node:__ \`$node_version\`
         * __Run:__ $(date)
         EOF)
