@@ -4,6 +4,7 @@ import {
   getGraphQLParams,
   renderGraphiQL,
   parseNodeRequest,
+  HandlerConfig,
 } from 'graphyne-core';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 
@@ -12,12 +13,12 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(handlerOpts?: { graphiql?: boolean }): RequestHandler {
+  createHandler(options?: HandlerConfig): RequestHandler {
     return async (req: Request, res: Response, next: NextFunction) => {
-      const path = this.options.path;
+      const path = options?.path;
 
       // serve GraphQL
-      if (!handlerOpts?.graphiql && (!path || path === req.path)) {
+      if (!path || path === req.path) {
         const context: Record<string, any> = { req, res };
         const body = await parseNodeRequest(req);
         const { query, variables, operationName } = getGraphQLParams({
@@ -45,24 +46,19 @@ export class GraphyneServer extends GraphyneServerBase {
       }
 
       // serve GraphiQL
-      const graphiql = this.options.graphiql;
-      const graphiqlPath = typeof graphiql === 'object' ? graphiql.path : null;
-      if (
-        handlerOpts?.graphiql &&
-        (!graphiqlPath || req.path === graphiqlPath)
-      ) {
-        if (!path || !graphiql) {
-          return res.send(
-            'To use GraphiQL, both options.path and options.graphiql must be set when initializing GraphyneServer'
-          );
+      if (options?.graphiql) {
+        const graphiql = options.graphiql;
+        const graphiqlPath =
+          typeof graphiql === 'object' ? graphiql.path : null;
+        if (!graphiqlPath || req.path === graphiqlPath) {
+          const defaultQuery =
+            typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(renderGraphiQL({ path, defaultQuery }));
         }
-        const defaultQuery =
-          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.send(renderGraphiQL({ path, defaultQuery }));
       }
 
-      // For connect, if path not matched
+      // If path not matched
       next();
     };
   }

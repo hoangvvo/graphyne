@@ -10,6 +10,7 @@ import {
   parseNodeRequest,
   getGraphQLParams,
   renderGraphiQL,
+  HandlerConfig,
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
@@ -19,11 +20,11 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(): RequestListener {
+  createHandler(options?: HandlerConfig): RequestListener {
     return async (req: IncomingMessage, res: ServerResponse) => {
-      const { pathname, query: queryParams } = parseUrl(req, true) || {};
-      const path = this.options.path || this.DEFAULT_PATH;
+      const path = options?.path || this.DEFAULT_PATH;
 
+      const { pathname, query: queryParams } = parseUrl(req, true) || {};
       // serve GraphQL
       if (pathname === path) {
         const context: Record<string, any> = { req, res };
@@ -54,16 +55,17 @@ export class GraphyneServer extends GraphyneServerBase {
       }
 
       // serve GraphiQL
-      const graphiql = this.options.graphiql;
-      const graphiqlPath =
-        (typeof graphiql === 'object' ? graphiql.path : null) ||
-        this.DEFAULT_GRAPHIQL_PATH;
-
-      if (graphiql && pathname === graphiqlPath) {
-        const defaultQuery =
-          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        return res.end(renderGraphiQL({ path, defaultQuery }));
+      if (options?.graphiql) {
+        const graphiql = options.graphiql;
+        const graphiqlPath =
+          (typeof graphiql === 'object' ? graphiql.path : null) ||
+          this.DEFAULT_GRAPHIQL_PATH;
+        if (pathname === graphiqlPath) {
+          const defaultQuery =
+            typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          return res.end(renderGraphiQL({ path, defaultQuery }));
+        }
       }
 
       // serve 404
