@@ -1,6 +1,6 @@
 {
   "name": "graphyne-express",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Lightning-fast JavaScript GraphQL Server for Express.js",
   "author": "Hoang Vo (https://hoangvvo.com)",
   "keywords": [
@@ -28,7 +28,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "graphyne-core": "^0.0.1"
+    "graphyne-core": "^0.0.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.4",
