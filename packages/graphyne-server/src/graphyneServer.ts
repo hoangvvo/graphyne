@@ -24,19 +24,6 @@ export class GraphyneServer extends GraphyneServerBase {
       const { pathname, query: queryParams } = parseUrl(req, true) || {};
       const path = this.options.path || this.DEFAULT_PATH;
 
-      // serve GraphiQL
-      const graphiql = this.options.graphiql;
-      const graphiqlPath =
-        (typeof graphiql === 'object' ? graphiql.path : null) ||
-        this.DEFAULT_GRAPHIQL_PATH;
-
-      if (graphiql && pathname === graphiqlPath) {
-        const defaultQuery =
-          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        return res.end(renderGraphiQL({ path, defaultQuery }));
-      }
-
       // serve GraphQL
       if (pathname === path) {
         const context: Record<string, any> = { req, res };
@@ -64,6 +51,19 @@ export class GraphyneServer extends GraphyneServerBase {
           res.statusCode = status;
           res.end(JSON.stringify(body));
         });
+      }
+
+      // serve GraphiQL
+      const graphiql = this.options.graphiql;
+      const graphiqlPath =
+        (typeof graphiql === 'object' ? graphiql.path : null) ||
+        this.DEFAULT_GRAPHIQL_PATH;
+
+      if (graphiql && pathname === graphiqlPath) {
+        const defaultQuery =
+          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        return res.end(renderGraphiQL({ path, defaultQuery }));
       }
 
       // serve 404

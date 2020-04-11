@@ -16,26 +16,8 @@ export class GraphyneServer extends GraphyneServerBase {
     return async (req: Request, res: Response, next: NextFunction) => {
       const path = this.options.path;
 
-      // serve GraphiQL
-      const graphiql = this.options.graphiql;
-      const graphiqlPath = typeof graphiql === 'object' ? graphiql.path : null;
-      if (
-        handlerOpts?.graphiql &&
-        (!graphiqlPath || req.path === graphiqlPath)
-      ) {
-        if (!path || !graphiql) {
-          return res.send(
-            'To use GraphiQL, both options.path and options.graphiql must be set when initializing GraphyneServer'
-          );
-        }
-        const defaultQuery =
-          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.send(renderGraphiQL({ path, defaultQuery }));
-      }
-
       // serve GraphQL
-      if (!path || path === req.path) {
+      if (!handlerOpts?.graphiql && (!path || path === req.path)) {
         const context: Record<string, any> = { req, res };
         const body = await parseNodeRequest(req);
         const { query, variables, operationName } = getGraphQLParams({
@@ -60,6 +42,24 @@ export class GraphyneServer extends GraphyneServerBase {
           }
           res.status(status).json(body);
         });
+      }
+
+      // serve GraphiQL
+      const graphiql = this.options.graphiql;
+      const graphiqlPath = typeof graphiql === 'object' ? graphiql.path : null;
+      if (
+        handlerOpts?.graphiql &&
+        (!graphiqlPath || req.path === graphiqlPath)
+      ) {
+        if (!path || !graphiql) {
+          return res.send(
+            'To use GraphiQL, both options.path and options.graphiql must be set when initializing GraphyneServer'
+          );
+        }
+        const defaultQuery =
+          typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(renderGraphiQL({ path, defaultQuery }));
       }
 
       // For connect, if path not matched
