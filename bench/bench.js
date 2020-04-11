@@ -56,13 +56,18 @@ async function doBench({ package, duration, connections }) {
       connections,
       duration,
     });
-  } catch (e) {
-    spinner.fail(e.message);
-  } finally {
     const { requests, latency } = result;
     spinner.succeed(
       `Done: ${requests.average} requests/s, ${latency.average} latency`
     );
+    return {
+      package,
+      requests: requests.average,
+      latency: latency.average,
+    };
+  } catch (e) {
+    spinner.fail(e.message);
+  } finally {
     forked.kill('SIGINT');
     forked = null;
   }
@@ -70,10 +75,17 @@ async function doBench({ package, duration, connections }) {
 
 exports.runBench = async function run({ packages, duration, connections }) {
   // warmup
+  const results = [];
   for (const index in packages) {
     const package = packages[index];
-    await doBench({ package, duration, connections });
+    const result = await doBench({
+      package,
+      duration,
+      connections,
+    });
+    results.push(result);
   }
+  return results;
 };
 
 process.on('exit', () => {

@@ -2,6 +2,7 @@ const prompts = require('prompts');
 const { readdirSync } = require('fs');
 const { join } = require('path');
 const { runBench } = require('./bench');
+const table = require('markdown-table');
 
 const allPackages = readdirSync(join(__dirname, 'benchmarks')).map((x) =>
   x.replace('.js', '')
@@ -31,6 +32,19 @@ const questions = [
 
 (async () => {
   const { packages, duration, connections } = await prompts(questions);
-  if (packages && duration && connections)
-    runBench({ packages, duration, connections });
+  if (!packages || !duration || !connections) return;
+  const results = await runBench({ packages, duration, connections });
+  results.sort((a, b) => b.requests - a.requests);
+  const tableMd = table(
+    [
+      ['Library', 'Requests/s', 'Latency'],
+      ...results.map(({ package, requests, latency }) => [
+        package,
+        requests,
+        latency,
+      ]),
+    ],
+    { align: ['l', 'c', 'c'] }
+  );
+  console.log(tableMd);
 })();
