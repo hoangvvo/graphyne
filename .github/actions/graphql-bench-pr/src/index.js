@@ -79,7 +79,7 @@ async function getStats(repo, ref) {
 
   let message = `# Benchmarks from current PR
 
-Hey, @${pullRequest.user.login}. I ran some benchmarks on this PR!
+Hey, @${pullRequest.user.login}. I ran some benchmarks on this PR.
 `;
 
   for (let key of Object.keys(statsBase)) {
@@ -96,7 +96,7 @@ Hey, @${pullRequest.user.login}. I ran some benchmarks on this PR!
 | | ${baseRepo} ${baseRef} | ${prRepo} ${prRef} | Change |
 | --- | --- | --- | --- |
 | Requests/s | ${requests} | ${prRequests} | ${
-      prRequests > requests ? '⚠️ +' : ' '
+      prRequests < requests ? '⚠️ ' : ' '
     }${(prRequests - requests).toFixed(1)} |
 | Latency | ${latency} | ${prLatency} | ${prLatency > latency ? '⚠️ +' : ' '}${
       (prLatency - latency).toFixed(2)
@@ -109,7 +109,7 @@ Hey, @${pullRequest.user.login}. I ran some benchmarks on this PR!
 
   message += `
   
-Thanks for the PR :+1:`
+Thanks for the contribution :+1:`
 
   const [owner, repo] = baseRepo.split('/');
   await octokit.issues.createComment({
