@@ -25,43 +25,47 @@ export function getGraphQLParams({
   return { query, variables, operationName };
 }
 
-export async function parseNodeRequest(
+export function parseNodeRequest(
   req: IncomingMessage & {
     body?: any;
   }
 ): Promise<HTTPQueryBody> {
-  // If body has been parsed as a keyed object, use it.
-  if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {
-    return req.body;
-  }
+  return new Promise((resolve) => {
+    // If body has been parsed as a keyed object, use it.
+    if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {
+      return resolve(req.body);
+    }
 
-  // Skip requests without content types.
-  if (!req.headers['content-type']) {
-    return {};
-  }
+    // Skip requests without content types.
+    if (!req.headers['content-type']) {
+      return resolve({});
+    }
 
-  // Parse content type
-  const oCtype = req.headers['content-type'];
-  const semiIndex = oCtype.indexOf(';');
-  const ctype = (semiIndex !== -1
-    ? oCtype.substring(0, semiIndex)
-    : oCtype
-  ).trim();
+    // Parse content type
+    const oCtype = req.headers['content-type'];
+    const semiIndex = oCtype.indexOf(';');
+    const ctype = (semiIndex !== -1
+      ? oCtype.substring(0, semiIndex)
+      : oCtype
+    ).trim();
 
-  let rawBody = '';
-  for await (const chunk of req) {
-    rawBody += chunk;
-  }
+    let rawBody = '';
 
-  switch (ctype) {
-    case 'application/graphql':
-      return { query: rawBody };
-    case 'application/json':
-      return JSON.parse(rawBody);
-    default:
-      // If no Content-Type header matches, parse nothing.
-      return {};
-  }
+    req.on('data', (chunk) => {
+      rawBody += chunk;
+    });
+    req.on('end', () => {
+      switch (ctype) {
+        case 'application/graphql':
+          return resolve({ query: rawBody });
+        case 'application/json':
+          return resolve(JSON.parse(rawBody));
+        default:
+          // If no Content-Type header matches, parse nothing.
+          resolve({});
+      }
+    });
+  });
 }
 
 export function safeSerialize(data?: string) {
