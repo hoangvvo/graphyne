@@ -96,13 +96,13 @@ Hey, @${pullRequest.user.login}. I ran some benchmarks on this PR.
 | | ${baseRepo} ${baseRef} | ${prRepo} ${prRef} | Change |
 | --- | --- | --- | --- |
 | Requests/s | ${requests} | ${prRequests} | ${
-      prRequests < requests ? '⚠️ ' : ' '
+      prRequests < requests ? '⚠️ ' : ' +'
     }${(prRequests - requests).toFixed(1)} |
 | Latency | ${latency} | ${prLatency} | ${prLatency > latency ? '⚠️ +' : ' '}${
       (prLatency - latency).toFixed(2)
     } | 
 | Throughput/Mb | ${throughput} | ${prThroughput} | ${
-      prThroughput > throughput ? '⚠️ +' : ' '
+      prThroughput < throughput ? '⚠️ ' : ' +'
     }${(prThroughput - throughput).toFixed(2)} |
 `;
   }
