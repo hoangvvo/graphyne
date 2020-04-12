@@ -25,9 +25,8 @@ export class GraphyneServer extends GraphyneServerBase {
       // serve GraphQL
       if (!path || path === req.path) {
         const context: Record<string, any> = { req, res };
-        const body = await parseNodeRequest(req);
         const { query, variables, operationName } = getGraphQLParams({
-          body,
+          body: await parseNodeRequest(req),
           queryParams: req.query as Record<string, string>,
         });
 
@@ -44,9 +43,9 @@ export class GraphyneServer extends GraphyneServerBase {
           // set headers
           for (const key in headers) {
             const headVal = headers[key];
-            if (headVal) res.append(key, headers[key]);
+            if (headVal) res.setHeader(key, headVal);
           }
-          res.status(status).json(body);
+          res.status(status).end(body);
         });
       }
 

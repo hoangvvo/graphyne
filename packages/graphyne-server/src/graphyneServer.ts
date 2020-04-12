@@ -1,9 +1,4 @@
-import {
-  createServer,
-  RequestListener,
-  IncomingMessage,
-  ServerResponse,
-} from 'http';
+import { RequestListener, IncomingMessage, ServerResponse } from 'http';
 import {
   GraphyneServerBase,
   Config,
@@ -28,10 +23,9 @@ export class GraphyneServer extends GraphyneServerBase {
       // serve GraphQL
       if (pathname === path) {
         const context: Record<string, any> = { req, res };
-        const body = await parseNodeRequest(req);
         const { query, variables, operationName } = getGraphQLParams({
           queryParams: queryParams || {},
-          body,
+          body: await parseNodeRequest(req),
         });
 
         return this.runHTTPQuery({
@@ -50,7 +44,7 @@ export class GraphyneServer extends GraphyneServerBase {
             if (headVal) res.setHeader(key, headVal);
           }
           res.statusCode = status;
-          res.end(JSON.stringify(body));
+          res.end(body);
         });
       }
 
