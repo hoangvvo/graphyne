@@ -25,47 +25,48 @@ export function getGraphQLParams({
   return { query, variables, operationName };
 }
 
-export function parseNodeRequest(
+export async function parseNodeRequest(
   req: IncomingMessage & {
     body?: any;
   }
 ): Promise<HTTPQueryBody> {
-  return new Promise((resolve) => {
-    // If body has been parsed as a keyed object, use it.
-    if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {
-      return resolve(req.body);
-    }
+  // If body has been parsed as a keyed object, use it.
+  if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {
+    return req.body;
+  }
 
-    // Skip requests without content types.
-    if (!req.headers['content-type']) {
-      return resolve({});
-    }
+  // Skip requests without content types.
+  if (!req.headers['content-type']) {
+    return {};
+  }
 
-    // Parse content type
-    const oCtype = req.headers['content-type'];
-    const semiIndex = oCtype.indexOf(';');
-    const ctype = (semiIndex !== -1
-      ? oCtype.substring(0, semiIndex)
-      : oCtype
-    ).trim();
+  // Parse content type
+  const oCtype = req.headers['content-type'];
+  const semiIndex = oCtype.indexOf(';');
+  const ctype = (semiIndex !== -1
+    ? oCtype.substring(0, semiIndex)
+    : oCtype
+  ).trim();
 
-    let rawBody = '';
+  let rawBody = '';
 
+  await new Promise((resolve, reject) => {
     req.on('data', (chunk) => {
       rawBody += chunk;
     });
-    req.on('end', () => {
-      switch (ctype) {
-        case 'application/graphql':
-          return resolve({ query: rawBody });
-        case 'application/json':
-          return resolve(JSON.parse(rawBody));
-        default:
-          // If no Content-Type header matches, parse nothing.
-          resolve({});
-      }
-    });
+    req.on('error', reject);
+    req.on('end', resolve);
   });
+
+  switch (ctype) {
+    case 'application/graphql':
+      return { query: rawBody };
+    case 'application/json':
+      return JSON.parse(rawBody);
+    default:
+      // If no Content-Type header matches, parse nothing.
+      return {};
+  }
 }
 
 export function safeSerialize(data?: string) {
