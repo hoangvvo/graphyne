@@ -145,7 +145,7 @@ export abstract class GraphyneServerBase {
       }
 
       compiledQuery = compileQuery(this.schema, document, operationName, {
-        customJSONSerializer: false,
+        customJSONSerializer: true,
       });
     }
 
