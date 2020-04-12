@@ -1,9 +1,4 @@
-import {
-  GraphQLError,
-  GraphQLSchema,
-  DocumentNode,
-  ExecutionResult,
-} from 'graphql';
+import { GraphQLError, GraphQLSchema, DocumentNode } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 import { IncomingMessage, ServerResponse } from 'http';
 
