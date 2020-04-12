@@ -1,0 +1,8 @@
+name: 'GraphQL server PR Stats'
+description: 'Compare benchmarks of a PR with the main branch'
+inputs:
+  repoToken:
+    require: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
