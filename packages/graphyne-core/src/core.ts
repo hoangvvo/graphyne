@@ -16,6 +16,7 @@ import {
   HTTPHeaders,
   HttpQueryResponse,
 } from './types';
+import flatstr from 'flatstr';
 
 function buildCache(opts: Config) {
   if (opts.cache) {
@@ -36,7 +37,7 @@ function createResponse(
 ): HttpQueryResponse {
   return {
     status: code,
-    body: (compiledQuery || JSON).stringify(result),
+    body: flatstr((compiledQuery || JSON).stringify(result)),
     headers,
   };
 }
