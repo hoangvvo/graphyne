@@ -1,9 +1,4 @@
-import {
-  createServer,
-  RequestListener,
-  IncomingMessage,
-  ServerResponse,
-} from 'http';
+import { RequestListener, IncomingMessage, ServerResponse } from 'http';
 import {
   GraphyneServerBase,
   Config,
