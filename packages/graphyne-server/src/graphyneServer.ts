@@ -23,10 +23,9 @@ export class GraphyneServer extends GraphyneServerBase {
       // serve GraphQL
       if (pathname === path) {
         const context: Record<string, any> = { req, res };
-        const body = await parseNodeRequest(req);
         const { query, variables, operationName } = getGraphQLParams({
           queryParams: queryParams || {},
-          body,
+          body: await parseNodeRequest(req),
         });
 
         return this.runHTTPQuery({
