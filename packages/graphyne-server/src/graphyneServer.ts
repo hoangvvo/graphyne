@@ -50,7 +50,7 @@ export class GraphyneServer extends GraphyneServerBase {
             if (headVal) res.setHeader(key, headVal);
           }
           res.statusCode = status;
-          res.end(JSON.stringify(body));
+          res.end(body);
         });
       }
 

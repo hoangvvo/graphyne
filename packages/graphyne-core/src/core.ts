@@ -30,12 +30,13 @@ function buildCache(opts: Config) {
 
 function createResponse(
   code: number,
-  body: ExecutionResult,
-  headers: HTTPHeaders
+  result: ExecutionResult,
+  headers: HTTPHeaders,
+  compiledQuery?: CompiledQuery
 ): HttpQueryResponse {
   return {
     status: code,
-    body,
+    body: (compiledQuery || JSON).stringify(result),
     headers,
   };
 }
@@ -129,7 +130,9 @@ export abstract class GraphyneServerBase {
         return createResponse(400, { errors: validationErrors }, headers);
       }
 
-      compiledQuery = compileQuery(this.schema, document, operationName);
+      compiledQuery = compileQuery(this.schema, document, operationName, {
+        customJSONSerializer: true,
+      });
     }
 
     if (!isCompiledQuery(compiledQuery)) {
@@ -159,7 +162,8 @@ export abstract class GraphyneServerBase {
               ),
             ],
           },
-          headers
+          headers,
+          compiledQuery
         );
       }
     }
@@ -171,7 +175,12 @@ export abstract class GraphyneServerBase {
         } catch (err) {
           // send statusCode attached to err if exists
           err.message = `Error creating context: ${err.message}`;
-          return createResponse(err.status || 500, { errors: [err] }, headers);
+          return createResponse(
+            err.status || 500,
+            { errors: [err] },
+            headers,
+            compiledQuery
+          );
         }
       } else context = contextFn;
     } else {
@@ -184,7 +193,12 @@ export abstract class GraphyneServerBase {
           rootValue = await rootValueFn(document);
         } catch (err) {
           err.message = `Error creating root value: ${err.message}`;
-          return createResponse(err.status || 500, { errors: [err] }, headers);
+          return createResponse(
+            err.status || 500,
+            { errors: [err] },
+            headers,
+            compiledQuery
+          );
         }
       } else rootValue = rootValueFn;
     }
@@ -192,7 +206,8 @@ export abstract class GraphyneServerBase {
     return createResponse(
       200,
       await compiledQuery.query(rootValue, context, variables),
-      headers
+      headers,
+      compiledQuery
     );
   }
 

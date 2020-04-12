@@ -48,7 +48,7 @@ export interface HttpQueryRequest extends HTTPQueryBody {
 
 export interface HttpQueryResponse {
   status: number;
-  body: ExecutionResult;
+  body: string;
   headers: HTTPHeaders;
 }
 

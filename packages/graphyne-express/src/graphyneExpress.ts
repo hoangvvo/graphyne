@@ -44,9 +44,9 @@ export class GraphyneServer extends GraphyneServerBase {
           // set headers
           for (const key in headers) {
             const headVal = headers[key];
-            if (headVal) res.append(key, headers[key]);
+            if (headVal) res.setHeader(key, headVal);
           }
-          res.status(status).json(body);
+          res.status(status).end(body);
         });
       }
 
