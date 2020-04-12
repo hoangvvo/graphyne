@@ -43,9 +43,9 @@ async function prepareRepo(repo, ref, outDir) {
 async function runManyBenches(dir, packages) {
   // Run benchmark
   let packagesArgs = packages.join(' ');
-  await exec(
-    `node ${dir}/bench/bench -c 5 -d 5 -p 1 --packages ${packagesArgs} --silent`
-  );
+  const benchCmd = `node ${dir}/bench/bench -c 5 -d 5 -p 1 --packages ${packagesArgs} --silent`
+  console.log(benchCmd)
+  await exec(benchCmd);
 }
 
 async function getStats(repo, ref) {

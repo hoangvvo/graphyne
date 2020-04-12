@@ -5,7 +5,11 @@ const { renderTable } = require('./lib/compare');
 const { argv } = require('yargs')
   .alias('d', 'duration')
   .alias('c', 'connections')
-  .alias('p', 'pipelining');
+  .alias('p', 'pipelining')
+  .options('packages', {
+    alias: 'pkgs',
+    type: 'array',
+  });
 
 if (argv['all-packages']) {
   argv.packages = allPackages;
