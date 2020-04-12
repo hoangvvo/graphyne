@@ -1,0 +1,29 @@
+name: Daily benchmark
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '0 0 * * 5'
+
+jobs:
+  build:
+    # only run on main repo
+    if: github.repository == 'hoangvvo/graphyne'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - name: run benchmarks
+      run: |
+        cd bench
+        sh ./scripts/bench.sh
+        cd ..
+    - name: commit benchmarks
+      run: sh ./bench/scripts/commit.sh   
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+

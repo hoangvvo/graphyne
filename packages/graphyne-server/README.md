@@ -9,7 +9,9 @@ A lightning-fast JavaScript GraphQL Server, featuring:
 
 ## Why
 
-[Apollo Server](https://github.com/apollographql/apollo-server) is a popular GraphQL Server for Node.js. While being robust, it contains overhead that make it [significantly slow compared to others](https://github.com/benawad/node-graphql-benchmarks). `Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([> 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
+`Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([> 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
+
+Check out the [benchmarks](/bench).
 
 ## Install
 
