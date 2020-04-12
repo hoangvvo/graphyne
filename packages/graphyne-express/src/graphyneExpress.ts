@@ -13,7 +13,7 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(options?: HandlerConfig): RequestHandler {
+  async createHandler(options?: HandlerConfig): Promise<RequestHandler> {
     if (options?.graphiql && !options.path)
       throw new Error(
         'createHandler: options.path must be set to use options.graphiql'
@@ -30,7 +30,7 @@ export class GraphyneServer extends GraphyneServerBase {
           queryParams: req.query as Record<string, string>,
         });
 
-        return this.runHTTPQuery({
+        const { status, body, headers } = await this.runHTTPQuery({
           query,
           context,
           variables,
@@ -39,14 +39,13 @@ export class GraphyneServer extends GraphyneServerBase {
             request: req,
             response: res,
           },
-        }).then(({ status, body, headers }) => {
-          // set headers
-          for (const key in headers) {
-            const headVal = headers[key];
-            if (headVal) res.setHeader(key, headVal);
-          }
-          res.status(status).end(body);
         });
+
+        for (const key in headers) {
+          const headVal = headers[key];
+          if (headVal) res.setHeader(key, headVal);
+        }
+        return res.status(status).end(body);
       }
 
       // serve GraphiQL

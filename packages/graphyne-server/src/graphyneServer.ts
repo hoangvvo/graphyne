@@ -15,7 +15,7 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(options?: HandlerConfig): RequestListener {
+  async createHandler(options?: HandlerConfig): Promise<RequestListener> {
     return async (req: IncomingMessage, res: ServerResponse) => {
       const path = options?.path || this.DEFAULT_PATH;
 
@@ -28,7 +28,7 @@ export class GraphyneServer extends GraphyneServerBase {
           body: await parseNodeRequest(req),
         });
 
-        return this.runHTTPQuery({
+        const { status, body, headers } = await this.runHTTPQuery({
           query,
           context,
           variables,
@@ -37,15 +37,13 @@ export class GraphyneServer extends GraphyneServerBase {
             request: req,
             response: res,
           },
-        }).then(({ status, body, headers }) => {
-          // set headers
-          for (const key in headers) {
-            const headVal = headers[key];
-            if (headVal) res.setHeader(key, headVal);
-          }
-          res.statusCode = status;
-          res.end(body);
         });
+        for (const key in headers) {
+          const headVal = headers[key];
+          if (headVal) res.setHeader(key, headVal);
+        }
+        res.statusCode = status;
+        return res.end(body);
       }
 
       // serve GraphiQL
