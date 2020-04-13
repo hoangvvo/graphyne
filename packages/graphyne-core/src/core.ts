@@ -29,18 +29,6 @@ function buildCache(opts: Config) {
   return lru(1024);
 }
 
-function createResponse(
-  code: number,
-  strResult: string,
-  headers: HTTPHeaders
-): HttpQueryResponse {
-  return {
-    status: code,
-    body: flatstr(strResult),
-    headers,
-  };
-}
-
 export abstract class GraphyneServerBase {
   private lru: Lru<Pick<QueryCache, 'document' | 'compiledQuery'>> | null;
   private lruErrors: Lru<Pick<QueryCache, 'document' | 'errors'>> | null;
@@ -72,9 +60,22 @@ export abstract class GraphyneServerBase {
     }
   }
 
-  protected async runHTTPQuery(
-    requestCtx: HttpQueryRequest
-  ): Promise<HttpQueryResponse> {
+  protected runHTTPQuery(
+    requestCtx: HttpQueryRequest,
+    cb: (err: Error | null, result: HttpQueryResponse) => void
+  ): void {
+    function createResponse(
+      code: number,
+      strResult: string,
+      headers: HTTPHeaders
+    ): void {
+      cb(null, {
+        status: code,
+        body: flatstr(strResult),
+        headers,
+      });
+    }
+
     let context: Record<string, any>;
     let rootValue = {};
     let document;
@@ -183,17 +184,7 @@ export abstract class GraphyneServerBase {
 
     if (contextFn) {
       if (typeof contextFn === 'function') {
-        try {
-          context = await contextFn(integrationContext);
-        } catch (err) {
-          // send statusCode attached to err if exists
-          err.message = `Error creating context: ${err.message}`;
-          return createResponse(
-            err.status || 500,
-            JSON.stringify({ errors: [err] }),
-            headers
-          );
-        }
+        context = contextFn(integrationContext);
       } else context = contextFn;
     } else {
       context = integrationContext;
@@ -201,25 +192,26 @@ export abstract class GraphyneServerBase {
 
     if (rootValueFn) {
       if (typeof rootValueFn === 'function') {
-        try {
-          rootValue = await rootValueFn(document);
-        } catch (err) {
-          err.message = `Error creating root value: ${err.message}`;
-          return createResponse(
-            err.status || 500,
-            JSON.stringify({ errors: [err] }),
-            headers
-          );
-        }
+        rootValue = rootValueFn(document);
       } else rootValue = rootValueFn;
     }
 
-    return createResponse(
-      200,
-      compiledQuery.stringify(
-        await compiledQuery.query(rootValue, context, variables)
-      ),
-      headers
+    Promise.all([context, rootValue]).then(
+      ([contextResult, rootValueResult]) => {
+        Promise.resolve(
+          (compiledQuery as CompiledQuery).query(
+            rootValueResult,
+            contextResult,
+            variables
+          )
+        ).then((result) =>
+          createResponse(
+            200,
+            (compiledQuery as CompiledQuery).stringify(result),
+            headers
+          )
+        );
+      }
     );
   }
 

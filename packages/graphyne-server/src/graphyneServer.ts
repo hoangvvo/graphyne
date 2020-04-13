@@ -15,35 +15,40 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  async createHandler(options?: HandlerConfig): Promise<RequestListener> {
-    return async (req: IncomingMessage, res: ServerResponse) => {
+  createHandler(options?: HandlerConfig): RequestListener {
+    return (req: IncomingMessage, res: ServerResponse) => {
       const path = options?.path || this.DEFAULT_PATH;
 
       const { pathname, query: queryParams } = parseUrl(req, true) || {};
       // serve GraphQL
       if (pathname === path) {
-        const context: Record<string, any> = { req, res };
-        const { query, variables, operationName } = getGraphQLParams({
-          queryParams: queryParams || {},
-          body: await parseNodeRequest(req),
+        return parseNodeRequest(req, (err, parsedBody) => {
+          const context: Record<string, any> = { req, res };
+          const { query, variables, operationName } = getGraphQLParams({
+            queryParams: queryParams || {},
+            body: parsedBody,
+          });
+          this.runHTTPQuery(
+            {
+              query,
+              context,
+              variables,
+              operationName,
+              http: {
+                request: req,
+                response: res,
+              },
+            },
+            (err, { status, body, headers }) => {
+              for (const key in headers) {
+                const headVal = headers[key];
+                if (headVal) res.setHeader(key, headVal);
+              }
+              res.statusCode = status;
+              return res.end(body);
+            }
+          );
         });
-
-        const { status, body, headers } = await this.runHTTPQuery({
-          query,
-          context,
-          variables,
-          operationName,
-          http: {
-            request: req,
-            response: res,
-          },
-        });
-        for (const key in headers) {
-          const headVal = headers[key];
-          if (headVal) res.setHeader(key, headVal);
-        }
-        res.statusCode = status;
-        return res.end(body);
       }
 
       // serve GraphiQL
