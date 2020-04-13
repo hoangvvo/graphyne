@@ -28,6 +28,19 @@ function buildCache(opts: Config) {
   return lru(1024);
 }
 
+function promiseWrapper<T>(
+  value: T | Promise<T>,
+  cb: (err: any, result: T) => void
+): void {
+  // @ts-ignore
+  if (value && typeof value.then === 'function') {
+    (value as Promise<T>).then(
+      (resolve: any) => cb(null, resolve),
+      (reject: any) => cb(reject, reject)
+    );
+  } else cb(null, value as T);
+}
+
 export abstract class GraphyneServerBase {
   private lru: Lru<
     Pick<QueryCache, 'document' | 'operation' | 'compiledQuery'>
@@ -168,24 +181,28 @@ export abstract class GraphyneServerBase {
       } else rootValue = rootValueFn;
     }
 
-    (async () => {
-      if (contextFn) {
-        if (typeof contextFn === 'function') {
-          try {
-            context = await contextFn(integrationContext);
-          } catch (err) {
-            err.message = `Error creating context: ${err.message}`;
-            return createResponse(err.status || 500, { errors: [err] });
-          }
-        } else context = contextFn;
-      } else {
-        context = integrationContext;
+    if (contextFn) {
+      if (typeof contextFn === 'function') {
+        context = contextFn(integrationContext);
+      } else context = contextFn;
+    } else {
+      context = integrationContext;
+    }
+
+    promiseWrapper(context, (err, resolvedContext) => {
+      if (err) {
+        err.message = `Error creating context: ${err.message}`;
+        return createResponse(err.status || 500, { errors: [err] });
       }
-      createResponse(
-        200,
-        await compiledQuery.query(rootValue, context, variables)
+      promiseWrapper(
+        (compiledQuery as CompiledQuery).query(
+          rootValue,
+          resolvedContext,
+          variables
+        ),
+        (err, result) => createResponse(200, result)
       );
-    })();
+    });
   }
 
   abstract createHandler(...args: any[]): any;
