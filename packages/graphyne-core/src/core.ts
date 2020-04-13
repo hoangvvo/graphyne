@@ -16,7 +16,6 @@ import {
   HTTPHeaders,
   HttpQueryResponse,
 } from './types';
-import flatstr from 'flatstr';
 
 function buildCache(opts: Config) {
   if (opts.cache) {
@@ -29,8 +28,23 @@ function buildCache(opts: Config) {
   return lru(1024);
 }
 
+function resolveMaybePromise<T>(
+  value: T | Promise<T>,
+  cb: (err: any, result: T) => void
+): void {
+  // @ts-ignore
+  if (value && typeof value.then === 'function') {
+    (value as Promise<T>).then(
+      (resolve: any) => cb(null, resolve),
+      (reject: any) => cb(reject, reject)
+    );
+  } else cb(null, value as T);
+}
+
 export abstract class GraphyneServerBase {
-  private lru: Lru<Pick<QueryCache, 'document' | 'compiledQuery'>> | null;
+  private lru: Lru<
+    Pick<QueryCache, 'document' | 'operation' | 'compiledQuery'>
+  > | null;
   private lruErrors: Lru<Pick<QueryCache, 'document' | 'errors'>> | null;
   private schema: GraphQLSchema;
   protected options: Config;
@@ -64,14 +78,16 @@ export abstract class GraphyneServerBase {
     requestCtx: HttpQueryRequest,
     cb: (err: any, result: HttpQueryResponse) => void
   ): void {
-    function createResponse(
-      code: number,
-      strResult: string,
-      headers: HTTPHeaders
-    ): void {
+    let compiledQuery: CompiledQuery | ExecutionResult;
+    const headers: HTTPHeaders = { 'content-type': 'application/json' };
+
+    function createResponse(code: number, obj: ExecutionResult): void {
+      const stringify = isCompiledQuery(compiledQuery)
+        ? compiledQuery.stringify
+        : JSON.stringify;
       cb(null, {
         status: code,
-        body: flatstr(strResult),
+        body: stringify(obj),
         headers,
       });
     }
@@ -79,9 +95,7 @@ export abstract class GraphyneServerBase {
     let context: Record<string, any>;
     let rootValue = {};
     let document;
-    let compiledQuery: CompiledQuery | ExecutionResult;
-
-    let headers: HTTPHeaders = { 'Content-Type': 'application/json' };
+    let operation;
 
     const {
       query,
@@ -92,13 +106,9 @@ export abstract class GraphyneServerBase {
     } = requestCtx;
 
     if (!query) {
-      return createResponse(
-        400,
-        JSON.stringify({
-          errors: [new GraphQLError('request does not contain query')],
-        }),
-        headers
-      );
+      return createResponse(400, {
+        errors: [new GraphQLError('request does not contain query')],
+      });
     }
 
     const { context: contextFn, rootValue: rootValueFn } = this.options;
@@ -109,24 +119,17 @@ export abstract class GraphyneServerBase {
     if (cached) {
       compiledQuery = cached.compiledQuery;
       document = cached.document;
+      operation = cached.operation;
     } else {
       const errCached = this.lruErrors !== null && this.lruErrors.get(query);
       if (errCached) {
-        return createResponse(
-          400,
-          JSON.stringify({ errors: errCached.errors }),
-          headers
-        );
+        return createResponse(400, { errors: errCached.errors });
       }
 
       try {
         document = parse(query);
       } catch (syntaxErr) {
-        return createResponse(
-          400,
-          JSON.stringify({ errors: [syntaxErr] }),
-          headers
-        );
+        return createResponse(400, { errors: [syntaxErr] });
       }
 
       const validationErrors = validate(this.schema, document);
@@ -138,13 +141,9 @@ export abstract class GraphyneServerBase {
             errors: validationErrors,
           });
         }
-        return createResponse(
-          400,
-          JSON.stringify({ errors: validationErrors }),
-          headers
-        );
+        return createResponse(400, { errors: validationErrors });
       }
-
+      operation = getOperationAST(document, operationName)?.operation;
       compiledQuery = compileQuery(this.schema, document, operationName, {
         customJSONSerializer: true,
       });
@@ -152,34 +151,28 @@ export abstract class GraphyneServerBase {
 
     if (!isCompiledQuery(compiledQuery)) {
       // Query fail compiling
-      return createResponse(500, JSON.stringify(compiledQuery), headers);
+      return createResponse(500, compiledQuery);
     }
 
     // TODO: Add support for caching multi-operation document
-    if (!cached && this.lru && !operationName) {
+    if (!cached && this.lru && operation && !operationName) {
       // save compiled query to cache
       this.lru.set(query, {
         document,
         compiledQuery,
+        operation,
       });
     }
 
-    if (request.method === 'GET') {
+    if (request.method === 'GET' && operation !== 'query') {
       // Mutation is not allowed with GET request
-      const operation = getOperationAST(document, operationName)?.operation;
-      if (operation !== 'query') {
-        return createResponse(
-          405,
-          JSON.stringify({
-            errors: [
-              new GraphQLError(
-                `Operation ${operation} cannot be performed via a GET request`
-              ),
-            ],
-          }),
-          headers
-        );
-      }
+      return createResponse(405, {
+        errors: [
+          new GraphQLError(
+            `Operation ${operation} cannot be performed via a GET request`
+          ),
+        ],
+      });
     }
 
     if (rootValueFn) {
@@ -188,31 +181,28 @@ export abstract class GraphyneServerBase {
       } else rootValue = rootValueFn;
     }
 
-    (async () => {
-      if (contextFn) {
-        if (typeof contextFn === 'function') {
-          try {
-            context = await contextFn(integrationContext);
-          } catch (err) {
-            err.message = `Error creating context: ${err.message}`;
-            return createResponse(
-              err.status || 500,
-              JSON.stringify({ errors: [err] }),
-              headers
-            );
-          }
-        } else context = contextFn;
-      } else {
-        context = integrationContext;
+    if (contextFn) {
+      if (typeof contextFn === 'function') {
+        context = contextFn(integrationContext);
+      } else context = contextFn;
+    } else {
+      context = integrationContext;
+    }
+
+    return resolveMaybePromise(context, (err, contextVal) => {
+      if (err) {
+        err.message = `Error creating context: ${err.message}`;
+        return createResponse(err.status || 500, { errors: [err] });
       }
-      createResponse(
-        200,
-        compiledQuery.stringify(
-          await compiledQuery.query(rootValue, context, variables)
+      return resolveMaybePromise(
+        (compiledQuery as CompiledQuery).query(
+          rootValue,
+          contextVal,
+          variables
         ),
-        headers
+        (err, result) => createResponse(200, result)
       );
-    })();
+    });
   }
 
   abstract createHandler(...args: any[]): any;

@@ -48,6 +48,7 @@ export interface HttpQueryResponse {
 }
 
 export interface QueryCache {
+  operation: string;
   document: DocumentNode;
   compiledQuery: CompiledQuery;
   errors: readonly GraphQLError[];
