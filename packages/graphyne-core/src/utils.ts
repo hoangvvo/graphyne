@@ -25,19 +25,20 @@ export function getGraphQLParams({
   return { query, variables, operationName };
 }
 
-export async function parseNodeRequest(
+export function parseNodeRequest(
   req: IncomingMessage & {
     body?: any;
-  }
-): Promise<HTTPQueryBody> {
+  },
+  cb: (err: any, parsedBody?: HTTPQueryBody) => void
+): void {
   // If body has been parsed as a keyed object, use it.
   if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {
-    return req.body;
+    return cb(null, req.body);
   }
 
   // Skip requests without content types.
   if (!req.headers['content-type']) {
-    return {};
+    return cb(null, {});
   }
 
   // Parse content type
@@ -49,19 +50,27 @@ export async function parseNodeRequest(
   ).trim();
 
   let rawBody = '';
-  for await (const chunk of req) {
+  req.on('data', (chunk) => {
     rawBody += chunk;
-  }
-
-  switch (ctype) {
-    case 'application/graphql':
-      return { query: rawBody };
-    case 'application/json':
-      return JSON.parse(rawBody);
-    default:
-      // If no Content-Type header matches, parse nothing.
-      return {};
-  }
+  });
+  req.on('error', cb);
+  req.on('end', () => {
+    switch (ctype) {
+      case 'application/graphql':
+        return cb(null, { query: rawBody });
+      case 'application/json':
+        try {
+          cb(null, JSON.parse(rawBody));
+        } catch (err) {
+          err.status = 400;
+          cb(err);
+        }
+        break;
+      default:
+        // If no Content-Type header matches, parse nothing.
+        return cb(null, {});
+    }
+  });
 }
 
 export function safeSerialize(data?: string) {

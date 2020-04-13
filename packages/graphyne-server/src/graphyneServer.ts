@@ -16,35 +16,42 @@ export class GraphyneServer extends GraphyneServerBase {
   }
 
   createHandler(options?: HandlerConfig): RequestListener {
-    return async (req: IncomingMessage, res: ServerResponse) => {
+    return (req: IncomingMessage, res: ServerResponse) => {
       const path = options?.path || this.DEFAULT_PATH;
 
       const { pathname, query: queryParams } = parseUrl(req, true) || {};
       // serve GraphQL
       if (pathname === path) {
-        const context: Record<string, any> = { req, res };
-        const { query, variables, operationName } = getGraphQLParams({
-          queryParams: queryParams || {},
-          body: await parseNodeRequest(req),
-        });
-
-        return this.runHTTPQuery({
-          query,
-          context,
-          variables,
-          operationName,
-          http: {
-            request: req,
-            response: res,
-          },
-        }).then(({ status, body, headers }) => {
-          // set headers
-          for (const key in headers) {
-            const headVal = headers[key];
-            if (headVal) res.setHeader(key, headVal);
+        return parseNodeRequest(req, (err, parsedBody) => {
+          if (err) {
+            res.statusCode = err.status || 500;
+            return res.end(Buffer.from(err));
           }
-          res.statusCode = status;
-          res.end(body);
+          const context: Record<string, any> = { req, res };
+          const { query, variables, operationName } = getGraphQLParams({
+            queryParams: queryParams || {},
+            body: parsedBody,
+          });
+          this.runHTTPQuery(
+            {
+              query,
+              context,
+              variables,
+              operationName,
+              http: {
+                request: req,
+                response: res,
+              },
+            },
+            (err, { status, body, headers }) => {
+              for (const key in headers) {
+                const headVal = headers[key];
+                if (headVal) res.setHeader(key, headVal);
+              }
+              res.statusCode = status;
+              return res.end(body);
+            }
+          );
         });
       }
 
