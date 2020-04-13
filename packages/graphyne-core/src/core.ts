@@ -182,37 +182,37 @@ export abstract class GraphyneServerBase {
       }
     }
 
-    if (contextFn) {
-      if (typeof contextFn === 'function') {
-        context = contextFn(integrationContext);
-      } else context = contextFn;
-    } else {
-      context = integrationContext;
-    }
-
     if (rootValueFn) {
       if (typeof rootValueFn === 'function') {
         rootValue = rootValueFn(document);
       } else rootValue = rootValueFn;
     }
 
-    Promise.all([context, rootValue]).then(
-      ([contextResult, rootValueResult]) => {
-        Promise.resolve(
-          (compiledQuery as CompiledQuery).query(
-            rootValueResult,
-            contextResult,
-            variables
-          )
-        ).then((result) =>
-          createResponse(
-            200,
-            (compiledQuery as CompiledQuery).stringify(result),
-            headers
-          )
-        );
+    (async () => {
+      if (contextFn) {
+        if (typeof contextFn === 'function') {
+          try {
+            context = await contextFn(integrationContext);
+          } catch (err) {
+            err.message = `Error creating context: ${err.message}`;
+            return createResponse(
+              err.status || 500,
+              JSON.stringify({ errors: [err] }),
+              headers
+            );
+          }
+        } else context = contextFn;
+      } else {
+        context = integrationContext;
       }
-    );
+      createResponse(
+        200,
+        compiledQuery.stringify(
+          await compiledQuery.query(rootValue, context, variables)
+        ),
+        headers
+      );
+    })();
   }
 
   abstract createHandler(...args: any[]): any;
