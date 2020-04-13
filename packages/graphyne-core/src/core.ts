@@ -102,7 +102,7 @@ export abstract class GraphyneServerBase {
       variables,
       operationName,
       context: integrationContext,
-      http: { request },
+      http: { request } = {},
     } = requestCtx;
 
     if (!query) {
@@ -164,7 +164,8 @@ export abstract class GraphyneServerBase {
       });
     }
 
-    if (request.method === 'GET' && operation !== 'query') {
+    // http.request is not available in ws
+    if (request && request.method === 'GET' && operation !== 'query') {
       // Mutation is not allowed with GET request
       return createResponse(405, {
         errors: [

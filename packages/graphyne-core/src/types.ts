@@ -35,8 +35,8 @@ export interface HTTPQueryBody {
 
 export interface HttpQueryRequest extends HTTPQueryBody {
   context: IntegrationContext;
-  http: {
-    request: IncomingMessage;
+  http?: {
+    request: Pick<IncomingMessage, 'method'>;
     response: ServerResponse;
   };
 }
