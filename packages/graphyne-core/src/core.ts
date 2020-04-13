@@ -65,12 +65,9 @@ export abstract class GraphyneServerBase {
     cb: (err: any, result: HttpQueryResponse) => void
   ): void {
     let compiledQuery: CompiledQuery | ExecutionResult;
+    const headers: HTTPHeaders = { 'content-type': 'application/json' };
 
-    function createResponse(
-      code: number,
-      obj: ExecutionResult,
-      headers: HTTPHeaders
-    ): void {
+    function createResponse(code: number, obj: ExecutionResult): void {
       const stringify = isCompiledQuery(compiledQuery)
         ? compiledQuery.stringify
         : JSON.stringify;
@@ -85,8 +82,6 @@ export abstract class GraphyneServerBase {
     let rootValue = {};
     let document;
 
-    let headers: HTTPHeaders = { 'Content-Type': 'application/json' };
-
     const {
       query,
       variables,
@@ -96,13 +91,9 @@ export abstract class GraphyneServerBase {
     } = requestCtx;
 
     if (!query) {
-      return createResponse(
-        400,
-        {
-          errors: [new GraphQLError('request does not contain query')],
-        },
-        headers
-      );
+      return createResponse(400, {
+        errors: [new GraphQLError('request does not contain query')],
+      });
     }
 
     const { context: contextFn, rootValue: rootValueFn } = this.options;
@@ -116,13 +107,13 @@ export abstract class GraphyneServerBase {
     } else {
       const errCached = this.lruErrors !== null && this.lruErrors.get(query);
       if (errCached) {
-        return createResponse(400, { errors: errCached.errors }, headers);
+        return createResponse(400, { errors: errCached.errors });
       }
 
       try {
         document = parse(query);
       } catch (syntaxErr) {
-        return createResponse(400, { errors: [syntaxErr] }, headers);
+        return createResponse(400, { errors: [syntaxErr] });
       }
 
       const validationErrors = validate(this.schema, document);
@@ -134,7 +125,7 @@ export abstract class GraphyneServerBase {
             errors: validationErrors,
           });
         }
-        return createResponse(400, { errors: validationErrors }, headers);
+        return createResponse(400, { errors: validationErrors });
       }
 
       compiledQuery = compileQuery(this.schema, document, operationName, {
@@ -144,7 +135,7 @@ export abstract class GraphyneServerBase {
 
     if (!isCompiledQuery(compiledQuery)) {
       // Query fail compiling
-      return createResponse(500, compiledQuery, headers);
+      return createResponse(500, compiledQuery);
     }
 
     // TODO: Add support for caching multi-operation document
@@ -160,17 +151,13 @@ export abstract class GraphyneServerBase {
       // Mutation is not allowed with GET request
       const operation = getOperationAST(document, operationName)?.operation;
       if (operation !== 'query') {
-        return createResponse(
-          405,
-          {
-            errors: [
-              new GraphQLError(
-                `Operation ${operation} cannot be performed via a GET request`
-              ),
-            ],
-          },
-          headers
-        );
+        return createResponse(405, {
+          errors: [
+            new GraphQLError(
+              `Operation ${operation} cannot be performed via a GET request`
+            ),
+          ],
+        });
       }
     }
 
@@ -187,11 +174,7 @@ export abstract class GraphyneServerBase {
             context = await contextFn(integrationContext);
           } catch (err) {
             err.message = `Error creating context: ${err.message}`;
-            return createResponse(
-              err.status || 500,
-              { errors: [err] },
-              headers
-            );
+            return createResponse(err.status || 500, { errors: [err] });
           }
         } else context = contextFn;
       } else {
@@ -199,8 +182,7 @@ export abstract class GraphyneServerBase {
       }
       createResponse(
         200,
-        await compiledQuery.query(rootValue, context, variables),
-        headers
+        await compiledQuery.query(rootValue, context, variables)
       );
     })();
   }
