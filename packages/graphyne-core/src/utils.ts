@@ -29,7 +29,7 @@ export function parseNodeRequest(
   req: IncomingMessage & {
     body?: any;
   },
-  cb: (err: Error | null, parsedBody?: HTTPQueryBody) => void
+  cb: (err: any, parsedBody?: HTTPQueryBody) => void
 ): void {
   // If body has been parsed as a keyed object, use it.
   if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {

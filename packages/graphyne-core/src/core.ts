@@ -62,7 +62,7 @@ export abstract class GraphyneServerBase {
 
   protected runHTTPQuery(
     requestCtx: HttpQueryRequest,
-    cb: (err: Error | null, result: HttpQueryResponse) => void
+    cb: (err: any, result: HttpQueryResponse) => void
   ): void {
     function createResponse(
       code: number,
