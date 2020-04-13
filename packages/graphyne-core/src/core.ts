@@ -28,7 +28,7 @@ function buildCache(opts: Config) {
   return lru(1024);
 }
 
-function promiseWrapper<T>(
+function resolveMaybePromise<T>(
   value: T | Promise<T>,
   cb: (err: any, result: T) => void
 ): void {
@@ -189,15 +189,15 @@ export abstract class GraphyneServerBase {
       context = integrationContext;
     }
 
-    promiseWrapper(context, (err, resolvedContext) => {
+    return resolveMaybePromise(context, (err, contextVal) => {
       if (err) {
         err.message = `Error creating context: ${err.message}`;
         return createResponse(err.status || 500, { errors: [err] });
       }
-      promiseWrapper(
+      return resolveMaybePromise(
         (compiledQuery as CompiledQuery).query(
           rootValue,
-          resolvedContext,
+          contextVal,
           variables
         ),
         (err, result) => createResponse(200, result)
