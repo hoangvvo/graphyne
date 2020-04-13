@@ -59,7 +59,13 @@ export function parseNodeRequest(
       case 'application/graphql':
         return cb(null, { query: rawBody });
       case 'application/json':
-        return cb(null, JSON.parse(rawBody));
+        try {
+          cb(null, JSON.parse(rawBody));
+        } catch (err) {
+          err.status = 400;
+          cb(err);
+        }
+        break;
       default:
         // If no Content-Type header matches, parse nothing.
         return cb(null, {});

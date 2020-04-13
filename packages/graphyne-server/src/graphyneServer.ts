@@ -23,6 +23,10 @@ export class GraphyneServer extends GraphyneServerBase {
       // serve GraphQL
       if (pathname === path) {
         return parseNodeRequest(req, (err, parsedBody) => {
+          if (err) {
+            res.statusCode = err.status || 500;
+            return res.end(Buffer.from(err));
+          }
           const context: Record<string, any> = { req, res };
           const { query, variables, operationName } = getGraphQLParams({
             queryParams: queryParams || {},
