@@ -29,7 +29,9 @@ function buildCache(opts: Config) {
 }
 
 export abstract class GraphyneServerBase {
-  private lru: Lru<Pick<QueryCache, 'document' | 'compiledQuery'>> | null;
+  private lru: Lru<
+    Pick<QueryCache, 'document' | 'operation' | 'compiledQuery'>
+  > | null;
   private lruErrors: Lru<Pick<QueryCache, 'document' | 'errors'>> | null;
   private schema: GraphQLSchema;
   protected options: Config;
@@ -80,6 +82,7 @@ export abstract class GraphyneServerBase {
     let context: Record<string, any>;
     let rootValue = {};
     let document;
+    let operation;
 
     const {
       query,
@@ -103,6 +106,7 @@ export abstract class GraphyneServerBase {
     if (cached) {
       compiledQuery = cached.compiledQuery;
       document = cached.document;
+      operation = cached.operation;
     } else {
       const errCached = this.lruErrors !== null && this.lruErrors.get(query);
       if (errCached) {
@@ -126,7 +130,7 @@ export abstract class GraphyneServerBase {
         }
         return createResponse(400, { errors: validationErrors });
       }
-
+      operation = getOperationAST(document, operationName)?.operation;
       compiledQuery = compileQuery(this.schema, document, operationName, {
         customJSONSerializer: true,
       });
@@ -138,26 +142,24 @@ export abstract class GraphyneServerBase {
     }
 
     // TODO: Add support for caching multi-operation document
-    if (!cached && this.lru && !operationName) {
+    if (!cached && this.lru && operation && !operationName) {
       // save compiled query to cache
       this.lru.set(query, {
         document,
         compiledQuery,
+        operation,
       });
     }
 
-    if (request.method === 'GET') {
+    if (request.method === 'GET' && operation !== 'query') {
       // Mutation is not allowed with GET request
-      const operation = getOperationAST(document, operationName)?.operation;
-      if (operation !== 'query') {
-        return createResponse(405, {
-          errors: [
-            new GraphQLError(
-              `Operation ${operation} cannot be performed via a GET request`
-            ),
-          ],
-        });
-      }
+      return createResponse(405, {
+        errors: [
+          new GraphQLError(
+            `Operation ${operation} cannot be performed via a GET request`
+          ),
+        ],
+      });
     }
 
     if (rootValueFn) {
