@@ -16,7 +16,6 @@ import {
   HTTPHeaders,
   HttpQueryResponse,
 } from './types';
-import flatstr from 'flatstr';
 
 function buildCache(opts: Config) {
   if (opts.cache) {
@@ -73,7 +72,7 @@ export abstract class GraphyneServerBase {
         : JSON.stringify;
       cb(null, {
         status: code,
-        body: flatstr(stringify(obj)),
+        body: stringify(obj),
         headers,
       });
     }
