@@ -64,14 +64,19 @@ export abstract class GraphyneServerBase {
     requestCtx: HttpQueryRequest,
     cb: (err: any, result: HttpQueryResponse) => void
   ): void {
+    let compiledQuery: CompiledQuery | ExecutionResult;
+
     function createResponse(
       code: number,
       obj: ExecutionResult,
       headers: HTTPHeaders
     ): void {
+      const stringify = isCompiledQuery(compiledQuery)
+        ? compiledQuery.stringify
+        : JSON.stringify;
       cb(null, {
         status: code,
-        body: flatstr(JSON.stringify(obj)),
+        body: flatstr(stringify(obj)),
         headers,
       });
     }
@@ -79,7 +84,6 @@ export abstract class GraphyneServerBase {
     let context: Record<string, any>;
     let rootValue = {};
     let document;
-    let compiledQuery: CompiledQuery | ExecutionResult;
 
     let headers: HTTPHeaders = { 'Content-Type': 'application/json' };
 
