@@ -46,7 +46,6 @@ export class GraphyneServer extends GraphyneServerBase {
 
       // Parse req.url
       const pathname = req.path || parseUrl(req, true).pathname;
-      const queryParams = req.query || parseUrl(req, true).query;
 
       // serve GraphQL
       const path = options?.path ?? DEFAULT_PATH;
@@ -54,8 +53,9 @@ export class GraphyneServer extends GraphyneServerBase {
         return parseNodeRequest(req, (err, parsedBody) => {
           if (err) {
             res.statusCode = err.status || 500;
-            return res.end(Buffer.from(err));
+            return res.end(JSON.stringify(err));
           }
+          const queryParams = req.query || parseUrl(req, true).query;
           const { query, variables, operationName } = getGraphQLParams({
             queryParams: queryParams || {},
             body: parsedBody,
