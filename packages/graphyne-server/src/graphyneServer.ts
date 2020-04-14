@@ -45,13 +45,8 @@ export class GraphyneServer extends GraphyneServerBase {
       }
 
       // Parse req.url
-      let pathname = req.path;
-      let queryParams = req.query;
-      if (!pathname || !queryParams) {
-        const parsedUrl = parseUrl(req, true);
-        pathname = parsedUrl.pathname;
-        queryParams = parsedUrl.query;
-      }
+      const pathname = req.path || parseUrl(req, true).pathname;
+      const queryParams = req.query || parseUrl(req, true).query;
 
       // serve GraphQL
       const path = options?.path ?? DEFAULT_PATH;
