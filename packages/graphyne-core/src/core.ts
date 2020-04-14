@@ -12,9 +12,9 @@ import lru, { Lru } from 'tiny-lru';
 import {
   Config,
   QueryCache,
-  HttpQueryRequest,
+  QueryRequest,
   HTTPHeaders,
-  HttpQueryResponse,
+  QueryResponse,
 } from './types';
 
 function buildCache(opts: Config) {
@@ -74,9 +74,9 @@ export abstract class GraphyneServerBase {
     }
   }
 
-  protected runHTTPQuery(
-    requestCtx: HttpQueryRequest,
-    cb: (err: any, result: HttpQueryResponse) => void
+  protected runQuery(
+    requestCtx: QueryRequest,
+    cb: (err: any, result: QueryResponse) => void
   ): void {
     let compiledQuery: CompiledQuery | ExecutionResult;
     const headers: HTTPHeaders = { 'content-type': 'application/json' };

@@ -27,13 +27,13 @@ export type HTTPHeaders = Record<string, string | string[] | undefined>;
 
 export type VariableValues = { [name: string]: any };
 
-export interface HTTPQueryBody {
+export interface QueryBody {
   query?: string;
   variables?: VariableValues;
   operationName?: string;
 }
 
-export interface HttpQueryRequest extends HTTPQueryBody {
+export interface QueryRequest extends QueryBody {
   context: IntegrationContext;
   http?: {
     request: Pick<IncomingMessage, 'method'>;
@@ -41,7 +41,7 @@ export interface HttpQueryRequest extends HTTPQueryBody {
   };
 }
 
-export interface HttpQueryResponse {
+export interface QueryResponse {
   status: number;
   body: string;
   headers: HTTPHeaders;

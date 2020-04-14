@@ -32,7 +32,7 @@ export class GraphyneServer extends GraphyneServerBase {
             queryParams: req.query as Record<string, string>,
           });
 
-          this.runHTTPQuery(
+          this.runQuery(
             {
               query,
               context,

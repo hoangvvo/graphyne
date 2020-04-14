@@ -32,7 +32,7 @@ export class GraphyneServer extends GraphyneServerBase {
             queryParams: queryParams || {},
             body: parsedBody,
           });
-          this.runHTTPQuery(
+          this.runQuery(
             {
               query,
               context,
