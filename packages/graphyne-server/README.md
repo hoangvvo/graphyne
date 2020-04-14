@@ -63,7 +63,21 @@ Create a handler for HTTP server, `options` accepts the following:
   - `defaultQuery`: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session.
 - `onNoMatch`: A handler when `req.url` does not match `options.path` nor `options.graphiql.path`. Its arguments depend on a framework's *signature function* (see below). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`.
 
-`createHandler` creates Node.js signature function of `(req, res)`, which work out-of-the-box for most frameworks, including `Express.js` and `Micro`.
+`createHandler` creates Node.js signature function of `(req, res)`, which work out-of-the-box for most frameworks which have handlers of similar signature, including `Express.js` and `Micro`.
+
+If the framework has non-standard signature function (such as `Hapi` (`(request, h)`), `Koa` (`(ctx, next)`), etc.), you can supply `options.integrationFn`, which maps the supplied arguments into an object of Node.js `request` (`IncomingMessage`) and `response` (`ServerResponse`). (see below for examples)
+
+```javascript
+createHandler({
+  integrationFn: (...args) => {
+    // Return an object with `request` and `response`
+    return {
+      request: IncomingMessage,
+      response: ServerResponse
+    }
+  }
+})
+```
 
 ## Framework-specific Usage
 
@@ -72,7 +86,6 @@ Create a handler for HTTP server, `options` accepts the following:
 ### [Express.js](https://github.com/expressjs/express)
 
 ```javascript
-/* Setup Graphyne */
 const graphyneHandler = graphyne.createHandler({
   path: '/graphql',
   graphiql: {
@@ -82,16 +95,15 @@ const graphyneHandler = graphyne.createHandler({
   // Continue to next handler in middleware chain
   onNoMatch: (req, res, next) => next()
 });
+
 app.use(graphyneHandler);
-app.listen(3000);
-console.log('Running a GraphQL API server at http://localhost:3000/graphql');
 ```
 
 ### [Micro](https://github.com/zeit/micro)
 
 ```javascript
 const {send} = require('micro')
-/* Setup Graphyne */
+
 module.exports = graphyne.createHandler({
   path: "/graphql",
   graphiql: {
@@ -110,7 +122,6 @@ module.exports = graphyne.createHandler({
 **Note:** This is an unofficial integration and may change in the future.
 
 ```javascript
-/* Setup Graphyne */
 fastify.use(
   ["/graphql", "/___graphql"],
   graphyne.createHandler({
@@ -122,3 +133,24 @@ fastify.use(
   })
 );
 ```
+
+### [Koa](https://github.com/koajs/koa)
+
+```javascript
+const graphyneHandler = graphyne.createHandler({
+  path: "/graphql",
+  graphiql: {
+    path: "/___graphql",
+    defaultQuery: "query { hello }",
+  },
+  integrationFn: (ctx, next) => {
+    // https://github.com/koajs/koa#context-request-and-response
+    return {
+      response: ctx.request,
+      response: ctx.response,
+    };
+  },
+});
+```
+
+(If there is any framework you fail to integrate, feel free to create an issue)

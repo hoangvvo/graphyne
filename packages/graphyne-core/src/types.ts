@@ -9,6 +9,13 @@ export interface Config<TContext = Record<string, any>, TRootValue = any> {
   cache?: number | boolean;
 }
 
+type IntegrationFunction = (
+  ...args: any[]
+) => {
+  request: IncomingMessage;
+  response: ServerResponse;
+};
+
 export interface HandlerConfig {
   path?: string;
   graphiql?:
@@ -18,6 +25,7 @@ export interface HandlerConfig {
         defaultQuery?: string;
       };
   onNoMatch?: (...args: any[]) => void;
+  integrationFn?: IntegrationFunction;
 }
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;

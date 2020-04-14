@@ -27,11 +27,22 @@ export class GraphyneServer extends GraphyneServerBase {
 
     return (...args: any[]) => {
       // Integration mapping
-      const req: IncomingMessage & {
-        path: string;
-        query: Record<string, string>;
-      } = args[0];
-      const res: ServerResponse = args[1];
+      let req: IncomingMessage & {
+        path?: string;
+        query?: Record<string, string>;
+      };
+      let res: ServerResponse;
+
+      if (options?.integrationFn) {
+        const {
+          request: mappedRequest,
+          response: mappedResponse,
+        } = options.integrationFn(...args);
+        req = mappedRequest;
+        res = mappedResponse;
+      } else {
+        [req, res] = args;
+      }
 
       // Parse req.url
       let pathname = req.path;
