@@ -2,15 +2,15 @@
 
 **This is a work in progress.**
 
-A lightning-fast JavaScript GraphQL Server, featuring:
+A **lightning-fast** JavaScript GraphQL Server, featuring:
 
 - Caching of query validation and compilation with LRU strategy.
 - Highly performant Just-In-Time compiler via [graphql-jit](https://github.com/zalando-incubator/graphql-jit)
-- **framework agnostic**: Works out-of-the-box with most JavaScript frameworks, such as Express, Micro. Others require minimum configuration.
+- Framework-agnostic: Works out-of-the-box with most JavaScript frameworks, such as Express, Micro.
 
 ## Why
 
-`Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([> 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
+`Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([more than 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
 
 Check out the [benchmarks](/bench).
 
@@ -63,11 +63,7 @@ Create a handler for HTTP server, `options` accepts the following:
   - `path`: Specify a custom path for `GraphiQL`. It defaults to `/___graphql` if no path is specified.
   - `defaultQuery`: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session.
 - `onNoMatch`: A handler function when `req.url` does not match `options.path` nor `options.graphiql.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`. See examples in [framework-specific integration](#framework-specific-integration).
-- `integrationFn`: A function to resolve mapping for frameworks with non-standard signature function.
-
-`createHandler` creates Node.js signature function of `(req, res)`, which work out-of-the-box for most frameworks which have handlers of similar signature, including `Express.js` and `Micro`.
-
-If the framework has non-standard signature function (such as `Hapi` (`(request, h)`), `Koa` (`(ctx, next)`), etc.), you can supply `options.integrationFn`, which maps the supplied arguments into an object of Node.js `request` (`IncomingMessage`) and `response` (`ServerResponse`).
+- `integrationFn`: A function to resolve frameworks with non-standard signature function. It should return an object of Node.js `request` (`IncomingMessage`) and `response` (`ServerResponse`). Its *arguments* depend on the framework's [signature function](#framework-specific-integration).
 
 ```javascript
 createHandler({
