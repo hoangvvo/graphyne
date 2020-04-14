@@ -1,4 +1,4 @@
-const express = require('express');
+const Koa = require('koa');
 const { GraphyneServer } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 
@@ -23,7 +23,7 @@ const graphyne = new GraphyneServer({
   context: (req, res) => ({ world: 'world' }),
 });
 
-const app = express();
+const app = new Koa();
 
 app.use(
   graphyne.createHandler({
@@ -32,9 +32,15 @@ app.use(
       path: '/___graphql',
       defaultQuery: 'query { hello }',
     },
-    onNoMatch: (req, res, next) => next(),
+    integrationFn: (ctx, next) => {
+      // https://github.com/koajs/koa/blob/master/lib/context.js#L54
+      return {
+        request: ctx.req,
+        response: ctx.res,
+      };
+    },
   })
 );
 
-app.listen(4000);
-console.log('Running a GraphQL API server at http://localhost:4000/graphql');
+app.listen(3000);
+console.log('Running a GraphQL API server at http://localhost:3000/graphql');

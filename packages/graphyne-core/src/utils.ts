@@ -1,10 +1,10 @@
 import { IncomingMessage } from 'http';
-import { VariableValues, HTTPQueryBody, HttpQueryRequest } from './types';
+import { VariableValues, QueryBody, QueryRequest } from './types';
 
-type GraphQLParams = Partial<HttpQueryRequest>;
+type GraphQLParams = Partial<QueryRequest>;
 type GraphQLParamsInput = {
   queryParams: Record<string, string>;
-  body: HTTPQueryBody | string | undefined;
+  body: QueryBody | string | undefined;
 };
 
 export function getGraphQLParams({
@@ -29,7 +29,7 @@ export function parseNodeRequest(
   req: IncomingMessage & {
     body?: any;
   },
-  cb: (err: any, parsedBody?: HTTPQueryBody) => void
+  cb: (err: any, parsedBody?: QueryBody) => void
 ): void {
   // If body has been parsed as a keyed object, use it.
   if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {
@@ -75,4 +75,17 @@ export function parseNodeRequest(
 
 export function safeSerialize(data?: string) {
   return data ? JSON.stringify(data).replace(/\//g, '\\/') : '';
+}
+
+export function resolveMaybePromise<T>(
+  value: T | Promise<T>,
+  cb: (err: any, result: T) => void
+): void {
+  // @ts-ignore
+  if (value && typeof value.then === 'function') {
+    (value as Promise<T>).then(
+      (resolve: any) => cb(null, resolve),
+      (reject: any) => cb(reject, reject)
+    );
+  } else cb(null, value as T);
 }

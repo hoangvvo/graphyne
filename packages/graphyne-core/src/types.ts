@@ -2,46 +2,51 @@ import { GraphQLError, GraphQLSchema, DocumentNode } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 import { IncomingMessage, ServerResponse } from 'http';
 
-type IntegrationContext = Record<string, any>;
-
 export interface Config<TContext = Record<string, any>, TRootValue = any> {
   schema: GraphQLSchema;
-  context?: TContext | ((intergrationContext: IntegrationContext) => TContext);
+  context?: TContext | ((...args: any[]) => TContext);
   rootValue?: (parsedQuery: DocumentNode) => TRootValue | TRootValue;
   cache?: number | boolean;
 }
 
+type IntegrationFunction = (
+  ...args: any[]
+) => {
+  request: IncomingMessage;
+  response: ServerResponse;
+};
+
 export interface HandlerConfig {
   path?: string;
-  graphiql?: boolean | GraphiQLConfig;
+  graphiql?:
+    | boolean
+    | {
+        path?: string;
+        defaultQuery?: string;
+      };
+  onNoMatch?: (...args: any[]) => void;
+  integrationFn?: IntegrationFunction;
 }
-
-export type GraphiQLConfig =
-  | boolean
-  | {
-      path?: string;
-      defaultQuery?: string;
-    };
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
 
 export type VariableValues = { [name: string]: any };
 
-export interface HTTPQueryBody {
+export interface QueryBody {
   query?: string;
   variables?: VariableValues;
   operationName?: string;
 }
 
-export interface HttpQueryRequest extends HTTPQueryBody {
-  context: IntegrationContext;
-  http: {
-    request: IncomingMessage;
+export interface QueryRequest extends QueryBody {
+  context: Record<string, any>;
+  http?: {
+    request: Pick<IncomingMessage, 'method'>;
     response: ServerResponse;
   };
 }
 
-export interface HttpQueryResponse {
+export interface QueryResponse {
   status: number;
   body: string;
   headers: HTTPHeaders;

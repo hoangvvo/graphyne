@@ -4,11 +4,15 @@ import {
   Config,
   parseNodeRequest,
   getGraphQLParams,
-  renderGraphiQL,
   HandlerConfig,
+  renderGraphiQL,
+  resolveMaybePromise,
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
+
+const DEFAULT_PATH = '/graphql';
+const DEFAULT_GRAPHIQL_PATH = '/___graphql';
 
 export class GraphyneServer extends GraphyneServerBase {
   constructor(options: Config) {
@@ -16,42 +20,74 @@ export class GraphyneServer extends GraphyneServerBase {
   }
 
   createHandler(options?: HandlerConfig): RequestListener {
-    return (req: IncomingMessage, res: ServerResponse) => {
-      const path = options?.path || this.DEFAULT_PATH;
+    // Validate options
+    if (options?.onNoMatch && typeof options.onNoMatch !== 'function') {
+      throw new Error('createHandler: options.onNoMatch must be a function');
+    }
 
-      const { pathname, query: queryParams } = parseUrl(req, true) || {};
+    return (...args: any[]) => {
+      // Integration mapping
+      let req: IncomingMessage & {
+        path?: string;
+        query?: Record<string, string>;
+      };
+      let res: ServerResponse;
+
+      if (options?.integrationFn) {
+        const {
+          request: mappedRequest,
+          response: mappedResponse,
+        } = options.integrationFn(...args);
+        req = mappedRequest;
+        res = mappedResponse;
+      } else {
+        [req, res] = args;
+      }
+
+      // Parse req.url
+      const pathname = req.path || parseUrl(req, true).pathname;
+      const queryParams = req.query || parseUrl(req, true).query;
+
       // serve GraphQL
+      const path = options?.path ?? DEFAULT_PATH;
       if (pathname === path) {
         return parseNodeRequest(req, (err, parsedBody) => {
           if (err) {
             res.statusCode = err.status || 500;
             return res.end(Buffer.from(err));
           }
-          const context: Record<string, any> = { req, res };
           const { query, variables, operationName } = getGraphQLParams({
             queryParams: queryParams || {},
             body: parsedBody,
           });
-          this.runHTTPQuery(
-            {
-              query,
-              context,
-              variables,
-              operationName,
-              http: {
-                request: req,
-                response: res,
+          const contextFn = this.options.context;
+          const contextVal =
+            (typeof contextFn === 'function'
+              ? contextFn(...args)
+              : contextFn) || {};
+
+          return resolveMaybePromise(contextVal, (err, context) => {
+            this.runQuery(
+              {
+                query,
+                context,
+                variables,
+                operationName,
+                http: {
+                  request: req,
+                  response: res,
+                },
               },
-            },
-            (err, { status, body, headers }) => {
-              for (const key in headers) {
-                const headVal = headers[key];
-                if (headVal) res.setHeader(key, headVal);
+              (err, { status, body, headers }) => {
+                for (const key in headers) {
+                  const headVal = headers[key];
+                  if (headVal) res.setHeader(key, headVal);
+                }
+                res.statusCode = status;
+                return res.end(body);
               }
-              res.statusCode = status;
-              return res.end(body);
-            }
-          );
+            );
+          });
         });
       }
 
@@ -59,19 +95,23 @@ export class GraphyneServer extends GraphyneServerBase {
       if (options?.graphiql) {
         const graphiql = options.graphiql;
         const graphiqlPath =
-          (typeof graphiql === 'object' ? graphiql.path : null) ||
-          this.DEFAULT_GRAPHIQL_PATH;
+          (typeof graphiql === 'object' && graphiql.path) ||
+          DEFAULT_GRAPHIQL_PATH;
         if (pathname === graphiqlPath) {
           const defaultQuery =
             typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
           return res.end(renderGraphiQL({ path, defaultQuery }));
         }
       }
 
-      // serve 404
-      res.statusCode = 404;
-      res.end('not found');
+      // onNoMatch
+      if (options?.onNoMatch) {
+        return options.onNoMatch(...args);
+      } else {
+        res.statusCode = 404;
+        res.end('not found');
+      }
     };
   }
 }

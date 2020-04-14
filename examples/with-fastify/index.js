@@ -1,4 +1,6 @@
-const express = require('express');
+const fastify = require('fastify')({
+  logger: true,
+});
 const { GraphyneServer } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 
@@ -23,9 +25,7 @@ const graphyne = new GraphyneServer({
   context: (req, res) => ({ world: 'world' }),
 });
 
-const app = express();
-
-app.use(
+fastify.use(
   graphyne.createHandler({
     path: '/graphql',
     graphiql: {
@@ -36,5 +36,7 @@ app.use(
   })
 );
 
-app.listen(4000);
-console.log('Running a GraphQL API server at http://localhost:4000/graphql');
+fastify.listen(3000, (err, address) => {
+  if (err) throw err;
+  fastify.log.info(`server listening on ${address}`);
+});

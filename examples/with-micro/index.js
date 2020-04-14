@@ -1,4 +1,4 @@
-const express = require('express');
+const { send } = require('micro');
 const { GraphyneServer } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 
@@ -23,18 +23,10 @@ const graphyne = new GraphyneServer({
   context: (req, res) => ({ world: 'world' }),
 });
 
-const app = express();
-
-app.use(
-  graphyne.createHandler({
-    path: '/graphql',
-    graphiql: {
-      path: '/___graphql',
-      defaultQuery: 'query { hello }',
-    },
-    onNoMatch: (req, res, next) => next(),
-  })
-);
-
-app.listen(4000);
-console.log('Running a GraphQL API server at http://localhost:4000/graphql');
+module.exports = graphyne.createHandler({
+  // other options
+  onNoMatch: async (req, res) => {
+    const statusCode = 400;
+    send(res, statusCode, 'not found');
+  },
+});
