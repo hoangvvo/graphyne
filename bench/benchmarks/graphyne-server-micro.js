@@ -1,4 +1,4 @@
-const express = require('express');
+const micro = require('micro');
 const { GraphyneServer } = require('graphyne-server');
 const { schema } = require('../buildSchema');
 
@@ -6,7 +6,6 @@ const graphyne = new GraphyneServer({
   schema,
 });
 
-const app = express();
-app.post('/graphql', graphyne.createHandler());
+const server = micro(graphyne.createHandler());
 
-app.listen(4001);
+server.listen(4001);
