@@ -81,7 +81,7 @@ createHandler({
 
 **Signature function** refers to framework-specific's handler function. For example in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
 
-### [Express.js](https://github.com/expressjs/express)
+### [Express](https://github.com/expressjs/express)
 
 [Example](/examples/with-express)
 
@@ -121,31 +121,11 @@ module.exports = graphyne.createHandler({
 
 ```javascript
 fastify.use(
-  ['/graphql', '/___graphql'],
   graphyne.createHandler({
     // other options
     onNoMatch: (req, res, next) => {
       next();
     }
-  })
-);
-```
-
-### [Koa](https://github.com/koajs/koa)
-
-[Example](/examples/with-koa)
-
-```javascript
-app.use(
-  graphyne.createHandler({
-    // ...other options
-    integrationFn: (ctx, next) => {
-      // https://github.com/koajs/koa/blob/master/lib/context.js#L54
-      return {
-        request: ctx.req,
-        response: ctx.res,
-      };
-    },
   })
 );
 ```
