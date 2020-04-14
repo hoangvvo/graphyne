@@ -51,7 +51,7 @@ async function runManyBenches(dir, packages) {
 async function getStats(repo, ref) {
   const dir = repo.replace('/', '-');
   await prepareRepo(repo, ref, dir);
-  await runManyBenches(dir, ['graphyne-express', 'graphyne-server']);
+  await runManyBenches(dir, ['graphyne-server-express', 'graphyne-server']);
   // Get the result
   const resultsPath = join(cwd, dir, 'bench', 'results');
   const resultObj = {};
