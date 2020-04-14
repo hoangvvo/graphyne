@@ -1,5 +1,5 @@
 const express = require('express');
-const { GraphyneServer } = require('graphyne-express');
+const { GraphyneServer } = require('graphyne-server');
 const { schema } = require('../buildSchema');
 
 const graphyne = new GraphyneServer({
