@@ -20,6 +20,11 @@ export class GraphyneServer extends GraphyneServerBase {
   }
 
   createHandler(options?: HandlerConfig): RequestListener {
+    // Validate options
+    if (options?.onNoMatch && typeof options.onNoMatch !== 'function') {
+      throw new Error('createHandler: options.onNoMatch must be a function');
+    }
+
     return (...args: any[]) => {
       // Integration mapping
       const req: IncomingMessage & {
@@ -80,7 +85,8 @@ export class GraphyneServer extends GraphyneServerBase {
           });
         });
       }
-      // server GraphiQL
+
+      // serve GraphiQL
       if (options?.graphiql) {
         const graphiql = options.graphiql;
         const graphiqlPath =
@@ -89,14 +95,18 @@ export class GraphyneServer extends GraphyneServerBase {
         if (pathname === graphiqlPath) {
           const defaultQuery =
             typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
           return res.end(renderGraphiQL({ path, defaultQuery }));
         }
       }
+
       // onNoMatch
-      // TODO: Allow user defined response
-      res.statusCode = 404;
-      res.end('not found');
+      if (options?.onNoMatch) {
+        return options.onNoMatch(...args);
+      } else {
+        res.statusCode = 404;
+        res.end('not found');
+      }
     };
   }
 }

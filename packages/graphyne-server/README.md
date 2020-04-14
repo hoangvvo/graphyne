@@ -23,17 +23,7 @@ npm i graphyne-server graphql
 yarn add graphyne-server graphql
 ```
 
-In addition, instead of the above, Graphyne Server [integration packages](#integration) can also be used with specific frameworks and runtimes.
-
-```shell
-npm i graphyne-{integration} graphql
-// or
-yarn add graphyne-{integration} graphql
-```
-
 ## Usage
-
-You can create a HTTP GraphQL server with `graphyne-server`:
 
 ```javascript
 const http = require('http');
@@ -49,14 +39,6 @@ server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);
 });
 ```
-
-For integration packages, check out their respective document below:
-
-## Integration
-
-`graphyne` offers integration packages to use with specific frameworks and runtimes:
-
-- [Express](/packages/graphyne-express)
 
 ## API
 
@@ -77,5 +59,37 @@ Create a handler for HTTP server, `options` accepts the following:
 - `graphiql`: Pass in `true` to present [GraphiQL](https://github.com/graphql/graphiql) when being loaded in a browser. Alternatively, you can also pass in an options object:
   - `path`: Specify a custom path for `GraphiQL`. It defaults to `/___graphql` if no path is specified.
   - `defaultQuery`: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session.
+- `onNoMatch`: A handler when `req.url` does not match `options.path` nor `options.graphiql.path`. Its arguments depend on a framework's *signature function*. By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`.
 
-Respective integration packages may have different requirement for `options`. Please refer to their respective documentations.
+#### Framework integration
+
+`Graphyne` works out-of-the-box for frameworks that resolve Node.js signature function `(req, res)`. **Signature function** refers to framework-specific's handler function. For example in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` on `Node HTTP Server`, it is simply `(req, res)`.
+
+##### options.onNoMatch
+
+This is what you may do in `Express.js`.
+
+```javascript
+createHandler({
+  //...
+  onNoMatch: (req, res, next) => {
+    next();
+  }
+}
+```
+
+In frameworks like `Micro` or bare `Node HTTP Server`, you usually do:
+
+```javascript
+createHandler({
+  //...
+  onNoMatch: (req, res) => {
+    res.statusCode = 404;
+    res.end('meh');
+  }
+}
+```
+
+##### Frameworks with non-standard signature function
+
+For frameworks that require different set of handler, define `options.handlerMapping`. **WIP**

@@ -46,7 +46,7 @@ export abstract class GraphyneServerBase {
       typeof options.context !== 'function' &&
       typeof options.context !== 'object'
     ) {
-      throw new TypeError('opts.context must be an object or function');
+      throw new TypeError('options.context must be an object or function');
     }
     this.options = options;
     // build cache

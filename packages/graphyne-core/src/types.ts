@@ -11,12 +11,13 @@ export interface Config<TContext = Record<string, any>, TRootValue = any> {
 
 export interface HandlerConfig {
   path?: string;
-  graphiql:
+  graphiql?:
     | boolean
     | {
         path?: string;
         defaultQuery?: string;
       };
+  onNoMatch?: (...args: any[]) => void;
 }
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
