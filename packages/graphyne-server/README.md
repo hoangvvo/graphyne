@@ -62,7 +62,7 @@ Create a handler for HTTP server, `options` accepts the following:
 - `graphiql`: Pass in `true` to present [GraphiQL](https://github.com/graphql/graphiql) when being loaded in a browser. Alternatively, you can also pass in an options object:
   - `path`: Specify a custom path for `GraphiQL`. It defaults to `/___graphql` if no path is specified.
   - `defaultQuery`: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session.
-- `onNoMatch`: A handler function when `req.url` does not match `options.path` nor `options.graphiql.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`.
+- `onNoMatch`: A handler function when `req.url` does not match `options.path` nor `options.graphiql.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`. See examples in [framework-specific integration](#framework-specific-integration).
 - `integrationFn`: A function to resolve mapping for frameworks with non-standard signature function.
 
 `createHandler` creates Node.js signature function of `(req, res)`, which work out-of-the-box for most frameworks which have handlers of similar signature, including `Express.js` and `Micro`.
@@ -87,6 +87,8 @@ createHandler({
 
 ### [Express.js](https://github.com/expressjs/express)
 
+[Example](/examples/with-express)
+
 ```javascript
 app.use(
   graphyne.createHandler({
@@ -100,6 +102,8 @@ app.use(
 ```
 
 ### [Micro](https://github.com/zeit/micro)
+
+[Example](/examples/with-micro)
 
 ```javascript
 const { send } = require('micro');
@@ -115,28 +119,35 @@ module.exports = graphyne.createHandler({
 
 ### [Fastify](https://github.com/fastify/fastify)
 
-**Note:** This is an unofficial integration and may change in the future.
+**Note:** This is an unofficial integration. For a solution in the ecosystem, check out [fastify-gql](https://github.com/mcollina/fastify-gql).
+
+[Example](/examples/with-fastify)
 
 ```javascript
 fastify.use(
   ['/graphql', '/___graphql'],
   graphyne.createHandler({
     // other options
+    onNoMatch: (req, res, next) => {
+      next();
+    }
   })
 );
 ```
 
 ### [Koa](https://github.com/koajs/koa)
 
+[Example](/examples/with-koa)
+
 ```javascript
 app.use(
   graphyne.createHandler({
     // ...other options
     integrationFn: (ctx, next) => {
-      // https://github.com/koajs/koa#context-request-and-response
+      // https://github.com/koajs/koa/blob/master/lib/context.js#L54
       return {
-        response: ctx.request,
-        response: ctx.response,
+        request: ctx.req,
+        response: ctx.res,
       };
     },
   })
