@@ -68,9 +68,10 @@ export abstract class GraphyneServerBase {
     const headers: HTTPHeaders = { 'content-type': 'application/json' };
 
     function createResponse(code: number, obj: ExecutionResult): void {
-      const stringify = isCompiledQuery(compiledQuery)
-        ? compiledQuery.stringify
-        : JSON.stringify;
+      const stringify =
+        compiledQuery && isCompiledQuery(compiledQuery)
+          ? compiledQuery.stringify
+          : JSON.stringify;
       cb(null, {
         status: code,
         body: stringify(obj),

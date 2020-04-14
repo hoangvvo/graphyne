@@ -50,7 +50,7 @@ export class GraphyneServer extends GraphyneServerBase {
       if (!pathname || !queryParams) {
         const parsedUrl = parseUrl(req, true);
         pathname = parsedUrl.pathname;
-        queryParams = parsedUrl.queryParams;
+        queryParams = parsedUrl.query;
       }
 
       // serve GraphQL
@@ -66,13 +66,12 @@ export class GraphyneServer extends GraphyneServerBase {
             body: parsedBody,
           });
           const contextFn = this.options.context;
-          const context = contextFn
-            ? Promise.resolve(
-                typeof contextFn === 'function' ? contextFn(...args) : contextFn
-              )
-            : {};
+          const contextVal =
+            (typeof contextFn === 'function'
+              ? contextFn(...args)
+              : contextFn) || {};
 
-          return resolveMaybePromise(context, (err, contextVal) => {
+          return resolveMaybePromise(contextVal, (err, context) => {
             this.runQuery(
               {
                 query,
