@@ -33,10 +33,7 @@ const graphyneHandler = graphyne.createHandler({
   },
 });
 
-// GraphQL API
-app.all('/graphql', graphyneHandler);
-// Use GraphiQL
-app.get('/___graphql', graphyneHandler);
+app.use(graphyneHandler);
 
 app.listen(4000);
 console.log('Running a GraphQL API server at http://localhost:4000/graphql');
