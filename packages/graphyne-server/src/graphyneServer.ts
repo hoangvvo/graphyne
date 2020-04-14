@@ -17,11 +17,11 @@ export class GraphyneServer extends GraphyneServerBase {
 
   createHandler(options?: HandlerConfig): RequestListener {
     return (req: IncomingMessage, res: ServerResponse) => {
-      const path = options?.path || this.DEFAULT_PATH;
-
+      const path = options?.path;
+      // TODO: Avoid unneccessary parsing
       const { pathname, query: queryParams } = parseUrl(req, true) || {};
       // serve GraphQL
-      if (pathname === path) {
+      if (!path || pathname === path) {
         return parseNodeRequest(req, (err, parsedBody) => {
           if (err) {
             res.statusCode = err.status || 500;
