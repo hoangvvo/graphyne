@@ -76,3 +76,16 @@ export function parseNodeRequest(
 export function safeSerialize(data?: string) {
   return data ? JSON.stringify(data).replace(/\//g, '\\/') : '';
 }
+
+export function resolveMaybePromise<T>(
+  value: T | Promise<T>,
+  cb: (err: any, result: T) => void
+): void {
+  // @ts-ignore
+  if (value && typeof value.then === 'function') {
+    (value as Promise<T>).then(
+      (resolve: any) => cb(null, resolve),
+      (reject: any) => cb(reject, reject)
+    );
+  } else cb(null, value as T);
+}

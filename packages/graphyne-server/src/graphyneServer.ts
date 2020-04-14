@@ -4,11 +4,15 @@ import {
   Config,
   parseNodeRequest,
   getGraphQLParams,
-  renderGraphiQL,
   HandlerConfig,
+  renderGraphiQL,
+  resolveMaybePromise,
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
+
+const DEFAULT_PATH = '/graphql';
+const DEFAULT_GRAPHIQL_PATH = '/___graphql';
 
 export class GraphyneServer extends GraphyneServerBase {
   constructor(options: Config) {
@@ -16,51 +20,72 @@ export class GraphyneServer extends GraphyneServerBase {
   }
 
   createHandler(options?: HandlerConfig): RequestListener {
-    return (req: IncomingMessage, res: ServerResponse) => {
-      const path = options?.path;
-      // TODO: Avoid unneccessary parsing
-      const { pathname, query: queryParams } = parseUrl(req, true) || {};
+    return (...args: any[]) => {
+      // Integration mapping
+      const req: IncomingMessage & {
+        path: string;
+        query: Record<string, string>;
+      } = args[0];
+      const res: ServerResponse = args[1];
+
+      // Parse req.url
+      let pathname = req.path;
+      let queryParams = req.query;
+      if (!pathname || !queryParams) {
+        const parsedUrl = parseUrl(req, true);
+        pathname = parsedUrl.pathname;
+        queryParams = parsedUrl.queryParams;
+      }
+
       // serve GraphQL
-      if (!path || pathname === path) {
+      const path = options?.path ?? DEFAULT_PATH;
+      if (pathname === path) {
         return parseNodeRequest(req, (err, parsedBody) => {
           if (err) {
             res.statusCode = err.status || 500;
             return res.end(Buffer.from(err));
           }
-          const context: Record<string, any> = { req, res };
           const { query, variables, operationName } = getGraphQLParams({
             queryParams: queryParams || {},
             body: parsedBody,
           });
-          this.runQuery(
-            {
-              query,
-              context,
-              variables,
-              operationName,
-              http: {
-                request: req,
-                response: res,
+          const contextFn = this.options.context;
+          const context = contextFn
+            ? Promise.resolve(
+                typeof contextFn === 'function' ? contextFn(...args) : contextFn
+              )
+            : {};
+
+          return resolveMaybePromise(context, (err, contextVal) => {
+            this.runQuery(
+              {
+                query,
+                context,
+                variables,
+                operationName,
+                http: {
+                  request: req,
+                  response: res,
+                },
               },
-            },
-            (err, { status, body, headers }) => {
-              for (const key in headers) {
-                const headVal = headers[key];
-                if (headVal) res.setHeader(key, headVal);
+              (err, { status, body, headers }) => {
+                for (const key in headers) {
+                  const headVal = headers[key];
+                  if (headVal) res.setHeader(key, headVal);
+                }
+                res.statusCode = status;
+                return res.end(body);
               }
-              res.statusCode = status;
-              return res.end(body);
-            }
-          );
+            );
+          });
         });
       }
-
-      // serve GraphiQL
+      // server GraphiQL
       if (options?.graphiql) {
         const graphiql = options.graphiql;
         const graphiqlPath =
-          (typeof graphiql === 'object' ? graphiql.path : null) ||
-          this.DEFAULT_GRAPHIQL_PATH;
+          (typeof graphiql === 'object' && graphiql.path) ||
+          DEFAULT_GRAPHIQL_PATH;
         if (pathname === graphiqlPath) {
           const defaultQuery =
             typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
@@ -68,8 +93,8 @@ export class GraphyneServer extends GraphyneServerBase {
           return res.end(renderGraphiQL({ path, defaultQuery }));
         }
       }
-
-      // serve 404
+      // onNoMatch
+      // TODO: Allow user defined response
       res.statusCode = 404;
       res.end('not found');
     };

@@ -2,26 +2,22 @@ import { GraphQLError, GraphQLSchema, DocumentNode } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 import { IncomingMessage, ServerResponse } from 'http';
 
-type IntegrationContext = Record<string, any>;
-
 export interface Config<TContext = Record<string, any>, TRootValue = any> {
   schema: GraphQLSchema;
-  context?: TContext | ((intergrationContext: IntegrationContext) => TContext);
+  context?: TContext | ((...args: any[]) => TContext);
   rootValue?: (parsedQuery: DocumentNode) => TRootValue | TRootValue;
   cache?: number | boolean;
 }
 
 export interface HandlerConfig {
   path?: string;
-  graphiql?: boolean | GraphiQLConfig;
+  graphiql:
+    | boolean
+    | {
+        path?: string;
+        defaultQuery?: string;
+      };
 }
-
-export type GraphiQLConfig =
-  | boolean
-  | {
-      path?: string;
-      defaultQuery?: string;
-    };
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
 
@@ -34,7 +30,7 @@ export interface QueryBody {
 }
 
 export interface QueryRequest extends QueryBody {
-  context: IntegrationContext;
+  context: Record<string, any>;
   http?: {
     request: Pick<IncomingMessage, 'method'>;
     response: ServerResponse;

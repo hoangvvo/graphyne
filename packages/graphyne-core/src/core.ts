@@ -16,6 +16,7 @@ import {
   HTTPHeaders,
   QueryResponse,
 } from './types';
+import { resolveMaybePromise } from './utils';
 
 function buildCache(opts: Config) {
   if (opts.cache) {
@@ -26,19 +27,6 @@ function buildCache(opts: Config) {
   }
   // Default
   return lru(1024);
-}
-
-function resolveMaybePromise<T>(
-  value: T | Promise<T>,
-  cb: (err: any, result: T) => void
-): void {
-  // @ts-ignore
-  if (value && typeof value.then === 'function') {
-    (value as Promise<T>).then(
-      (resolve: any) => cb(null, resolve),
-      (reject: any) => cb(reject, reject)
-    );
-  } else cb(null, value as T);
 }
 
 export abstract class GraphyneServerBase {
@@ -90,7 +78,6 @@ export abstract class GraphyneServerBase {
       });
     }
 
-    let context: Record<string, any>;
     let rootValue = {};
     let document;
     let operation;
@@ -99,7 +86,7 @@ export abstract class GraphyneServerBase {
       query,
       variables,
       operationName,
-      context: integrationContext,
+      context,
       http: { request } = {},
     } = requestCtx;
 
@@ -109,7 +96,7 @@ export abstract class GraphyneServerBase {
       });
     }
 
-    const { context: contextFn, rootValue: rootValueFn } = this.options;
+    const { rootValue: rootValueFn } = this.options;
 
     // Get graphql-jit compiled query and parsed document
     let cached = this.lru !== null && this.lru.get(query);
@@ -180,28 +167,10 @@ export abstract class GraphyneServerBase {
       } else rootValue = rootValueFn;
     }
 
-    if (contextFn) {
-      if (typeof contextFn === 'function') {
-        context = contextFn(integrationContext);
-      } else context = contextFn;
-    } else {
-      context = integrationContext;
-    }
-
-    return resolveMaybePromise(context, (err, contextVal) => {
-      if (err) {
-        err.message = `Error creating context: ${err.message}`;
-        return createResponse(err.status || 500, { errors: [err] });
-      }
-      return resolveMaybePromise(
-        (compiledQuery as CompiledQuery).query(
-          rootValue,
-          contextVal,
-          variables
-        ),
-        (err, result) => createResponse(200, result)
-      );
-    });
+    return resolveMaybePromise(
+      (compiledQuery as CompiledQuery).query(rootValue, context, variables),
+      (err, result) => createResponse(200, result)
+    );
   }
 
   abstract createHandler(...args: any[]): any;
