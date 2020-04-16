@@ -122,9 +122,8 @@ export class GraphyneWebSocketConnection {
     const id = data.id as string;
     const payload = data.payload;
     try {
-      if (!payload) throw new GraphQLError('Missing payload');
-      const { query, variables, operationName } = payload;
-      if (!query) throw new GraphQLError('Missing query');
+      const { query, variables, operationName } = payload || {};
+      if (!query) throw new GraphQLError('Must provide query string.');
 
       const { document, operation } = this.graphyne.getCompiledQuery(query);
 
