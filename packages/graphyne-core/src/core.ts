@@ -6,6 +6,7 @@ import {
   GraphQLError,
   GraphQLSchema,
   ExecutionResult,
+  DocumentNode,
 } from 'graphql';
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
 import lru, { Lru } from 'tiny-lru';
@@ -29,12 +30,26 @@ function buildCache(opts: Config) {
   return lru(1024);
 }
 
+type GraphyneError = Error & {
+  status?: number;
+  errors?: readonly GraphQLError[];
+};
+
+function createGraphyneError({
+  errors,
+  status,
+}: Pick<GraphyneError, 'status' | 'errors'>): GraphyneError {
+  const error: GraphyneError = new Error();
+  Object.assign(error, { errors, status });
+  return error;
+}
+
 export abstract class GraphyneServerBase {
   private lru: Lru<
     Pick<QueryCache, 'document' | 'operation' | 'compiledQuery'>
   > | null;
   private lruErrors: Lru<Pick<QueryCache, 'document' | 'errors'>> | null;
-  private schema: GraphQLSchema;
+  public schema: GraphQLSchema;
   protected options: Config;
   constructor(options: Config) {
     // validate options
@@ -60,7 +75,80 @@ export abstract class GraphyneServerBase {
     }
   }
 
-  protected runQuery(
+  public getCompiledQuery(
+    query: string,
+    operationName?: string
+  ): {
+    document: DocumentNode;
+    compiledQuery: CompiledQuery | ExecutionResult;
+    operation: string;
+  } {
+    let cached = this.lru !== null && this.lru.get(query);
+    let document;
+    if (cached) {
+      return cached;
+    } else {
+      const errCached = this.lruErrors !== null && this.lruErrors.get(query);
+      if (errCached) {
+        throw createGraphyneError({
+          errors: errCached.errors,
+          status: 400,
+        });
+      }
+
+      try {
+        document = parse(query);
+      } catch (syntaxErr) {
+        throw createGraphyneError({
+          errors: [syntaxErr],
+          status: 400,
+        });
+      }
+
+      const validationErrors = validate(this.schema, document);
+      if (validationErrors.length > 0) {
+        if (this.lruErrors) {
+          // cache the error here
+          this.lruErrors.set(query, {
+            document,
+            errors: validationErrors,
+          });
+        }
+        throw createGraphyneError({
+          errors: validationErrors,
+          status: 400,
+        });
+      }
+
+      const operation = getOperationAST(document, operationName)?.operation;
+      if (!operation)
+        throw createGraphyneError({
+          errors: [new GraphQLError('Cannot resolve operation name')],
+          status: 400,
+        });
+
+      const compiledQuery = compileQuery(this.schema, document, operationName, {
+        customJSONSerializer: true,
+      });
+
+      // Cache the compiled query
+      if (this.lru && !operationName && isCompiledQuery(compiledQuery)) {
+        this.lru.set(query, {
+          document,
+          compiledQuery,
+          operation,
+        });
+      }
+
+      return {
+        operation,
+        compiledQuery,
+        document,
+      };
+    }
+  }
+
+  public runQuery(
     requestCtx: QueryRequest,
     cb: (err: any, result: QueryResponse) => void
   ): void {
@@ -79,10 +167,6 @@ export abstract class GraphyneServerBase {
       });
     }
 
-    let rootValue = {};
-    let document;
-    let operation;
-
     const {
       query,
       variables,
@@ -100,78 +184,40 @@ export abstract class GraphyneServerBase {
     const { rootValue: rootValueFn } = this.options;
 
     // Get graphql-jit compiled query and parsed document
-    let cached = this.lru !== null && this.lru.get(query);
-
-    if (cached) {
-      compiledQuery = cached.compiledQuery;
-      document = cached.document;
-      operation = cached.operation;
-    } else {
-      const errCached = this.lruErrors !== null && this.lruErrors.get(query);
-      if (errCached) {
-        return createResponse(400, { errors: errCached.errors });
+    try {
+      const { compiledQuery, document, operation } = this.getCompiledQuery(
+        query,
+        operationName
+      );
+      // http.request is not available in ws
+      if (request && request.method === 'GET' && operation !== 'query') {
+        // Mutation is not allowed with GET request
+        throw createGraphyneError({
+          status: 405,
+          errors: [
+            new GraphQLError(
+              `Operation ${operation} cannot be performed via a GET request`
+            ),
+          ],
+        });
       }
 
-      try {
-        document = parse(query);
-      } catch (syntaxErr) {
-        return createResponse(400, { errors: [syntaxErr] });
+      let rootValue = {};
+      if (rootValueFn) {
+        if (typeof rootValueFn === 'function') {
+          rootValue = rootValueFn(document);
+        } else rootValue = rootValueFn;
       }
 
-      const validationErrors = validate(this.schema, document);
-      if (validationErrors.length > 0) {
-        if (this.lruErrors) {
-          // cache the error here
-          this.lruErrors.set(query, {
-            document,
-            errors: validationErrors,
-          });
-        }
-        return createResponse(400, { errors: validationErrors });
-      }
-      operation = getOperationAST(document, operationName)?.operation;
-      compiledQuery = compileQuery(this.schema, document, operationName, {
-        customJSONSerializer: true,
+      return resolveMaybePromise(
+        (compiledQuery as CompiledQuery).query(rootValue, context, variables),
+        (err, result) => createResponse(200, result)
+      );
+    } catch (err) {
+      createResponse(err.status ?? 500, {
+        errors: err.errors,
       });
     }
-
-    if (!isCompiledQuery(compiledQuery)) {
-      // Query fail compiling
-      return createResponse(500, compiledQuery);
-    }
-
-    // TODO: Add support for caching multi-operation document
-    if (!cached && this.lru && operation && !operationName) {
-      // save compiled query to cache
-      this.lru.set(query, {
-        document,
-        compiledQuery,
-        operation,
-      });
-    }
-
-    // http.request is not available in ws
-    if (request && request.method === 'GET' && operation !== 'query') {
-      // Mutation is not allowed with GET request
-      return createResponse(405, {
-        errors: [
-          new GraphQLError(
-            `Operation ${operation} cannot be performed via a GET request`
-          ),
-        ],
-      });
-    }
-
-    if (rootValueFn) {
-      if (typeof rootValueFn === 'function') {
-        rootValue = rootValueFn(document);
-      } else rootValue = rootValueFn;
-    }
-
-    return resolveMaybePromise(
-      (compiledQuery as CompiledQuery).query(rootValue, context, variables),
-      (err, result) => createResponse(200, result)
-    );
   }
 
   abstract createHandler(...args: any[]): any;
