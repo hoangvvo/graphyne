@@ -20,7 +20,7 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(options?: HandlerConfig): RequestListener {
+  createHandler(options?: HandlerConfig): RequestListener | any {
     // Validate options
     if (options?.onNoMatch && typeof options.onNoMatch !== 'function') {
       throw new Error('createHandler: options.onNoMatch must be a function');
