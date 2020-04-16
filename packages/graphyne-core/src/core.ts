@@ -123,7 +123,11 @@ export abstract class GraphyneServerBase {
       const operation = getOperationAST(document, operationName)?.operation;
       if (!operation)
         throw createGraphyneError({
-          errors: [new GraphQLError('Cannot resolve operation name')],
+          errors: [
+            new GraphQLError(
+              'Must provide operation name if query contains multiple operations.'
+            ),
+          ],
           status: 400,
         });
 
@@ -177,7 +181,7 @@ export abstract class GraphyneServerBase {
 
     if (!query) {
       return createResponse(400, {
-        errors: [new GraphQLError('request does not contain query')],
+        errors: [new GraphQLError('Must provide query string.')],
       });
     }
 

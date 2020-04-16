@@ -10,6 +10,7 @@ import {
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
+import { GraphQLError } from 'graphql';
 
 const DEFAULT_PATH = '/graphql';
 const DEFAULT_GRAPHIQL_PATH = '/___graphql';
@@ -67,6 +68,16 @@ export class GraphyneServer extends GraphyneServerBase {
               : contextFn) || {};
 
           return resolveMaybePromise(contextVal, (err, context) => {
+            if (err) {
+              res.statusCode = err.status || 500;
+              return res.end(
+                JSON.stringify({
+                  errors: [
+                    new GraphQLError(`Context creation failed: ${err.message}`),
+                  ],
+                })
+              );
+            }
             this.runQuery(
               {
                 query,
