@@ -1,4 +1,4 @@
-name: Weekly GraphQL server benchmark
+name: Weekly benchmark
 
 on:
   schedule:

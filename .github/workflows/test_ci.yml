@@ -1,4 +1,4 @@
-name: Test and coverage
+name: Build, test, and coverage
 
 on:
   push:
@@ -24,6 +24,8 @@ jobs:
         yarn install
         yarn test
         yarn coverage
+    - name: lint
+      run: yarn lint
     - name: coverage
       uses: codecov/codecov-action@v1
       with:
