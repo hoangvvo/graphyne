@@ -1,4 +1,4 @@
-# GraphQL WebSocket for Graphyne
+# GraphQL Subscriptions over WebSocket for Graphyne
 
 The GraphQL WebSocket server to facilitate GraphQL queries, mutations and subscriptions over WebSocket. Implements [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
 
@@ -6,7 +6,7 @@ This library is meant to be used exclusively with [Graphyne](/).
 
 ## Install
 
-Install `graphyne-ws` and [`graphql-subscriptions`](https://github.com/apollographql/graphql-subscriptions) to use the PubSub system for subscriptions.
+Install `graphyne-ws` to use `Graphyne` with WebSocket and [`graphql-subscriptions`](https://github.com/apollographql/graphql-subscriptions) to implement PubSub Subcriptions system.
 
 ```shell
 npm i graphyne-ws graphql-subscriptions graphql
@@ -18,7 +18,7 @@ yarn add graphyne-ws graphql-subscriptions graphql
 
 [Example](/examples/with-graphql-subscriptions)
 
-Creating an instance of `GraphyneWebSocketServer` is the same as in the popular [`ws`] library.
+Creating an instance of `GraphyneWebSocketServer` using `startSubscriptionServer` function.
 
 ```javascript
 const http = require('http');
@@ -64,7 +64,7 @@ A Node HTTP Server instance should be supplied to `options.server`.
 
 ### `new GraphyneWebSocketServer(options)`
 
-Create a server instance of `GraphyneWebSocketServer` like in `startSubscriptionServer` without listening to connections. To listen to connections, listen to `connection` event like [this](https://github.com/hoangvvo/graphyne/blob/feat/subscription/packages/graphyne-ws/src/graphyneWebsocket.ts#L232).
+Create a server instance of `GraphyneWebSocketServer` just like in `startSubscriptionServer` without listening to connections. To listen to connections, hook on the `connection` event like [this](https://github.com/hoangvvo/graphyne/blob/feat/subscription/packages/graphyne-ws/src/graphyneWebsocket.ts#L232).
 
 ## Framework integration
 
@@ -76,6 +76,7 @@ The HTTP Server instance is returned after `app.listen` is called.
 app.use(
   graphyne.createHandler({ /* ... */ })
 );
+
 const server = app.listen(PORT);
 
 const wss = startSubscriptionServer({
@@ -87,7 +88,7 @@ const wss = startSubscriptionServer({
 
 ### [Micro](https://github.com/zeit/micro)
 
-You need to [use Micro programmatically](https://www.npmjs.com/package/micro#programmatic-use) for WebSocket support. `micro()` returns a HTTP Server instance.
+You need to [use Micro programmatically](https://www.npmjs.com/package/micro#programmatic-use) for WebSocket support. `micro()` returns the HTTP Server instance.
 
 ```javascript
 const server = micro(
