@@ -107,7 +107,7 @@ export class GraphyneWebSocketConnection {
             ? await contextFn(initContext)
             : contextFn;
       } else this.context = initContext;
-      if (!this.context) throw new Error('Prohibited connection!');
+      if (!this.context) throw new GraphQLError('Prohibited connection!');
       this.sendMessage(GQL_CONNECTION_ACK);
     } catch (e) {
       this.sendMessage(GQL_CONNECTION_ERROR, data.id, {
@@ -122,9 +122,8 @@ export class GraphyneWebSocketConnection {
     const id = data.id as string;
     const payload = data.payload;
     try {
-      if (!payload) throw new Error('Missing payload');
-      const { query, variables, operationName } = payload;
-      if (!query) throw new Error('Missing query');
+      const { query, variables, operationName } = payload || {};
+      if (!query) throw new GraphQLError('Must provide query string.');
 
       const { document, operation } = this.graphyne.getCompiledQuery(query);
 
@@ -194,13 +193,9 @@ export class GraphyneWebSocketConnection {
   }
 
   sendMessage(type: string, id?: string | null, payload?: ExecutionResult) {
-    try {
-      this.socket.send(
-        JSON.stringify({ type, ...(id && { id }), ...(payload && { payload }) })
-      );
-    } catch (e) {
-      this.handleConnectionClose(e);
-    }
+    this.socket.send(
+      JSON.stringify({ type, ...(id && { id }), ...(payload && { payload }) })
+    );
   }
 }
 
@@ -231,9 +226,7 @@ export function startSubscriptionServer(
       wss: wss,
     });
     socket.on('message', (message) => {
-      connection.handleMessage(message.toString()).catch((e) => {
-        connection.handleConnectionClose();
-      });
+      connection.handleMessage(message.toString());
     });
     socket.on('error', connection.handleConnectionClose.bind(connection));
     socket.on('close', connection.handleConnectionClose.bind(connection));

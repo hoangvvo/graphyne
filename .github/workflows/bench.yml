@@ -4,9 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
-    - 'packages/graphyne-core/**'
-    - 'packages/graphyne-server/**'
-    - 'packages/graphyne-express/**'
+    - 'packages/**'
 
 jobs:
   bench:

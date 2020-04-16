@@ -1,8 +1,13 @@
 # GraphQL Subscriptions over WebSocket for Graphyne
 
+[![npm](https://badgen.net/npm/v/graphyne-ws)](https://www.npmjs.com/package/graphyne-ws)
+![ci](https://github.com/hoangvvo/graphyne/workflows/Test%20and%20coverage/badge.svg)
+[![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
+[![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
+
 The GraphQL WebSocket server to facilitate GraphQL queries, mutations and subscriptions over WebSocket. Implements [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
 
-This library is meant to be used exclusively with [Graphyne](/).
+This library is meant to be used exclusively with [Graphyne](https://github.com/hoangvvo/graphyne).
 
 ## Install
 

@@ -18,17 +18,26 @@
   "scripts": {
     "prepublish": "lerna run build",
     "lint": "eslint packages/*/src/**/*.{js,ts}",
-    "bench-cli": "node bench/cli"
+    "test": "nyc mocha",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov"
   },
   "devDependencies": {
+    "@types/mocha": "^7.0.2",
     "@typescript-eslint/eslint-plugin": "^2.27.0",
     "@typescript-eslint/parser": "^2.27.0",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.1",
     "eslint-plugin-prettier": "^3.1.2",
     "graphql": "^15.0.0",
+    "graphql-subscriptions": "^1.1.0",
+    "graphql-tools": "^5.0.0",
     "lerna": "^3.20.2",
+    "mocha": "^7.1.1",
+    "nyc": "^15.0.1",
     "prettier": "^2.0.4",
-    "typescript": "^3.8.3"
+    "supertest": "^4.0.2",
+    "ts-node": "^8.8.2",
+    "typescript": "^3.8.3",
+    "ws": "^7.2.3"
   }
 }
