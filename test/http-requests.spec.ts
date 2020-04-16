@@ -9,6 +9,7 @@ const schemaHello = makeExecutableSchema({
       hello(who: String!): String
       helloWorld: String
       helloMe: String
+      helloRoot: String
     }
     type Mutation {
       sayHello(who: String!): String
@@ -20,6 +21,7 @@ const schemaHello = makeExecutableSchema({
       hello: (obj, args) => args.who,
       helloWorld: () => 'world',
       helloMe: (obj, args, context) => context.me,
+      helloRoot: ({ name }) => name,
     },
     Mutation: {
       sayHello: (obj, args) => 'Hello ' + args.who,
@@ -78,7 +80,7 @@ describe('HTTP Operations', () => {
         '{"errors":[{"message":"Operation mutation cannot be performed via a GET request"}]}'
       );
   });
-  describe('Allows defining options.context', () => {
+  describe('allows defining options.context', () => {
     it('with an object', async () => {
       const server = createGQLServer({
         schema: schemaHello,
@@ -98,6 +100,32 @@ describe('HTTP Operations', () => {
         .get('/graphql')
         .query({ query: 'query { helloMe }' })
         .expect('{"data":{"helloMe":"hoang"}}');
+    });
+  });
+  describe('allows defining options.rootValue', () => {
+    const rootValue = {
+      name: 'Luke',
+    };
+    // FIXME: need better test
+    it('with an object', async () => {
+      const server = createGQLServer({
+        schema: schemaHello,
+        rootValue,
+      });
+      await request(server)
+        .get('/graphql')
+        .query({ query: 'query { helloRoot }' })
+        .expect('{"data":{"helloRoot":"Luke"}}');
+    });
+    it('with a function', async () => {
+      const server = createGQLServer({
+        schema: schemaHello,
+        rootValue: () => rootValue,
+      });
+      await request(server)
+        .get('/graphql')
+        .query({ query: 'query { helloRoot }' })
+        .expect('{"data":{"helloRoot":"Luke"}}');
     });
   });
   it('allow POST request of application/json', async () => {

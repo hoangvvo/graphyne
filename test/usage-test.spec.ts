@@ -1,4 +1,5 @@
 import { makeExecutableSchema } from 'graphql-tools';
+import { GraphQLSchema } from 'graphql';
 import { strict as assert } from 'assert';
 import { GraphyneServer } from '../packages/graphyne-server/lib';
 
@@ -22,11 +23,20 @@ describe('graphyne-core', () => {
       new GraphyneServer();
     });
   });
-  it('throws if options.context is not aa function or object', () => {
+  it('throws if options.context is not a function or object', () => {
     assert.throws(() => {
       new GraphyneServer({
         // @ts-ignore
         context: 1,
+        schema: schemaHello,
+      });
+    });
+  });
+  it('throws if schema is invalid', () => {
+    assert.throws(() => {
+      new GraphyneServer({
+        // @ts-ignore
+        schema: new GraphQLSchema({ directives: [null] }),
       });
     });
   });

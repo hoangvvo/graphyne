@@ -10,6 +10,7 @@ on:
     types: [opened, synchronize]
     paths:
     - 'packages/**'
+    - 'test/**'
 
 jobs:
   test-coverage:
@@ -29,4 +30,4 @@ jobs:
     - name: coverage
       uses: codecov/codecov-action@v1
       with:
-        file: ./coverage.lcov
+        file: /coverage.lcov

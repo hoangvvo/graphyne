@@ -288,4 +288,25 @@ describe('graphyne-ws', () => {
       });
     });
   });
+  it('close connection on connection_terminate', (done) => {
+    startServer().then(({ server, client }) => {
+      client.write(
+        JSON.stringify({
+          type: 'connection_init',
+        })
+      );
+      client.on('data', () => {
+        client.write(
+          JSON.stringify({
+            type: 'connection_terminate',
+          })
+        );
+      });
+      client.on('end', () => {
+        client.end();
+        server.close();
+        done();
+      });
+    });
+  });
 });
