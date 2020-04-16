@@ -77,6 +77,12 @@ createHandler({
 })
 ```
 
+## Additional features
+
+### Subscriptions
+
+GraphQL subscriptions support is provided by [graphyne-transport-ws](https://www.npmjs.com/package/graphyne-transport-ws) package. Check out the documentation [here](/packages/graphyne-transport-ws).
+
 ## Framework-specific integration
 
 **Signature function** refers to framework-specific's handler function. For example in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
