@@ -23,6 +23,7 @@ jobs:
       run: |
         yarn install
         yarn test
+        yarn coverage
     - name: coverage
       uses: codecov/codecov-action@v1
       with:
