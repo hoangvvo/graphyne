@@ -81,7 +81,11 @@ createHandler({
 
 ### Subscriptions
 
-GraphQL subscriptions support is provided by [graphyne-websockets](https://www.npmjs.com/package/graphyne-ws) package. Check out the documentation [here](/packages/graphyne-ws).
+GraphQL subscriptions support is provided by [graphyne-ws](https://www.npmjs.com/package/graphyne-ws) package. Check out the documentation [here](/packages/graphyne-ws).
+
+### File uploads
+
+To enable file upload, use [graphql-upload](https://github.com/jaydenseric/graphql-upload) and add the `Upload` scaler. See [#10](https://github.com/hoangvvo/graphyne/issues/10).
 
 ## Framework-specific integration
 
