@@ -1,6 +1,7 @@
 export * from './messageTypes';
 
 export {
-  GraphyneWebsocketServer,
-  createSubscriptionServer,
+  GraphyneWebSocketConnection,
+  GraphyneWebSocketServer,
+  startSubscriptionServer,
 } from './graphyneWebsocket';

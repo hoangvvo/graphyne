@@ -25,10 +25,10 @@ interface OperationMessage {
   type: string;
 }
 
-interface WebSocketConnectionConstruct {
+interface GraphyneWebSocketConnectionConstruct {
   socket: WebSocket;
   request: IncomingMessage;
-  graphyneWS: GraphyneWebsocketServer;
+  wss: GraphyneWebSocketServer;
 }
 
 interface InitContext {
@@ -46,31 +46,22 @@ type ContextFn =
   | Record<string, any>
   | ((initContext: InitContext) => Record<string, any>);
 
-class WebSocketConnection {
+export class GraphyneWebSocketConnection {
   private graphyne: GraphyneServer;
-  private socket: WebSocket;
+  public socket: WebSocket;
   private request: IncomingMessage;
-  private graphyneWS: GraphyneWebsocketServer;
+  private wss: GraphyneWebSocketServer;
   private operations: Map<
     string,
     AsyncIterator<ExecutionResult, any, undefined>
   > = new Map();
   context: Record<string, any>;
-  constructor(options: WebSocketConnectionConstruct) {
+  constructor(options: GraphyneWebSocketConnectionConstruct) {
     this.context = {};
     this.socket = options.socket;
-    this.graphyneWS = options.graphyneWS;
-    this.graphyne = options.graphyneWS.graphyne;
+    this.wss = options.wss;
+    this.graphyne = options.wss.graphyne;
     this.request = options.request;
-
-    this.socket.on('message', (message) => {
-      this.handleMessage(message.toString()).catch((e) => {
-        this.handleConnectionClose();
-      });
-    });
-
-    this.socket.on('error', this.handleConnectionClose.bind(this));
-    this.socket.on('close', this.handleConnectionClose.bind(this));
   }
 
   async handleMessage(message: string) {
@@ -104,7 +95,7 @@ class WebSocketConnection {
 
   async handleConnectionInit(data: OperationMessage) {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init
-    const { contextFn } = this.graphyneWS;
+    const { contextFn } = this.wss;
     const initContext: InitContext = {
       request: this.request,
       socket: this.socket,
@@ -228,31 +219,39 @@ class WebSocketConnection {
   }
 }
 
-export class GraphyneWebsocketServer extends WebSocket.Server {
+export class GraphyneWebSocketServer extends WebSocket.Server {
   public graphyne: GraphyneServer;
   public contextFn?: ContextFn;
   constructor(options: GraphyneWSOptions) {
     super(options);
     this.contextFn = options.context;
     this.graphyne = options.graphyne;
-    this.on('connection', (socket: WebSocket, request) => {
-      // Check that socket.protocol is GRAPHQL_WS
-      if (
-        socket.protocol === undefined ||
-        socket.protocol.indexOf(GRAPHQL_WS) === -1
-      )
-        return socket.close(1002);
-      return new WebSocketConnection({
-        socket,
-        request,
-        graphyneWS: this,
-      });
-    });
   }
 }
 
-export function createSubscriptionServer(
+export function startSubscriptionServer(
   options: GraphyneWSOptions
-): GraphyneWebsocketServer {
-  return new GraphyneWebsocketServer(options);
+): GraphyneWebSocketServer {
+  const wss = new GraphyneWebSocketServer(options);
+  wss.on('connection', (socket: WebSocket, request: IncomingMessage) => {
+    // Check that socket.protocol is GRAPHQL_WS
+    if (
+      socket.protocol === undefined ||
+      socket.protocol.indexOf(GRAPHQL_WS) === -1
+    )
+      return socket.close(1002);
+    const connection = new GraphyneWebSocketConnection({
+      socket,
+      request,
+      wss: wss,
+    });
+    socket.on('message', (message) => {
+      connection.handleMessage(message.toString()).catch((e) => {
+        connection.handleConnectionClose();
+      });
+    });
+    socket.on('error', connection.handleConnectionClose.bind(connection));
+    socket.on('close', connection.handleConnectionClose.bind(connection));
+  });
+  return wss;
 }
