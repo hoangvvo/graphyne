@@ -1,6 +1,6 @@
 {
   "name": "graphyne-ws",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "GraphQL Subscriptions implementation for Graphyne",
   "author": "Hoang Vo (https://www.hoangvvo.com)",
   "keywords": [
@@ -26,7 +26,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "graphyne-core": "^0.2.0",
+    "graphyne-core": "^0.3.0",
     "iterall": "^1.3.0",
     "ws": "^7.2.3"
   },
