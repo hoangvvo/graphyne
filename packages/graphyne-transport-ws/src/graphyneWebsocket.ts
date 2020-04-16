@@ -128,11 +128,7 @@ export class GraphyneWebSocketConnection {
       const { query, variables, operationName } = payload;
       if (!query) throw new Error('Missing query');
 
-      const {
-        document,
-        compiledQuery,
-        operation,
-      } = this.graphyne.getCompiledQuery(query);
+      const { document, operation } = this.graphyne.getCompiledQuery(query);
 
       if (operation !== 'subscription')
         throw new GraphQLError('Not a subscription operation');
@@ -154,10 +150,7 @@ export class GraphyneWebSocketConnection {
       await forAwaitEach(
         executionIterable as any,
         (result: ExecutionResult) => {
-          const stringify = isCompiledQuery(compiledQuery)
-            ? compiledQuery.stringify
-            : JSON.stringify;
-          this.sendMessage(GQL_DATA, id, stringify(result));
+          this.sendMessage(GQL_DATA, id, result);
         }
       ).then(
         () => {
@@ -200,19 +193,9 @@ export class GraphyneWebSocketConnection {
     }, 10);
   }
 
-  sendMessage(
-    type: string,
-    id?: string | null,
-    payload?: string | ExecutionResult
-  ) {
+  sendMessage(type: string, id?: string | null, payload?: ExecutionResult) {
     try {
-      this.socket.send(
-        JSON.stringify({
-          type,
-          id,
-          payload,
-        })
-      );
+      this.socket.send(JSON.stringify({ type, id, payload }));
     } catch (e) {
       this.handleConnectionClose(e);
     }
