@@ -1,10 +1,8 @@
 import { GraphQLError, ExecutionResult, subscribe } from 'graphql';
-import { QueryBody } from 'graphyne-core';
-import { GraphyneServer } from 'graphyne-server';
+import { QueryBody, GraphyneServerBase as GraphyneServer } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
-import { isCompiledQuery } from 'graphql-jit';
 
 import {
   GQL_CONNECTION_INIT,
