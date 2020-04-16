@@ -39,7 +39,7 @@ function createGraphyneError({
   errors,
   status,
 }: Pick<GraphyneError, 'status' | 'errors'>): GraphyneError {
-  const error: GraphyneError = new Error();
+  const error = new GraphQLError('Error');
   Object.assign(error, { errors, status });
   return error;
 }

@@ -107,7 +107,7 @@ export class GraphyneWebSocketConnection {
             ? await contextFn(initContext)
             : contextFn;
       } else this.context = initContext;
-      if (!this.context) throw new Error('Prohibited connection!');
+      if (!this.context) throw new GraphQLError('Prohibited connection!');
       this.sendMessage(GQL_CONNECTION_ACK);
     } catch (e) {
       this.sendMessage(GQL_CONNECTION_ERROR, data.id, {
@@ -122,9 +122,9 @@ export class GraphyneWebSocketConnection {
     const id = data.id as string;
     const payload = data.payload;
     try {
-      if (!payload) throw new Error('Missing payload');
+      if (!payload) throw new GraphQLError('Missing payload');
       const { query, variables, operationName } = payload;
-      if (!query) throw new Error('Missing query');
+      if (!query) throw new GraphQLError('Missing query');
 
       const { document, operation } = this.graphyne.getCompiledQuery(query);
 
