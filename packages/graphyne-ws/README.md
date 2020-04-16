@@ -2,7 +2,7 @@
 
 The GraphQL WebSocket server to facilitate GraphQL queries, mutations and subscriptions over WebSocket. Implements [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
 
-This library is meant to be used exclusively with [Graphyne](/).
+This library is meant to be used exclusively with [Graphyne](https://github.com/hoangvvo/graphyne).
 
 ## Install
 
