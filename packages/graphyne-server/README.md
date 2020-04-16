@@ -1,7 +1,7 @@
 # Graphyne Server
 
-[![npm](https://badgen.net/npm/v/graphyne)](https://www.npmjs.com/package/graphyne)
-![Test and coverage](https://github.com/hoangvvo/graphyne/workflows/Test%20and%20coverage/badge.svg)
+[![npm](https://badgen.net/npm/v/graphyne-server)](https://www.npmjs.com/package/graphyne-server)
+![ci](https://github.com/hoangvvo/graphyne/workflows/Test%20and%20coverage/badge.svg)
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
