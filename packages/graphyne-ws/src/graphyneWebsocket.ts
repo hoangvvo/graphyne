@@ -163,7 +163,9 @@ export class GraphyneWebSocketConnection {
       );
     } catch (err) {
       // Unsubscribe from this operation due to errors
-      this.sendMessage(GQL_DATA, id, { errors: err.errors });
+      this.sendMessage(GQL_DATA, id, {
+        errors: Array.isArray(err) ? err : [err],
+      });
       this.handleGQLStop(id);
     }
   }
