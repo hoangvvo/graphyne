@@ -2,7 +2,7 @@ const http = require('http');
 const { GraphyneServer } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 const { PubSub } = require('graphql-subscriptions');
-const { startSubscriptionServer } = require('graphyne-transport-ws');
+const { startSubscriptionServer } = require('graphyne-ws');
 
 const pubsub = new PubSub();
 

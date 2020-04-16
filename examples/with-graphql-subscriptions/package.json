@@ -9,7 +9,7 @@
     "graphql-subscriptions": "^1.1.0",
     "graphql-tools": "^4.0.7",
     "graphyne-server": "^0.2.0",
-    "graphyne-transport-ws": "0.0.0"
+    "graphyne-ws": "^0.0.0"
   },
   "license": "ISC"
 }

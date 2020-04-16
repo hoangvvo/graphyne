@@ -1,7 +1,7 @@
 {
-  "name": "graphyne-transport-ws",
+  "name": "graphyne-ws",
   "version": "0.0.0",
-  "description": "subscriptions-transport-ws implementation for Graphyne",
+  "description": "GraphQL Subscriptions implementation for Graphyne",
   "author": "Hoang Vo (https://www.hoangvvo.com)",
   "keywords": [
     "graphql",

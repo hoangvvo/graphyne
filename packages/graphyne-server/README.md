@@ -81,7 +81,7 @@ createHandler({
 
 ### Subscriptions
 
-GraphQL subscriptions support is provided by [graphyne-transport-ws](https://www.npmjs.com/package/graphyne-transport-ws) package. Check out the documentation [here](/packages/graphyne-transport-ws).
+GraphQL subscriptions support is provided by [graphyne-websockets](https://www.npmjs.com/package/graphyne-ws) package. Check out the documentation [here](/packages/graphyne-ws).
 
 ## Framework-specific integration
 

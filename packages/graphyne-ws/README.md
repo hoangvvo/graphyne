@@ -6,12 +6,12 @@ This library is meant to be used exclusively with [Graphyne](/).
 
 ## Install
 
-Install `graphyne-transport-ws` and [`graphql-subscriptions`](https://github.com/apollographql/graphql-subscriptions) to use the PubSub system for subscriptions.
+Install `graphyne-ws` and [`graphql-subscriptions`](https://github.com/apollographql/graphql-subscriptions) to use the PubSub system for subscriptions.
 
 ```shell
-npm i graphyne-transport-ws graphql-subscriptions graphql
+npm i graphyne-ws graphql-subscriptions graphql
 // or
-yarn add graphyne-transport-ws graphql-subscriptions graphql
+yarn add graphyne-ws graphql-subscriptions graphql
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ Creating an instance of `GraphyneWebSocketServer` is the same as in the popular 
 ```javascript
 const http = require('http');
 const { GraphyneServer } = require('graphyne-server');
-const { startSubscriptionServer } = require('graphyne-transport-ws');
+const { startSubscriptionServer } = require('graphyne-ws');
 
 // Create a GraphyneServer instance
 const graphyne = new GraphyneServer(options);
@@ -32,7 +32,7 @@ const server = http.createServer(
   graphyne.createHandler()
 );
 
-// Hook it with graphyne-transport-ws
+// Hook it with graphyne-ws
 const wss = startSubscriptionServer({
   graphyne: graphyne, // Require an instance of Graphyne Server
   server: server, // Require an instance of HTTP Server
@@ -64,7 +64,7 @@ A Node HTTP Server instance should be supplied to `options.server`.
 
 ### `new GraphyneWebSocketServer(options)`
 
-Create a server instance of `GraphyneWebSocketServer` like in `startSubscriptionServer` without listening to connections. To listen to connections, listen to `connection` event like [this](https://github.com/hoangvvo/graphyne/blob/feat/subscription/packages/graphyne-transport-ws/src/graphyneWebsocket.ts#L232).
+Create a server instance of `GraphyneWebSocketServer` like in `startSubscriptionServer` without listening to connections. To listen to connections, listen to `connection` event like [this](https://github.com/hoangvvo/graphyne/blob/feat/subscription/packages/graphyne-ws/src/graphyneWebsocket.ts#L232).
 
 ## Framework integration
 
