@@ -193,7 +193,9 @@ export class GraphyneWebSocketConnection {
 
   sendMessage(type: string, id?: string | null, payload?: ExecutionResult) {
     try {
-      this.socket.send(JSON.stringify({ type, id, payload }));
+      this.socket.send(
+        JSON.stringify({ type, ...(id && { id }), ...(payload && { payload }) })
+      );
     } catch (e) {
       this.handleConnectionClose(e);
     }
