@@ -41,8 +41,5 @@
     "tsconfig-paths": "^3.9.0",
     "typescript": "^3.8.3",
     "ws": "^7.2.3"
-  },
-  "nyc": {
-    "include": ["packages/*/src/"]
   }
 }
