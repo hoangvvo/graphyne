@@ -2,7 +2,7 @@
 
 Benchmarks GraphQL Servers using [autocannon](https://github.com/mcollina/autocannon). Each run includes two rounds: one 5-second round to warm up and one to measure.
 
-The benchmark is run once a day using Github Actions. The latest version of each library is used.
+The benchmark is run once a week using Github Actions. The latest version of each library is used.
 
 ## Usage
 
@@ -39,7 +39,6 @@ Add a server simply by creating a file in [benchmarks](benchmarks). The server s
 
 | Server                                                           | Requests/s | Latency | Throughput/Mb |
 | :--------------------------------------------------------------- | :--------: | :-----: | :-----------: |
-| [graphql-jit-str](benchmarks/graphql-jit-str.js)                 |   4963.1   |  19.89  |     30.70     |
 | [graphyne-server-micro](benchmarks/graphyne-server-micro.js)     |   4653.4   |  21.21  |     28.92     |
 | [graphyne-server-fastify](benchmarks/graphyne-server-fastify.js) |   4601.7   |  21.45  |     28.60     |
 | [graphyne-server](benchmarks/graphyne-server.js)                 |   4592.7   |  21.49  |     28.55     |
