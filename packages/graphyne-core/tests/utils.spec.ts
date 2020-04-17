@@ -1,4 +1,8 @@
-import { parseNodeRequest, resolveMaybePromise } from '../src/utils';
+import {
+  parseNodeRequest,
+  resolveMaybePromise,
+  getGraphQLParams,
+} from '../src/utils';
 import { strict as assert } from 'assert';
 import { createServer } from 'http';
 import request from 'supertest';
@@ -22,7 +26,7 @@ describe('core utils', () => {
       await request(server)
         .post('/graphql')
         .send(`query { helloWorld`)
-        .set('content-type', 'application/json')
+        .set('content-type', 'application/json; t')
         .expect(400);
     });
     describe('do not parse POST body', () => {
@@ -50,6 +54,39 @@ describe('core utils', () => {
           .set('content-type', 'wat')
           .expect('{}');
       });
+    });
+  });
+  describe('getGraphQLParams', () => {
+    it('works with queryParams', () => {
+      const { query, variables } = getGraphQLParams({
+        queryParams: { query: 'ok', variables: `{ "ok": "no" }` },
+        body: {},
+      });
+      assert.deepStrictEqual(query, 'ok');
+      assert.deepStrictEqual(variables?.ok, 'no');
+    });
+    it('works with body', () => {
+      const { query, variables } = getGraphQLParams({
+        queryParams: {},
+        body: { query: 'ok', variables: { ok: 'no' } },
+      });
+      assert.deepStrictEqual(query, 'ok');
+      assert.deepStrictEqual(variables?.ok, 'no');
+    });
+    it('works retrieving from both queryParams and body', () => {
+      const { query, variables } = getGraphQLParams({
+        queryParams: { query: 'ok' },
+        body: { variables: { ok: 'no' } },
+      });
+      assert.deepStrictEqual(query, 'ok');
+      assert.deepStrictEqual(variables?.ok, 'no');
+    });
+    it('see body as query if is string', () => {
+      const { query } = getGraphQLParams({
+        queryParams: {},
+        body: `query { hello }`,
+      });
+      assert.deepStrictEqual(query, 'query { hello }');
     });
   });
   describe('resolveMaybePromise', () => {
