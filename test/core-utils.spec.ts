@@ -1,4 +1,4 @@
-import { parseNodeRequest } from '../packages/graphyne-core/lib/utils';
+import { parseNodeRequest } from '../packages/graphyne-core/src/utils';
 import { strict as assert } from 'assert';
 
 describe('core utils', () => {

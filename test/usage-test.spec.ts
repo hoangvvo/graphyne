@@ -1,7 +1,7 @@
 import { makeExecutableSchema } from 'graphql-tools';
 import { GraphQLSchema } from 'graphql';
 import { strict as assert } from 'assert';
-import { GraphyneServer } from '../packages/graphyne-server/lib';
+import { GraphyneServer } from '../packages/graphyne-server/src';
 
 const schemaHello = makeExecutableSchema({
   typeDefs: `

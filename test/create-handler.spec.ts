@@ -2,8 +2,7 @@ import { makeExecutableSchema } from 'graphql-tools';
 import { strict as assert } from 'assert';
 import * as request from 'supertest';
 import { createServer } from 'http';
-import { GraphyneServer } from '../packages/graphyne-server/lib';
-import { createGQLServer } from './utils';
+import { GraphyneServer } from '../packages/graphyne-server/src';
 
 const schemaHello = makeExecutableSchema({
   typeDefs: `
