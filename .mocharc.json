@@ -1,6 +1,6 @@
 {
   "spec": ["packages/*/**/*.spec.ts"],
-  "require": ["ts-node/register", "tsconfig-paths/register"],
+  "require": ["ts-node/register"],
   "extension": ["js", "ts"],
   "colors": true
 }

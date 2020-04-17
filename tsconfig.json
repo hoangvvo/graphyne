@@ -7,12 +7,6 @@
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "baseUrl": "./",
-    "paths": {
-      "graphyne-*": [
-        "packages/*/src"
-      ]
-    }
   },
   "include": [
     "packages"
