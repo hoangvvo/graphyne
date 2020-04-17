@@ -44,7 +44,7 @@ function createGraphyneError({
   return error;
 }
 
-export abstract class GraphyneServerBase {
+export class GraphyneServerBase {
   private lru: Lru<
     Pick<QueryCache, 'document' | 'operation' | 'compiledQuery'>
   > | null;
@@ -223,6 +223,4 @@ export abstract class GraphyneServerBase {
       });
     }
   }
-
-  abstract createHandler(...args: any[]): any;
 }
