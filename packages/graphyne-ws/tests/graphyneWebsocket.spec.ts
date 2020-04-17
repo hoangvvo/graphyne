@@ -1,5 +1,5 @@
-import { startSubscriptionServer } from '../packages/graphyne-ws/src';
-import { GraphyneServer } from '../packages/graphyne-server/src';
+import { startSubscriptionServer } from '../src';
+import { GraphyneServer } from '../../graphyne-server/src';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
 import { makeExecutableSchema } from 'graphql-tools';

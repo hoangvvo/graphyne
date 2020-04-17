@@ -1,7 +1,7 @@
 import { makeExecutableSchema } from 'graphql-tools';
 import { GraphQLSchema } from 'graphql';
 import { strict as assert } from 'assert';
-import { GraphyneServer } from '../packages/graphyne-server/src';
+import { GraphyneServerBase } from '../src';
 
 const schemaHello = makeExecutableSchema({
   typeDefs: `
@@ -25,7 +25,7 @@ describe('graphyne-core', () => {
   });
   it('throws if options.context is not a function or object', () => {
     assert.throws(() => {
-      new GraphyneServer({
+      new GraphyneServerBase({
         // @ts-ignore
         context: 1,
         schema: schemaHello,
@@ -34,7 +34,7 @@ describe('graphyne-core', () => {
   });
   it('throws if schema is invalid', () => {
     assert.throws(() => {
-      new GraphyneServer({
+      new GraphyneServerBase({
         // @ts-ignore
         schema: new GraphQLSchema({ directives: [null] }),
       });
@@ -44,19 +44,19 @@ describe('graphyne-core', () => {
     it('throws if options.cache is not a number or boolean', () => {
       assert.doesNotThrow(() => {
         // TODO: Need test for actual behavior
-        new GraphyneServer({
+        new GraphyneServerBase({
           // @ts-ignore
           cache: true,
           schema: schemaHello,
         });
-        new GraphyneServer({
+        new GraphyneServerBase({
           // @ts-ignore
           cache: 12,
           schema: schemaHello,
         });
       });
       assert.throws(() => {
-        new GraphyneServer({
+        new GraphyneServerBase({
           // @ts-ignore
           cache: {},
         });
