@@ -84,7 +84,7 @@ describe('graphyne-core', () => {
   it('throws if initializing instance with no option', () => {
     assert.throws(() => {
       // @ts-ignore
-      new GraphyneServer();
+      new GraphyneServerBase();
     });
   });
   it('throws if options.context is not a function or object', () => {
@@ -250,6 +250,14 @@ describe('HTTP Operations', () => {
         operationName: 'helloJane',
       })
       .expect('{"data":{"hello":"Jane"}}');
+  });
+  it('errors when missong query', async () => {
+    const server = createGQLServer({
+      schema: schemaHello,
+    });
+    await request(server)
+      .get('/graphql')
+      .expect('{"errors":[{"message":"Must provide query string."}]}');
   });
   it('errors when missing operation name request', async () => {
     const server = createGQLServer({
