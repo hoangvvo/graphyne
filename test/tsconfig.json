@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "outDir": "./lib",
-    "rootDir": "../",
-    "esModuleInterop": true
-  },
-  "include": ["../**/*"],
-  "exclude": ["node_modules"]
-}

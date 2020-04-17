@@ -5,7 +5,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 export interface Config<TContext = Record<string, any>, TRootValue = any> {
   schema: GraphQLSchema;
   context?: TContext | ((...args: any[]) => TContext);
-  rootValue?: (parsedQuery: DocumentNode) => TRootValue | TRootValue;
+  rootValue?: ((parsedQuery: DocumentNode) => TRootValue) | TRootValue;
   cache?: number | boolean;
 }
 

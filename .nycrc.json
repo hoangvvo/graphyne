@@ -1,3 +1,4 @@
 {
-  "include": ["packages/*/lib/**/*"]
+  "include": ["packages/*/src/**/*"],
+  "all": true
 }

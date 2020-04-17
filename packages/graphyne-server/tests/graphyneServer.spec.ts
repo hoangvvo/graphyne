@@ -1,19 +1,41 @@
 import { makeExecutableSchema } from 'graphql-tools';
+import request from 'supertest';
 import { strict as assert } from 'assert';
-import * as request from 'supertest';
+import { Config } from '../../graphyne-core/src';
 import { createServer } from 'http';
-import { GraphyneServer } from '../packages/graphyne-server/lib';
-import { createGQLServer } from './utils';
+import { GraphyneServer } from '../src';
+
+function createGQLServer({
+  schema: schemaOpt,
+  typeDefs,
+  resolvers,
+  ...options
+}: Partial<Config> & {
+  typeDefs?: string;
+  resolvers?: any;
+}) {
+  const schema =
+    schemaOpt ||
+    makeExecutableSchema({
+      typeDefs: typeDefs as string,
+      resolvers,
+    });
+  const graphyne = new GraphyneServer({
+    schema,
+    ...options,
+  });
+  return createServer(graphyne.createHandler());
+}
 
 const schemaHello = makeExecutableSchema({
   typeDefs: `
     type Query {
-      hello(who: String!): String
+      helloMe: String
     }
   `,
   resolvers: {
     Query: {
-      hello: (obj, args) => args.who,
+      helloMe: (obj, args, context) => context.me,
     },
   },
 });
@@ -105,5 +127,42 @@ describe('createHandler', () => {
       .set('content-type', 'application/json')
       .send('{ as')
       .expect(400);
+  });
+});
+
+describe('HTTP handler', () => {
+  it('catches error thrown in context function', async () => {
+    const server = createGQLServer({
+      schema: schemaHello,
+      context: async () => {
+        throw new Error('uh oh');
+      },
+    });
+    await request(server)
+      .get('/graphql')
+      .query({ query: 'query { helloMe }' })
+      .expect('{"errors":[{"message":"Context creation failed: uh oh"}]}');
+  });
+  describe('resolves options.context that is', () => {
+    it('an object', async () => {
+      const server = createGQLServer({
+        schema: schemaHello,
+        context: { me: 'hoang' },
+      });
+      await request(server)
+        .get('/graphql')
+        .query({ query: 'query { helloMe }' })
+        .expect('{"data":{"helloMe":"hoang"}}');
+    });
+    it('a function', async () => {
+      const server = createGQLServer({
+        schema: schemaHello,
+        context: async () => ({ me: 'hoang' }),
+      });
+      await request(server)
+        .get('/graphql')
+        .query({ query: 'query { helloMe }' })
+        .expect('{"data":{"helloMe":"hoang"}}');
+    });
   });
 });

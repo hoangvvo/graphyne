@@ -1,11 +1,11 @@
-import { startSubscriptionServer } from '../packages/graphyne-ws';
-import { GraphyneServer } from '../packages/graphyne-server';
-import * as WebSocket from 'ws';
+import { startSubscriptionServer } from '../src';
+import { GraphyneServer } from '../../graphyne-server/src';
+import WebSocket from 'ws';
 import { strict as assert } from 'assert';
 import { makeExecutableSchema } from 'graphql-tools';
 import { PubSub } from 'graphql-subscriptions';
 import { createServer } from 'http';
-import * as request from 'supertest';
+import request from 'supertest';
 
 const pubsub = new PubSub();
 
@@ -32,7 +32,7 @@ const resolvers = {
     _: () => '',
   },
   Mutation: {
-    addNotification: async (_, { message }) => {
+    addNotification: async (_: any, { message }: { message: string }) => {
       const notification = { message };
       await pubsub.publish('NOTIFICATION_ADDED', {
         notificationAdded: notification,
@@ -61,10 +61,8 @@ async function startServer(options = {}) {
   startSubscriptionServer({
     server,
     graphyne,
-    context: ({ connectionParams }) => {
-      if (connectionParams?.unauthenticated) return false;
-      return {};
-    },
+    // @ts-ignore
+    ...(options.context && { context: options.context }),
   });
   const client = WebSocket.createWebSocketStream(ws, {
     encoding: 'utf8',
@@ -266,7 +264,12 @@ describe('graphyne-ws', () => {
     });
   });
   it('close connection on error in context function', (done) => {
-    startServer().then(({ server, client }) => {
+    // @ts-ignore
+    const context = ({ connectionParams }) => {
+      if (connectionParams?.unauthenticated) return false;
+      return {};
+    };
+    startServer({ context }).then(({ server, client }) => {
       client.write(
         JSON.stringify({
           type: 'connection_init',
@@ -285,6 +288,27 @@ describe('graphyne-ws', () => {
         client.end();
         server.close();
         done(assert(isErrored));
+      });
+    });
+  });
+  it('close connection on connection_terminate', (done) => {
+    startServer().then(({ server, client }) => {
+      client.write(
+        JSON.stringify({
+          type: 'connection_init',
+        })
+      );
+      client.on('data', () => {
+        client.write(
+          JSON.stringify({
+            type: 'connection_terminate',
+          })
+        );
+      });
+      client.on('end', () => {
+        client.end();
+        server.close();
+        done();
       });
     });
   });

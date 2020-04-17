@@ -1,31 +1,132 @@
 import { makeExecutableSchema } from 'graphql-tools';
-import * as request from 'supertest';
+import { createServer } from 'http';
+import { GraphQLSchema } from 'graphql';
 import { strict as assert } from 'assert';
-import { createGQLServer } from './utils';
+import { GraphyneServerBase, Config } from '../src';
+import { parseNodeRequest, getGraphQLParams } from '../src/utils';
+import request from 'supertest';
+import querystring from 'querystring';
+
+function createGQLServer({
+  schema: schemaOpt,
+  typeDefs,
+  resolvers,
+  ...options
+}: Partial<Config> & {
+  typeDefs?: string;
+  resolvers?: any;
+}) {
+  const schema =
+    schemaOpt ||
+    makeExecutableSchema({
+      typeDefs: typeDefs as string,
+      resolvers,
+    });
+  const graphyne = new GraphyneServerBase({
+    schema,
+    ...options,
+  });
+  // This is a mini version of graphyne-server
+  return createServer((req, res) => {
+    parseNodeRequest(req, (err, parsedBody) => {
+      const queryParams = querystring.parse(
+        new URL(req.url as string, 'https://localhost:4000/').search.slice(1)
+      );
+      const { query, variables, operationName } = getGraphQLParams({
+        // @ts-ignore
+        queryParams: queryParams || {},
+        body: parsedBody,
+      });
+      graphyne.runQuery(
+        {
+          query,
+          context: {},
+          variables,
+          operationName,
+          http: { request: req, response: res },
+        },
+        (err, { body, headers }) => {
+          for (const key in headers) {
+            // @ts-ignore
+            res.setHeader(key, headers[key]);
+          }
+          res.end(body);
+        }
+      );
+    });
+  });
+}
 
 const schemaHello = makeExecutableSchema({
   typeDefs: `
     type Query {
       hello(who: String!): String
       helloWorld: String
-      helloMe: String
+      helloRoot: String
     }
     type Mutation {
       sayHello(who: String!): String
-      sayByeAll: String
     }
   `,
   resolvers: {
     Query: {
       hello: (obj, args) => args.who,
       helloWorld: () => 'world',
-      helloMe: (obj, args, context) => context.me,
+      helloRoot: ({ name }) => name,
     },
     Mutation: {
       sayHello: (obj, args) => 'Hello ' + args.who,
-      sayByeAll: () => 'Bye, all!',
     },
   },
+});
+
+describe('graphyne-core', () => {
+  it('throws if initializing instance with no option', () => {
+    assert.throws(() => {
+      // @ts-ignore
+      new GraphyneServerBase();
+    });
+  });
+  it('throws if options.context is not a function or object', () => {
+    assert.throws(() => {
+      new GraphyneServerBase({
+        // @ts-ignore
+        context: 1,
+        schema: schemaHello,
+      });
+    });
+  });
+  it('throws if schema is invalid', () => {
+    assert.throws(() => {
+      new GraphyneServerBase({
+        // @ts-ignore
+        schema: new GraphQLSchema({ directives: [null] }),
+      });
+    });
+  });
+  describe('options.cache', () => {
+    it('throws if options.cache is not a number or boolean', () => {
+      assert.doesNotThrow(() => {
+        // TODO: Need test for actual behavior
+        new GraphyneServerBase({
+          // @ts-ignore
+          cache: true,
+          schema: schemaHello,
+        });
+        new GraphyneServerBase({
+          // @ts-ignore
+          cache: 12,
+          schema: schemaHello,
+        });
+      });
+      assert.throws(() => {
+        new GraphyneServerBase({
+          // @ts-ignore
+          cache: {},
+        });
+      });
+    });
+  });
 });
 
 describe('HTTP Operations', () => {
@@ -78,26 +179,30 @@ describe('HTTP Operations', () => {
         '{"errors":[{"message":"Operation mutation cannot be performed via a GET request"}]}'
       );
   });
-  describe('Allows defining options.context', () => {
+  describe('allows defining options.rootValue', () => {
+    const rootValue = {
+      name: 'Luke',
+    };
+    // FIXME: need better test
     it('with an object', async () => {
       const server = createGQLServer({
         schema: schemaHello,
-        context: { me: 'hoang' },
+        rootValue,
       });
       await request(server)
         .get('/graphql')
-        .query({ query: 'query { helloMe }' })
-        .expect('{"data":{"helloMe":"hoang"}}');
+        .query({ query: 'query { helloRoot }' })
+        .expect('{"data":{"helloRoot":"Luke"}}');
     });
     it('with a function', async () => {
       const server = createGQLServer({
         schema: schemaHello,
-        context: async () => ({ me: 'hoang' }),
+        rootValue: () => rootValue,
       });
       await request(server)
         .get('/graphql')
-        .query({ query: 'query { helloMe }' })
-        .expect('{"data":{"helloMe":"hoang"}}');
+        .query({ query: 'query { helloRoot }' })
+        .expect('{"data":{"helloRoot":"Luke"}}');
     });
   });
   it('allow POST request of application/json', async () => {
@@ -145,6 +250,14 @@ describe('HTTP Operations', () => {
         operationName: 'helloJane',
       })
       .expect('{"data":{"hello":"Jane"}}');
+  });
+  it('errors when missing query', async () => {
+    const server = createGQLServer({
+      schema: schemaHello,
+    });
+    await request(server)
+      .get('/graphql')
+      .expect('{"errors":[{"message":"Must provide query string."}]}');
   });
   it('errors when missing operation name request', async () => {
     const server = createGQLServer({
@@ -207,18 +320,19 @@ describe('HTTP Operations', () => {
         `Variable "$who" got invalid value 12; Expected type String; String cannot represent a non string value: 12`
       );
     });
-  });
-  it('catches error thrown in context function', async () => {
-    const server = createGQLServer({
-      schema: schemaHello,
-      context: async () => {
-        throw new Error('uh oh');
-      },
+    it('when query is malformed', async () => {
+      const {
+        body: {
+          errors: [err],
+        },
+      } = await request(server).post('/graphql').send({
+        query: 'query { helloWorld ',
+      });
+      assert.deepStrictEqual(
+        err.message,
+        `Syntax Error: Expected Name, found <EOF>.`
+      );
     });
-    await request(server)
-      .get('/graphql')
-      .query({ query: 'query { helloMe }' })
-      .expect('{"errors":[{"message":"Context creation failed: uh oh"}]}');
   });
   it('catches error thrown in resolver function', async () => {
     const server = createGQLServer({
@@ -243,20 +357,5 @@ describe('HTTP Operations', () => {
       .post('/graphql')
       .send({ query: 'query { throwMe }' });
     assert.deepStrictEqual(message, 'weeeeee');
-  });
-  it('do not parse POST body with empty/unknown content-type', async () => {
-    const server = createGQLServer({
-      schema: schemaHello,
-    });
-    await request(server)
-      .post('/graphql')
-      .send(`query { helloWorld }`)
-      .set('content-type', '')
-      .expect('{"errors":[{"message":"Must provide query string."}]}');
-    await request(server)
-      .post('/graphql')
-      .send(`query { helloWorld }`)
-      .set('content-type', 'wat')
-      .expect('{"errors":[{"message":"Must provide query string."}]}');
   });
 });

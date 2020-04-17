@@ -10,6 +10,7 @@ on:
     types: [opened, synchronize]
     paths:
     - 'packages/**'
+    - 'test/**'
 
 jobs:
   test-coverage:
