@@ -251,7 +251,7 @@ describe('HTTP Operations', () => {
       })
       .expect('{"data":{"hello":"Jane"}}');
   });
-  it('errors when missong query', async () => {
+  it('errors when missing query', async () => {
     const server = createGQLServer({
       schema: schemaHello,
     });
@@ -318,6 +318,19 @@ describe('HTTP Operations', () => {
       assert.deepStrictEqual(
         err.message,
         `Variable "$who" got invalid value 12; Expected type String; String cannot represent a non string value: 12`
+      );
+    });
+    it('when query is malformed', async () => {
+      const {
+        body: {
+          errors: [err],
+        },
+      } = await request(server).post('/graphql').send({
+        query: 'query { helloWorld ',
+      });
+      assert.deepStrictEqual(
+        err.message,
+        `Syntax Error: Expected Name, found <EOF>.`
       );
     });
   });

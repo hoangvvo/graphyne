@@ -61,10 +61,8 @@ async function startServer(options = {}) {
   startSubscriptionServer({
     server,
     graphyne,
-    context: ({ connectionParams }) => {
-      if (connectionParams?.unauthenticated) return false;
-      return {};
-    },
+    // @ts-ignore
+    ...(options.context && { context: options.context }),
   });
   const client = WebSocket.createWebSocketStream(ws, {
     encoding: 'utf8',
@@ -266,7 +264,12 @@ describe('graphyne-ws', () => {
     });
   });
   it('close connection on error in context function', (done) => {
-    startServer().then(({ server, client }) => {
+    // @ts-ignore
+    const context = ({ connectionParams }) => {
+      if (connectionParams?.unauthenticated) return false;
+      return {};
+    };
+    startServer({ context }).then(({ server, client }) => {
       client.write(
         JSON.stringify({
           type: 'connection_init',
