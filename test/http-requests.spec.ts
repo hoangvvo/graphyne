@@ -1,5 +1,5 @@
 import { makeExecutableSchema } from 'graphql-tools';
-import * as request from 'supertest';
+import request from 'supertest';
 import { strict as assert } from 'assert';
 import { createGQLServer } from './utils';
 

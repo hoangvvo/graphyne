@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "lib": ["es2018"],
+    "module": "commonjs",
+    "target": "es2018",
+    "strict": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "baseUrl": "./",
+    "paths": {
+      "graphyne-*": [
+        "packages/*/src"
+      ]
+    }
+  },
+  "include": [
+    "packages"
+  ],
+  "exclude": ["node_modules", "packages/*/lib"]
+}

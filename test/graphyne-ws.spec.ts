@@ -1,11 +1,11 @@
-import { startSubscriptionServer } from '../packages/graphyne-ws';
+import { startSubscriptionServer } from '../packages/graphyne-ws/src';
 import { GraphyneServer } from '../packages/graphyne-server/src';
-import * as WebSocket from 'ws';
+import WebSocket from 'ws';
 import { strict as assert } from 'assert';
 import { makeExecutableSchema } from 'graphql-tools';
 import { PubSub } from 'graphql-subscriptions';
 import { createServer } from 'http';
-import * as request from 'supertest';
+import request from 'supertest';
 
 const pubsub = new PubSub();
 
@@ -32,7 +32,7 @@ const resolvers = {
     _: () => '',
   },
   Mutation: {
-    addNotification: async (_, { message }) => {
+    addNotification: async (_: any, { message }: { message: string }) => {
       const notification = { message };
       await pubsub.publish('NOTIFICATION_ADDED', {
         notificationAdded: notification,

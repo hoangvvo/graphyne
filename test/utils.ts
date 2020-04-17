@@ -1,7 +1,7 @@
 import { Config } from 'graphyne-core';
 import { createServer } from 'http';
 import { makeExecutableSchema } from 'graphql-tools';
-import { GraphyneServer } from '../packages/graphyne-server/lib';
+import { GraphyneServer } from '../packages/graphyne-server/src';
 
 export function createGQLServer({
   schema: schemaOpt,
@@ -15,7 +15,7 @@ export function createGQLServer({
   const schema =
     schemaOpt ||
     makeExecutableSchema({
-      typeDefs,
+      typeDefs: typeDefs as string,
       resolvers,
     });
   const graphyne = new GraphyneServer({

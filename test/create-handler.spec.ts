@@ -1,6 +1,6 @@
 import { makeExecutableSchema } from 'graphql-tools';
 import { strict as assert } from 'assert';
-import * as request from 'supertest';
+import request from 'supertest';
 import { createServer } from 'http';
 import { GraphyneServer } from '../packages/graphyne-server/src';
 
