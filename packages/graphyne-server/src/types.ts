@@ -10,6 +10,11 @@ type IntegrationFunction = (
 
 export interface HandlerConfig {
   path?: string;
+  playground?:
+    | boolean
+    | {
+        path: string;
+      };
   onNoMatch?: (...args: any[]) => void;
   integrationFn?: IntegrationFunction;
 }

@@ -50,6 +50,7 @@ export class GraphyneServerBase {
   private lruErrors: Lru<Pick<QueryCache, 'document' | 'errors'>> | null;
   public schema: GraphQLSchema;
   protected options: Config;
+  public subscriptionPath: string = '/';
   constructor(options: Config) {
     // validate options
     if (!options) {

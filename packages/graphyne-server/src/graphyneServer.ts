@@ -5,6 +5,7 @@ import {
   parseNodeRequest,
   getGraphQLParams,
   QueryResponse,
+  renderPlayground,
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
@@ -12,6 +13,7 @@ import { GraphQLError } from 'graphql';
 import { HandlerConfig } from './types';
 
 const DEFAULT_PATH = '/graphql';
+const DEFAULT_PLAYGROUND_PATH = '/playground';
 
 export class GraphyneServer extends GraphyneServerBase {
   constructor(options: Config) {
@@ -56,6 +58,11 @@ export class GraphyneServer extends GraphyneServerBase {
       // Parse req.url
       const pathname = req.path || parseUrl(req, true).pathname;
       const path = options?.path ?? DEFAULT_PATH;
+
+      const playground = options?.playground;
+      const playgroundPath =
+        (typeof playground === 'object' && playground.path) ||
+        DEFAULT_PLAYGROUND_PATH;
 
       if (pathname === path) {
         // serve GraphQL
@@ -106,6 +113,15 @@ export class GraphyneServer extends GraphyneServerBase {
               (err, result) => sendResponse(result)
             );
           })();
+        });
+      } else if (playground && pathname === playgroundPath) {
+        sendResponse({
+          status: 200,
+          body: renderPlayground({
+            endpoint: path,
+            subscriptionEndpoint: this.subscriptionPath,
+          }),
+          headers: { 'content-type': 'text/html; charset=utf-8' },
         });
       } else {
         // onNoMatch
