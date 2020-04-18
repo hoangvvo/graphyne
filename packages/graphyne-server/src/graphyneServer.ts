@@ -49,9 +49,11 @@ export class GraphyneServer extends GraphyneServerBase {
         const {
           request: mappedRequest,
           response: mappedResponse,
+          sendResponse: customSendResponse,
         } = options.integrationFn(...args);
         req = mappedRequest;
         res = mappedResponse;
+        sendResponse = customSendResponse || sendResponse;
       } else [req, res] = args;
 
       // Parse req.url
@@ -67,11 +69,6 @@ export class GraphyneServer extends GraphyneServerBase {
               body: JSON.stringify(err),
               headers: {},
             });
-          const queryParams = req.query || parseUrl(req, true).query;
-          const { query, variables, operationName } = getGraphQLParams({
-            queryParams: queryParams || {},
-            body: parsedBody,
-          });
           (async () => {
             let context;
             try {
@@ -93,6 +90,11 @@ export class GraphyneServer extends GraphyneServerBase {
                 headers: { 'content-type': 'application/json' },
               });
             }
+            const queryParams = req.query || parseUrl(req, true).query;
+            const { query, variables, operationName } = getGraphQLParams({
+              queryParams: queryParams || {},
+              body: parsedBody,
+            });
             this.runQuery(
               {
                 query,

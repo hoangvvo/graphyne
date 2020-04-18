@@ -30,11 +30,13 @@ function createGQLServer({
 const schemaHello = makeExecutableSchema({
   typeDefs: `
     type Query {
+      hello: String
       helloMe: String
     }
   `,
   resolvers: {
     Query: {
+      hello: () => 'world',
       helloMe: (obj, args, context) => context.me,
     },
   },
@@ -48,28 +50,42 @@ describe('createHandler', () => {
     // @ts-ignore
     assert.throws(() => graphyne.createHandler({ onNoMatch: 'boom' }));
   });
-  it('maps req and res using integrationFn', () => {
+  it('maps req and res using integrationFn', async () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,
     });
-    const ctx = {
-      req: {
-        method: 'POST',
-        query: '{ hello }',
-        path: '/graphql',
-        headers: { 'content-type': 'application/json' },
-        on: () => null,
-      },
-      res: {
-        setHeader: () => null,
-        end: () => null,
-      },
-    };
     const handler = graphyne.createHandler({
       integrationFn: ({ req, res }) => ({ request: req, response: res }),
     });
-    // @ts-ignore
-    assert.doesNotThrow(() => handler(ctx));
+    const server = createServer((req, res) => {
+      const ctx = { req, res };
+      handler(ctx);
+    });
+    await request(server)
+      .get('/graphql')
+      .query({ query: 'query { hello }' })
+      .expect('{"data":{"hello":"world"}}');
+  });
+  it('allow custom sendResponse using integrationFn', async () => {
+    const graphyne = new GraphyneServer({
+      schema: schemaHello,
+    });
+    const server = createServer(
+      graphyne.createHandler({
+        integrationFn: (req, res) => ({
+          request: req,
+          response: res,
+          sendResponse: () => {
+            res.setHeader('test', 'ok');
+            res.end('');
+          },
+        }),
+      })
+    );
+    await request(server)
+      .get('/graphql')
+      .query({ query: 'query { hello }' })
+      .expect('test', 'ok');
   });
   describe('renders GraphiQL', () => {
     const graphyne = new GraphyneServer({
