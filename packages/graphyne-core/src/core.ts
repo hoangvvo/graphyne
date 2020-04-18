@@ -17,7 +17,6 @@ import {
   HTTPHeaders,
   QueryResponse,
 } from './types';
-import { resolveMaybePromise } from './utils';
 
 function buildCache(opts: Config) {
   if (opts.cache) {
@@ -213,10 +212,16 @@ export class GraphyneServerBase {
         } else rootValue = rootValueFn;
       }
 
-      return resolveMaybePromise(
-        (compiledQuery as CompiledQuery).query(rootValue, context, variables),
-        (err, result) => createResponse(200, result)
-      );
+      (async () => {
+        createResponse(
+          200,
+          await (compiledQuery as CompiledQuery).query(
+            rootValue,
+            context,
+            variables
+          )
+        );
+      })();
     } catch (err) {
       createResponse(err.status ?? 500, {
         errors: err.errors,

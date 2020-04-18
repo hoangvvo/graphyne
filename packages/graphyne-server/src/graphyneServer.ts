@@ -6,7 +6,6 @@ import {
   getGraphQLParams,
   HandlerConfig,
   renderGraphiQL,
-  resolveMaybePromise,
   QueryResponse,
 } from 'graphyne-core';
 // @ts-ignore
@@ -36,22 +35,7 @@ export class GraphyneServer extends GraphyneServerBase {
       };
       let res: ServerResponse;
 
-      if (options?.integrationFn) {
-        const {
-          request: mappedRequest,
-          response: mappedResponse,
-        } = options.integrationFn(...args);
-        req = mappedRequest;
-        res = mappedResponse;
-      } else {
-        [req, res] = args;
-      }
-
-      // Parse req.url
-      const pathname = req.path || parseUrl(req, true).pathname;
-      const path = options?.path ?? DEFAULT_PATH;
-
-      const sendResponse = (result: QueryResponse) => {
+      let sendResponse = (result: QueryResponse) => {
         const { status, body, headers } = result;
         for (const key in headers) {
           const headVal = headers[key];
@@ -60,6 +44,19 @@ export class GraphyneServer extends GraphyneServerBase {
         res.statusCode = status;
         res.end(body);
       };
+
+      if (options?.integrationFn) {
+        const {
+          request: mappedRequest,
+          response: mappedResponse,
+        } = options.integrationFn(...args);
+        req = mappedRequest;
+        res = mappedResponse;
+      } else [req, res] = args;
+
+      // Parse req.url
+      const pathname = req.path || parseUrl(req, true).pathname;
+      const path = options?.path ?? DEFAULT_PATH;
 
       if (pathname === path) {
         // serve GraphQL
@@ -75,29 +72,17 @@ export class GraphyneServer extends GraphyneServerBase {
             queryParams: queryParams || {},
             body: parsedBody,
           });
-          const contextFn = this.options.context;
-          Promise.resolve(
-            (typeof contextFn === 'function'
-              ? contextFn(...args)
-              : contextFn) || {}
-          ).then(
-            (context) => {
-              this.runQuery(
-                {
-                  query,
-                  context,
-                  variables,
-                  operationName,
-                  http: {
-                    request: req,
-                    response: res,
-                  },
-                },
-                (err, result) => sendResponse(result)
-              );
-            },
-            (err) => {
-              sendResponse({
+          (async () => {
+            let context;
+            try {
+              const contextFn = this.options.context;
+              if (contextFn)
+                context =
+                  typeof contextFn === 'function'
+                    ? await contextFn(...args)
+                    : contextFn;
+            } catch (err) {
+              return sendResponse({
                 status: err.status || 500,
                 body: JSON.stringify({
                   errors: [
@@ -108,7 +93,20 @@ export class GraphyneServer extends GraphyneServerBase {
                 headers: { 'content-type': 'application/json' },
               });
             }
-          );
+            this.runQuery(
+              {
+                query,
+                context,
+                variables,
+                operationName,
+                http: {
+                  request: req,
+                  response: res,
+                },
+              },
+              (err, result) => sendResponse(result)
+            );
+          })();
         });
       } else if (options?.graphiql) {
         // serve GraphiQL
