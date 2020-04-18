@@ -1,15 +1,14 @@
 {
   "name": "with-koa",
   "private": true,
-  "main": "index.js",
   "scripts": {
-    "start": "micro"
+    "start": "node index.js"
   },
   "dependencies": {
     "graphql": "^15.0.0",
     "graphql-tools": "^4.0.7",
     "graphyne-server": "^0.4.0",
-    "micro": "^9.3.4"
+    "koa": "^2.11.0"
   },
   "license": "ISC"
 }

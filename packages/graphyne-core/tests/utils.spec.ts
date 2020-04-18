@@ -1,8 +1,4 @@
-import {
-  parseNodeRequest,
-  resolveMaybePromise,
-  getGraphQLParams,
-} from '../src/utils';
+import { parseNodeRequest, getGraphQLParams } from '../src/utils';
 import { strict as assert } from 'assert';
 import { createServer } from 'http';
 import request from 'supertest';
@@ -87,28 +83,6 @@ describe('core utils', () => {
         body: `query { hello }`,
       });
       assert.deepStrictEqual(query, 'query { hello }');
-    });
-  });
-  describe('resolveMaybePromise', () => {
-    it('work with non-promise value', (done) => {
-      const val = 1;
-      resolveMaybePromise(val, (err, result) =>
-        done(assert.deepStrictEqual(result, 1))
-      );
-    });
-    it('work with promise value', (done) => {
-      const val = Promise.resolve(1);
-      resolveMaybePromise(val, (err, result) =>
-        done(assert.deepStrictEqual(result, 1))
-      );
-    });
-    it('errors on error', (done) => {
-      const fn = async () => {
-        throw new Error();
-      };
-      resolveMaybePromise(fn(), (err) => {
-        done(assert(err));
-      });
     });
   });
 });
