@@ -4,13 +4,13 @@ import {
   Config,
   parseNodeRequest,
   getGraphQLParams,
-  HandlerConfig,
   renderGraphiQL,
   QueryResponse,
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
 import { GraphQLError } from 'graphql';
+import { HandlerConfig } from './types';
 
 const DEFAULT_PATH = '/graphql';
 const DEFAULT_GRAPHIQL_PATH = '/___graphql';
