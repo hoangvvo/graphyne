@@ -10,12 +10,6 @@ type IntegrationFunction = (
 
 export interface HandlerConfig {
   path?: string;
-  graphiql?:
-    | boolean
-    | {
-        path?: string;
-        defaultQuery?: string;
-      };
   onNoMatch?: (...args: any[]) => void;
   integrationFn?: IntegrationFunction;
 }

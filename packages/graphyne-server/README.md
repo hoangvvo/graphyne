@@ -64,10 +64,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 Create a handler for HTTP server, `options` accepts the following:
 
 - `path`: Specify a path for the GraphQL endpoint. It default to `/graphql` if no path is specified.
-- `graphiql`: Pass in `true` to present [GraphiQL](https://github.com/graphql/graphiql) when being loaded in a browser. Alternatively, you can also pass in an options object:
-  - `path`: Specify a custom path for `GraphiQL`. It defaults to `/___graphql` if no path is specified.
-  - `defaultQuery`: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session.
-- `onNoMatch`: A handler function when `req.url` does not match `options.path` nor `options.graphiql.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`. See examples in [framework-specific integration](#framework-specific-integration).
+- `onNoMatch`: A handler function when `req.url` does not match `options.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`. See examples in [framework-specific integration](#framework-specific-integration).
 - `integrationFn`: ([Example](#koa)) A function to resolve frameworks with non-standard signature function. Its *arguments* depend on the framework's [signature function](#framework-specific-integration). It should return an object with:
   - `request`: `IncomingMessage` from Node.js request listener
   - `response`: `ServerResponse` from Node.js request listener

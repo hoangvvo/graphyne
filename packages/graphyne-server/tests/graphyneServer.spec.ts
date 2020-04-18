@@ -87,35 +87,6 @@ describe('createHandler', () => {
       .query({ query: 'query { hello }' })
       .expect('test', 'ok');
   });
-  describe('renders GraphiQL', () => {
-    const graphyne = new GraphyneServer({
-      schema: schemaHello,
-    });
-    it('when graphiql is true', async () => {
-      const server = createServer(
-        graphyne.createHandler({
-          graphiql: true,
-        })
-      );
-      const { text } = await request(server).get('/___graphql');
-      // .expect('content-type', 'text/html; charset=utf-8');
-      assert(text.includes('GraphiQL'));
-    });
-    it('when graphiql.path and graphiql.defaultQuery is set', async () => {
-      const server = createServer(
-        graphyne.createHandler({
-          graphiql: {
-            path: '/graphiql',
-            defaultQuery: '{ hello }',
-          },
-        })
-      );
-      const { text } = await request(server).get('/graphiql');
-      // .expect('content-type', 'text/html; charset=utf-8');
-      assert(text.includes('GraphiQL'));
-      assert(text.includes('{ hello }'));
-    });
-  });
   describe('when path no match ', () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,

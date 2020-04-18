@@ -26,10 +26,6 @@ const graphyne = new GraphyneServer({
 const server = http.createServer(
   graphyne.createHandler({
     path: '/graphql',
-    graphiql: {
-      // path is not set, default to /___graphql
-      defaultQuery: 'query { hello }',
-    },
   })
 );
 

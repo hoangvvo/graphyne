@@ -28,10 +28,6 @@ const app = express();
 app.use(
   graphyne.createHandler({
     path: '/graphql',
-    graphiql: {
-      path: '/___graphql',
-      defaultQuery: 'query { hello }',
-    },
     onNoMatch: (req, res, next) => next(),
   })
 );

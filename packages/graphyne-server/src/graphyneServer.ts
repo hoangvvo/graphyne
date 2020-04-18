@@ -4,7 +4,6 @@ import {
   Config,
   parseNodeRequest,
   getGraphQLParams,
-  renderGraphiQL,
   QueryResponse,
 } from 'graphyne-core';
 // @ts-ignore
@@ -13,7 +12,6 @@ import { GraphQLError } from 'graphql';
 import { HandlerConfig } from './types';
 
 const DEFAULT_PATH = '/graphql';
-const DEFAULT_GRAPHIQL_PATH = '/___graphql';
 
 export class GraphyneServer extends GraphyneServerBase {
   constructor(options: Config) {
@@ -109,23 +107,6 @@ export class GraphyneServer extends GraphyneServerBase {
             );
           })();
         });
-      } else if (options?.graphiql) {
-        // serve GraphiQL
-        const graphiql = options.graphiql;
-        const graphiqlPath =
-          (typeof graphiql === 'object' && graphiql.path) ||
-          DEFAULT_GRAPHIQL_PATH;
-        if (pathname === graphiqlPath) {
-          const defaultQuery =
-            typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-          sendResponse({
-            status: 200,
-            body: renderGraphiQL({ path, defaultQuery }),
-            headers: {
-              'content-type': 'text/html; charset=utf-8',
-            },
-          });
-        }
       } else {
         // onNoMatch
         if (options?.onNoMatch) options.onNoMatch(...args);
