@@ -1,4 +1,4 @@
-![Graphyne](../../logo.png)
+![Graphyne](https://github.com/hoangvvo/graphyne/blob/master/logo.png)
 
 # Graphyne Server
 
