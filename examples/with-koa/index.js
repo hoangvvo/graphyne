@@ -38,6 +38,10 @@ app.use(
         },
       };
     },
+    onNoMatch: (ctx) => {
+      ctx.status = 404;
+      ctx.body = 'not found';
+    },
   })
 );
 
