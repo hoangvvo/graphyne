@@ -7,6 +7,8 @@ import {
   HandlerConfig,
   renderGraphiQL,
   resolveMaybePromise,
+  QueryResponse,
+  QueryBody,
 } from 'graphyne-core';
 // @ts-ignore
 import parseUrl from '@polka/url';
@@ -20,6 +22,15 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
+  sendResponse(res: ServerResponse, { status, body, headers }: QueryResponse) {
+    for (const key in headers) {
+      const headVal = headers[key];
+      if (headVal) res.setHeader(key, headVal);
+    }
+    res.statusCode = status;
+    res.end(body);
+  }
+
   createHandler(options?: HandlerConfig): RequestListener | any {
     // Validate options
     if (options?.onNoMatch && typeof options.onNoMatch !== 'function') {
@@ -28,6 +39,7 @@ export class GraphyneServer extends GraphyneServerBase {
 
     return (...args: any[]) => {
       // Integration mapping
+
       let req: IncomingMessage & {
         path?: string;
         query?: Record<string, string>;
@@ -47,87 +59,92 @@ export class GraphyneServer extends GraphyneServerBase {
 
       // Parse req.url
       const pathname = req.path || parseUrl(req, true).pathname;
-
-      // serve GraphQL
       const path = options?.path ?? DEFAULT_PATH;
-      if (pathname === path) {
-        return new Promise((resolve) => {
-          parseNodeRequest(req, (err, parsedBody) => {
+      const self = this;
+
+      return new Promise((resolve) => {
+        function sendResponse(
+          err: any,
+          { status, body, headers }: QueryResponse
+        ) {
+          for (const key in headers) {
+            const headVal = headers[key];
+            if (headVal) res.setHeader(key, headVal);
+          }
+          res.statusCode = status;
+          res.end(body);
+          resolve();
+        }
+
+        function handleRequest(err: any, parsedBody: QueryBody | undefined) {
+          if (err) {
+            res.statusCode = err.status || 500;
+            return res.end(JSON.stringify(err));
+          }
+          const queryParams = req.query || parseUrl(req, true).query;
+          const { query, variables, operationName } = getGraphQLParams({
+            queryParams: queryParams || {},
+            body: parsedBody,
+          });
+          const contextFn = self.options.context;
+          const contextVal =
+            (typeof contextFn === 'function'
+              ? contextFn(...args)
+              : contextFn) || {};
+          resolveMaybePromise(contextVal, (err, context) => {
             if (err) {
               res.statusCode = err.status || 500;
-              return res.end(JSON.stringify(err));
-            }
-            const queryParams = req.query || parseUrl(req, true).query;
-            const { query, variables, operationName } = getGraphQLParams({
-              queryParams: queryParams || {},
-              body: parsedBody,
-            });
-            const contextFn = this.options.context;
-            const contextVal =
-              (typeof contextFn === 'function'
-                ? contextFn(...args)
-                : contextFn) || {};
-
-            return resolveMaybePromise(contextVal, (err, context) => {
-              if (err) {
-                res.statusCode = err.status || 500;
-                return res.end(
-                  JSON.stringify({
-                    errors: [
-                      new GraphQLError(
-                        `Context creation failed: ${err.message}`
-                      ),
-                    ],
-                  })
-                );
-              }
-              this.runQuery(
-                {
-                  query,
-                  context,
-                  variables,
-                  operationName,
-                  http: {
-                    request: req,
-                    response: res,
-                  },
-                },
-                (err, { status, body, headers }) => {
-                  for (const key in headers) {
-                    const headVal = headers[key];
-                    if (headVal) res.setHeader(key, headVal);
-                  }
-                  res.statusCode = status;
-                  res.end(body);
-                  return resolve();
-                }
+              return res.end(
+                JSON.stringify({
+                  errors: [
+                    new GraphQLError(`Context creation failed: ${err.message}`),
+                  ],
+                })
               );
-            });
+            }
+            self.runQuery(
+              {
+                query,
+                context,
+                variables,
+                operationName,
+                http: {
+                  request: req,
+                  response: res,
+                },
+              },
+              sendResponse
+            );
           });
-        });
-      }
-
-      // serve GraphiQL
-      if (options?.graphiql) {
-        const graphiql = options.graphiql;
-        const graphiqlPath =
-          (typeof graphiql === 'object' && graphiql.path) ||
-          DEFAULT_GRAPHIQL_PATH;
-        if (pathname === graphiqlPath) {
-          const defaultQuery =
-            typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
-          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-          return res.end(renderGraphiQL({ path, defaultQuery }));
         }
-      }
 
-      // onNoMatch
-      if (options?.onNoMatch) {
-        return options.onNoMatch(...args);
-      } else {
-        res.statusCode = 404;
-        res.end('not found');
-      }
+        // serve GraphQL
+        if (pathname === path) parseNodeRequest(req, handleRequest);
+        // serve GraphiQL
+        else if (options?.graphiql) {
+          const graphiql = options.graphiql;
+          const graphiqlPath =
+            (typeof graphiql === 'object' && graphiql.path) ||
+            DEFAULT_GRAPHIQL_PATH;
+          if (pathname === graphiqlPath) {
+            const defaultQuery =
+              typeof graphiql === 'object' ? graphiql.defaultQuery : undefined;
+            sendResponse(null, {
+              status: 200,
+              body: renderGraphiQL({ path, defaultQuery }),
+              headers: {
+                'content-type': 'text/html; charset=utf-8',
+              },
+            });
+          }
+        }
+        // onNoMatch
+        else {
+          if (options?.onNoMatch) resolve(options.onNoMatch(...args));
+          else
+            sendResponse(null, { status: 404, body: 'not found', headers: {} });
+        }
+      });
     };
   }
 }
