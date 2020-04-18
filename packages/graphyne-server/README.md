@@ -68,19 +68,10 @@ Create a handler for HTTP server, `options` accepts the following:
   - `path`: Specify a custom path for `GraphiQL`. It defaults to `/___graphql` if no path is specified.
   - `defaultQuery`: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session.
 - `onNoMatch`: A handler function when `req.url` does not match `options.path` nor `options.graphiql.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`. See examples in [framework-specific integration](#framework-specific-integration).
-- `integrationFn`: A function to resolve frameworks with non-standard signature function. It should return an object of Node.js `request` (`IncomingMessage`) and `response` (`ServerResponse`). Its *arguments* depend on the framework's [signature function](#framework-specific-integration).
-
-```javascript
-createHandler({
-  integrationFn: (...args) => {
-    // Return an object with `request` and `response`
-    return {
-      request: IncomingMessage,
-      response: ServerResponse
-    }
-  }
-})
-```
+- `integrationFn`: ([Example](#koa)) A function to resolve frameworks with non-standard signature function. Its *arguments* depend on the framework's [signature function](#framework-specific-integration). It should return an object with:
+  - `request`: `IncomingMessage` from Node.js request listener
+  - `response`: `ServerResponse` from Node.js request listener
+  - `sendResponse`: (optional) A function to override how response is sent. It accepts an object of `status` (the status code that should be set), `headers` (the headers that should be set), and `body` (the stringified response body).
 
 ## Additional features
 
@@ -141,6 +132,32 @@ fastify.use(
     onNoMatch: (req, res, next) => {
       next();
     }
+  })
+);
+```
+
+### [Koa](https://github.com/koajs/koa)
+
+[Example](/examples/with-koa)
+
+```javascript
+app.use(
+  graphyne.createHandler({
+    integrationFn: (ctx) => {
+      return {
+        request: ctx.req,
+        response: ctx.res,
+        sendResponse: ({ headers, body, status }) => {
+          ctx.status = status;
+          ctx.set(headers);
+          ctx.body = body;
+        },
+      };
+    },
+    onNoMatch: (ctx) => {
+      ctx.status = 404;
+      ctx.body = 'not found';
+    },
   })
 );
 ```
