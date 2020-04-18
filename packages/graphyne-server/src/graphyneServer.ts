@@ -128,7 +128,14 @@ export class GraphyneServer extends GraphyneServerBase {
       } else {
         // onNoMatch
         if (options?.onNoMatch) options.onNoMatch(...args);
-        else sendResponse({ status: 404, body: 'not found', headers: {} });
+        else
+          sendResponse({
+            status: 404,
+            body: 'not found',
+            headers: {
+              'content-type': 'text/html; charset=utf-8',
+            },
+          });
       }
     };
   }
