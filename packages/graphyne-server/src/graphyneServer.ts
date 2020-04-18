@@ -38,8 +38,7 @@ export class GraphyneServer extends GraphyneServerBase {
       let sendResponse = (result: QueryResponse) => {
         const { status, body, headers } = result;
         for (const key in headers) {
-          const headVal = headers[key];
-          if (headVal) res.setHeader(key, headVal);
+          res.setHeader(key, headers[key] as string);
         }
         res.statusCode = status;
         res.end(body);
