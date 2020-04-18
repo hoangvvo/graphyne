@@ -51,53 +51,58 @@ export class GraphyneServer extends GraphyneServerBase {
       // serve GraphQL
       const path = options?.path ?? DEFAULT_PATH;
       if (pathname === path) {
-        return parseNodeRequest(req, (err, parsedBody) => {
-          if (err) {
-            res.statusCode = err.status || 500;
-            return res.end(JSON.stringify(err));
-          }
-          const queryParams = req.query || parseUrl(req, true).query;
-          const { query, variables, operationName } = getGraphQLParams({
-            queryParams: queryParams || {},
-            body: parsedBody,
-          });
-          const contextFn = this.options.context;
-          const contextVal =
-            (typeof contextFn === 'function'
-              ? contextFn(...args)
-              : contextFn) || {};
-
-          return resolveMaybePromise(contextVal, (err, context) => {
+        return new Promise((resolve) => {
+          parseNodeRequest(req, (err, parsedBody) => {
             if (err) {
               res.statusCode = err.status || 500;
-              return res.end(
-                JSON.stringify({
-                  errors: [
-                    new GraphQLError(`Context creation failed: ${err.message}`),
-                  ],
-                })
-              );
+              return res.end(JSON.stringify(err));
             }
-            this.runQuery(
-              {
-                query,
-                context,
-                variables,
-                operationName,
-                http: {
-                  request: req,
-                  response: res,
-                },
-              },
-              (err, { status, body, headers }) => {
-                for (const key in headers) {
-                  const headVal = headers[key];
-                  if (headVal) res.setHeader(key, headVal);
-                }
-                res.statusCode = status;
-                return res.end(body);
+            const queryParams = req.query || parseUrl(req, true).query;
+            const { query, variables, operationName } = getGraphQLParams({
+              queryParams: queryParams || {},
+              body: parsedBody,
+            });
+            const contextFn = this.options.context;
+            const contextVal =
+              (typeof contextFn === 'function'
+                ? contextFn(...args)
+                : contextFn) || {};
+
+            return resolveMaybePromise(contextVal, (err, context) => {
+              if (err) {
+                res.statusCode = err.status || 500;
+                return res.end(
+                  JSON.stringify({
+                    errors: [
+                      new GraphQLError(
+                        `Context creation failed: ${err.message}`
+                      ),
+                    ],
+                  })
+                );
               }
-            );
+              this.runQuery(
+                {
+                  query,
+                  context,
+                  variables,
+                  operationName,
+                  http: {
+                    request: req,
+                    response: res,
+                  },
+                },
+                (err, { status, body, headers }) => {
+                  for (const key in headers) {
+                    const headVal = headers[key];
+                    if (headVal) res.setHeader(key, headVal);
+                  }
+                  res.statusCode = status;
+                  res.end(body);
+                  return resolve();
+                }
+              );
+            });
           });
         });
       }
