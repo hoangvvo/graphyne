@@ -1,6 +1,6 @@
 {
   "name": "graphyne-core",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Lightning-fast JavaScript GraphQL Server",
   "author": "Hoang Vo (https://hoangvvo.com)",
   "repository": {
