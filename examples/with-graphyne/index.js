@@ -26,6 +26,9 @@ const graphyne = new GraphyneServer({
 const server = http.createServer(
   graphyne.createHandler({
     path: '/graphql',
+    playground: {
+      path: '/playground',
+    },
   })
 );
 

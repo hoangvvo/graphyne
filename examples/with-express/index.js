@@ -28,6 +28,9 @@ const app = express();
 app.use(
   graphyne.createHandler({
     path: '/graphql',
+    playground: {
+      path: '/playground',
+    },
     onNoMatch: (req, res, next) => next(),
   })
 );

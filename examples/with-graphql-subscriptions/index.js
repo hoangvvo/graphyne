@@ -69,6 +69,9 @@ const graphyne = new GraphyneServer({
 const server = http.createServer(
   graphyne.createHandler({
     path: '/graphql',
+    playground: {
+      path: '/playground',
+    },
   })
 );
 
@@ -84,9 +87,9 @@ startSubscriptionServer({
     // Return a context to be used in resolvers
     return {};
   },
-  path: '/',
+  path: '/graphql',
 });
 
-server.listen(4000, () => {
+server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);
 });

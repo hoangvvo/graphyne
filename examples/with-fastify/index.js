@@ -28,6 +28,9 @@ const graphyne = new GraphyneServer({
 fastify.use(
   graphyne.createHandler({
     path: '/graphql',
+    playground: {
+      path: '/playground',
+    },
     onNoMatch: (req, res, next) => next(),
   })
 );
