@@ -67,9 +67,11 @@ export class GraphyneWebSocketConnection {
     try {
       data = JSON.parse(message);
     } catch (err) {
-      return this.sendMessage(GQL_ERROR, null, {
-        errors: [new GraphQLError('Malformed message')],
-      });
+      return this.sendError(
+        GQL_ERROR,
+        null,
+        new GraphQLError('Malformed message')
+      );
     }
     switch (data.type) {
       case GQL_CONNECTION_INIT:
@@ -84,10 +86,6 @@ export class GraphyneWebSocketConnection {
       case GQL_CONNECTION_TERMINATE:
         this.handleConnectionClose();
         break;
-      default:
-        this.sendMessage(GQL_ERROR, data.id, {
-          errors: [new GraphQLError('Invalid payload type')],
-        });
     }
   }
 
@@ -109,10 +107,8 @@ export class GraphyneWebSocketConnection {
       } else this.context = initContext;
       if (!this.context) throw new GraphQLError('Prohibited connection!');
       this.sendMessage(GQL_CONNECTION_ACK);
-    } catch (e) {
-      this.sendMessage(GQL_CONNECTION_ERROR, data.id, {
-        errors: [e],
-      });
+    } catch (err) {
+      this.sendError(GQL_CONNECTION_ERROR, data.id, err);
       this.handleConnectionClose();
     }
   }
@@ -154,17 +150,13 @@ export class GraphyneWebSocketConnection {
           // Subscription is finished
           this.sendMessage(GQL_COMPLETE, id);
         },
-        (e) => {
-          this.sendMessage(GQL_ERROR, id, {
-            errors: [e],
-          });
+        (err) => {
+          this.sendError(GQL_ERROR, id, err);
         }
       );
     } catch (err) {
       // Unsubscribe from this operation due to errors
-      this.sendMessage(GQL_DATA, id, {
-        errors: Array.isArray(err) ? err : [err],
-      });
+      this.sendError(GQL_DATA, id, err);
       this.handleGQLStop(id);
     }
   }
@@ -178,11 +170,7 @@ export class GraphyneWebSocketConnection {
   }
 
   handleConnectionClose(error?: any) {
-    if (error) {
-      this.sendMessage(GQL_CONNECTION_ERROR, null, {
-        errors: [error],
-      });
-    }
+    if (error) this.sendError(GQL_CONNECTION_ERROR, null, error);
 
     setTimeout(() => {
       // Unsubscribe from the whole socket
@@ -190,6 +178,12 @@ export class GraphyneWebSocketConnection {
       // Close connection after sending error message
       this.socket.close(1011);
     }, 10);
+  }
+
+  sendError(type: string, id?: string | null, err?: any | any[]) {
+    this.sendMessage(type, id, {
+      errors: Array.isArray(err) ? err : [err],
+    });
   }
 
   sendMessage(type: string, id?: string | null, payload?: ExecutionResult) {

@@ -178,25 +178,6 @@ describe('graphyne-ws', () => {
       });
     });
   });
-  it('errors on invalid type', (done) => {
-    startServer().then(({ server, client }) => {
-      client.write(
-        JSON.stringify({
-          type: 'connection_init_',
-        })
-      );
-      client.on('data', (chunk) => {
-        client.end();
-        server.close();
-        done(
-          assert.deepStrictEqual(
-            chunk,
-            `{"type":"error","payload":{"errors":[{"message":"Invalid payload type"}]}}`
-          )
-        );
-      });
-    });
-  });
   it('errors on empty query', async function () {
     const { server, client } = await startServer();
     client.write(
