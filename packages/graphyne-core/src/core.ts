@@ -18,9 +18,11 @@ import {
   HTTPHeaders,
   QueryResponse,
 } from './types';
+// @ts-ignore
+import flatstr from 'flatstr';
 
 // Default stringify fallback if no graphql-jit compiled query available.
-const stringify = fastJson({
+const fastStringify = fastJson({
   type: 'object',
   properties: {
     data: {
@@ -203,13 +205,15 @@ export class GraphyneServerBase {
     const headers: HTTPHeaders = { 'content-type': 'application/json' };
 
     function createResponse(code: number, obj: ExecutionResult): void {
-      const stringifyFn =
+      const stringify =
         compiledQuery && isCompiledQuery(compiledQuery)
           ? compiledQuery.stringify
-          : stringify;
+          : fastStringify;
+      const payload = stringify(obj);
+      flatstr(payload);
       cb(null, {
         status: code,
-        body: stringifyFn(obj),
+        body: payload,
         headers,
       });
     }

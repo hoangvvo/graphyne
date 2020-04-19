@@ -22,6 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "fast-json-stringify": "^2.0.0",
+    "flatstr": "^1.0.12",
     "graphql-jit": "^0.4.3",
     "tiny-lru": "^7.0.2"
   },
