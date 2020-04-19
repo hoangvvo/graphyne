@@ -2,6 +2,7 @@ import { makeExecutableSchema } from 'graphql-tools';
 import request from 'supertest';
 import { strict as assert } from 'assert';
 import { Config } from '../../graphyne-core/src';
+import { startSubscriptionServer } from '../../graphyne-ws/src';
 import { createServer } from 'http';
 import { GraphyneServer } from '../src';
 
@@ -86,6 +87,48 @@ describe('createHandler', () => {
       .get('/graphql')
       .query({ query: 'query { hello }' })
       .expect('test', 'ok');
+  });
+  describe('renders GraphiQL', () => {
+    const graphyne = new GraphyneServer({
+      schema: schemaHello,
+    });
+    it('when graphiql is true', async () => {
+      const server = createServer(
+        graphyne.createHandler({
+          playground: true,
+        })
+      );
+      const { text } = await request(server).get('/playground');
+      assert(text.includes('GraphQL Playground'));
+    });
+    it('when graphiql.path is set', async () => {
+      const server = createServer(
+        graphyne.createHandler({
+          playground: { path: '/___graphql' },
+        })
+      );
+      const { text } = await request(server).get('/___graphql');
+      assert(text.includes('GraphQL Playground'));
+    });
+    it('with correct graphql endpoint and subscription endpoint', async () => {
+      const server = createServer(
+        graphyne.createHandler({
+          playground: true,
+          path: '/thegraphqlendpoint',
+        })
+      );
+      startSubscriptionServer({
+        server,
+        graphyne,
+        path: '/thesubscriptionendpoint',
+      });
+      const { text } = await request(server).get('/playground');
+      assert(
+        text.includes(
+          `"endpoint":"/thegraphqlendpoint","subscriptionEndpoint":"/thesubscriptionendpoint"`
+        )
+      );
+    });
   });
   describe('when path no match ', () => {
     const graphyne = new GraphyneServer({
