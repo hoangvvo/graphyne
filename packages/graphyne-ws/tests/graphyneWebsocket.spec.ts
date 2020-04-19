@@ -134,17 +134,7 @@ describe('graphyne-ws', () => {
           resolve(
             assert.deepStrictEqual(
               chunk,
-              JSON.stringify({
-                type: 'data',
-                id: 1,
-                payload: {
-                  data: {
-                    notificationAdded: {
-                      message: 'Hello World',
-                    },
-                  },
-                },
-              })
+              `{"type":"data","id":1,"payload":{"data":{"notificationAdded":{"message":"Hello World"}}}}`
             )
           );
         }
@@ -173,25 +163,6 @@ describe('graphyne-ws', () => {
           assert.deepStrictEqual(
             chunk,
             `{"type":"error","payload":{"errors":[{"message":"Malformed message"}]}}`
-          )
-        );
-      });
-    });
-  });
-  it('errors on invalid type', (done) => {
-    startServer().then(({ server, client }) => {
-      client.write(
-        JSON.stringify({
-          type: 'connection_init_',
-        })
-      );
-      client.on('data', (chunk) => {
-        client.end();
-        server.close();
-        done(
-          assert.deepStrictEqual(
-            chunk,
-            `{"type":"error","payload":{"errors":[{"message":"Invalid payload type"}]}}`
           )
         );
       });
@@ -261,6 +232,109 @@ describe('graphyne-ws', () => {
           )
         );
       });
+    });
+  });
+  it('errors on syntax error', async () => {
+    const { server, client } = await startServer();
+    client.write(
+      JSON.stringify({
+        type: 'connection_init',
+      })
+    );
+    client.write(
+      JSON.stringify({
+        id: 1,
+        type: 'start',
+        payload: {
+          query: `
+            subscription {
+              NNotificationAdded {
+                message
+              }
+            }
+          `,
+        },
+      })
+    );
+    await new Promise((resolve, reject) => {
+      client.on('data', (chunk) => {
+        if (chunk === `{"type":"connection_ack"}`) return;
+        server.close();
+        client.end();
+        const {
+          payload: {
+            errors: [{ message }],
+          },
+        } = JSON.parse(chunk);
+
+        resolve(
+          assert.deepStrictEqual(
+            message,
+            `Cannot query field "NNotificationAdded" on type "Subscription". Did you mean "notificationAdded"?`
+          )
+        );
+      });
+    });
+  });
+  it('close connection upon GQL_STOP', async () => {
+    const { server, client } = await startServer();
+    client.write(
+      JSON.stringify({
+        type: 'connection_init',
+      })
+    );
+    client.write(
+      JSON.stringify({
+        id: 1,
+        type: 'start',
+        payload: {
+          query: `
+          subscription {
+            notificationAdded {
+              message
+            }
+          }
+        `,
+        },
+      })
+    );
+    await new Promise((resolve, reject) => {
+      client.on('data', (chunk) => {
+        const data = JSON.parse(chunk);
+        let timer;
+        if (data.type === 'connection_ack') {
+          client.write(
+            JSON.stringify({
+              id: 1,
+              type: 'stop',
+            })
+          );
+          request('http://localhost:4000')
+            .post('/graphql')
+            .send({
+              query: `
+            mutation {
+              addNotification(message: "Hello World") {
+                message
+              }
+            }
+          `,
+            })
+            .then(() => {
+              // Wait for little bit more to see if there is notification
+              timer = setTimeout(resolve, 20);
+            });
+        }
+        if (data.type === 'data') {
+          console.log('data');
+          // We have unsubscribed, there should not be data
+          if (timer) clearTimeout(timer);
+          reject();
+        }
+      });
+    }).finally(() => {
+      client.end();
+      server.close();
     });
   });
   it('close connection on error in context function', (done) => {
