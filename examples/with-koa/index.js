@@ -27,6 +27,10 @@ const app = new Koa();
 
 app.use(
   graphyne.createHandler({
+    path: '/graphql',
+    playground: {
+      path: '/playground',
+    },
     integrationFn: (ctx) => {
       return {
         request: ctx.req,

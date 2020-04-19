@@ -24,7 +24,10 @@ const graphyne = new GraphyneServer({
 });
 
 module.exports = graphyne.createHandler({
-  // other options
+  path: '/graphql',
+  playground: {
+    path: '/playground',
+  },
   onNoMatch: async (req, res) => {
     const statusCode = 400;
     send(res, statusCode, 'not found');

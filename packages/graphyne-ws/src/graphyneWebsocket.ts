@@ -206,6 +206,7 @@ export class GraphyneWebSocketServer extends WebSocket.Server {
     super(options);
     this.contextFn = options.context;
     this.graphyne = options.graphyne;
+    this.graphyne.subscriptionPath = options.path || '/';
   }
 }
 

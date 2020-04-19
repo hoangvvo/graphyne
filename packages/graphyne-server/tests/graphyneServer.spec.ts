@@ -2,6 +2,7 @@ import { makeExecutableSchema } from 'graphql-tools';
 import request from 'supertest';
 import { strict as assert } from 'assert';
 import { Config } from '../../graphyne-core/src';
+import { startSubscriptionServer } from '../../graphyne-ws/src';
 import { createServer } from 'http';
 import { GraphyneServer } from '../src';
 
@@ -94,26 +95,39 @@ describe('createHandler', () => {
     it('when graphiql is true', async () => {
       const server = createServer(
         graphyne.createHandler({
-          graphiql: true,
+          playground: true,
+        })
+      );
+      const { text } = await request(server).get('/playground');
+      assert(text.includes('GraphQL Playground'));
+    });
+    it('when graphiql.path is set', async () => {
+      const server = createServer(
+        graphyne.createHandler({
+          playground: { path: '/___graphql' },
         })
       );
       const { text } = await request(server).get('/___graphql');
-      // .expect('content-type', 'text/html; charset=utf-8');
-      assert(text.includes('GraphiQL'));
+      assert(text.includes('GraphQL Playground'));
     });
-    it('when graphiql.path and graphiql.defaultQuery is set', async () => {
+    it('with correct graphql endpoint and subscription endpoint', async () => {
       const server = createServer(
         graphyne.createHandler({
-          graphiql: {
-            path: '/graphiql',
-            defaultQuery: '{ hello }',
-          },
+          playground: true,
+          path: '/thegraphqlendpoint',
         })
       );
-      const { text } = await request(server).get('/graphiql');
-      // .expect('content-type', 'text/html; charset=utf-8');
-      assert(text.includes('GraphiQL'));
-      assert(text.includes('{ hello }'));
+      startSubscriptionServer({
+        server,
+        graphyne,
+        path: '/thesubscriptionendpoint',
+      });
+      const { text } = await request(server).get('/playground');
+      assert(
+        text.includes(
+          `"endpoint":"/thegraphqlendpoint","subscriptionEndpoint":"/thesubscriptionendpoint"`
+        )
+      );
     });
   });
   describe('when path no match ', () => {

@@ -72,7 +72,3 @@ export function parseNodeRequest(
     }
   });
 }
-
-export function safeSerialize(data?: string) {
-  return data ? JSON.stringify(data).replace(/\//g, '\\/') : '';
-}
