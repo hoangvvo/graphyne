@@ -10,6 +10,7 @@ import {
 } from 'graphql';
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
 import lru, { Lru } from 'tiny-lru';
+import fastJson from 'fast-json-stringify';
 import {
   Config,
   QueryCache,
@@ -17,6 +18,48 @@ import {
   HTTPHeaders,
   QueryResponse,
 } from './types';
+
+// Default stringify fallback if no graphql-jit compiled query available.
+const stringify = fastJson({
+  type: 'object',
+  properties: {
+    data: {
+      type: 'object',
+      additionalProperties: true,
+    },
+    errors: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['message'],
+        properties: {
+          message: { type: 'string' },
+          locations: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                line: { type: 'integer' },
+                column: { type: 'integer' },
+              },
+            },
+          },
+          path: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          extensions: {
+            type: 'object',
+            properties: {
+              code: { type: 'string' },
+              timestamp: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  },
+});
 
 function buildCache(opts: Config) {
   if (opts.cache) {
@@ -160,13 +203,13 @@ export class GraphyneServerBase {
     const headers: HTTPHeaders = { 'content-type': 'application/json' };
 
     function createResponse(code: number, obj: ExecutionResult): void {
-      const stringify =
+      const stringifyFn =
         compiledQuery && isCompiledQuery(compiledQuery)
           ? compiledQuery.stringify
-          : JSON.stringify;
+          : stringify;
       cb(null, {
         status: code,
-        body: stringify(obj),
+        body: stringifyFn(obj),
         headers,
       });
     }
