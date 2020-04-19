@@ -84,7 +84,7 @@ export class GraphyneServer extends GraphyneServerBase {
                     : contextFn;
             } catch (err) {
               return sendResponse({
-                status: err.status || 500,
+                status: err.status || 400,
                 body: JSON.stringify({
                   errors: [
                     // TODO: More context
