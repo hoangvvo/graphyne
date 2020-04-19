@@ -182,7 +182,7 @@ export class GraphyneWebSocketConnection {
 
   sendError(type: string, id?: string | null, err?: any | any[]) {
     this.sendMessage(type, id, {
-      errors: Array.isArray(err) ? err : [err],
+      errors: err.errors ? err.errors : Array.isArray(err) ? err : [err],
     });
   }
 
