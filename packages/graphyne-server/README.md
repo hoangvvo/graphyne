@@ -64,6 +64,8 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 Create a handler for HTTP server, `options` accepts the following:
 
 - `path`: Specify a path for the GraphQL endpoint. It default to `/graphql` if no path is specified.
+- `playground`: Pass in `true` to present [Playground](https://github.com/prisma-labs/graphql-playground) when being loaded from a browser. Alternatively, you can also pass in an options object:
+  - `path`: Specify a custom path to present `Playground`. It defaults to `/playground` if not specified.
 - `onNoMatch`: A handler function when `req.url` does not match `options.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`. See examples in [framework-specific integration](#framework-specific-integration).
 - `integrationFn`: ([Example](#koa)) A function to resolve frameworks with non-standard signature function. Its *arguments* depend on the framework's [signature function](#framework-specific-integration). It should return an object with:
   - `request`: `IncomingMessage` from Node.js request listener
