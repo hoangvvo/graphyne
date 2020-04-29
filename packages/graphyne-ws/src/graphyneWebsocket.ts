@@ -138,6 +138,11 @@ export class GraphyneWebSocketConnection {
         ? executionResult
         : createAsyncIterator([executionResult]);
 
+      if (this.operations.get(id)) {
+        // unsubscribe from existing subscription first
+        this.handleGQLStop(id);
+      }
+
       this.operations.set(id, executionIterable);
 
       await forAwaitEach(
