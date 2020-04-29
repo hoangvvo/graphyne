@@ -53,9 +53,8 @@ export class GraphyneWebSocketConnection {
     string,
     AsyncIterator<ExecutionResult, any, undefined>
   > = new Map();
-  context: Record<string, any>;
+  contextPromise?: Promise<Record<string, any>>;
   constructor(options: GraphyneWebSocketConnectionConstruct) {
-    this.context = {};
     this.socket = options.socket;
     this.wss = options.wss;
     this.graphyne = options.wss.graphyne;
@@ -100,12 +99,12 @@ export class GraphyneWebSocketConnection {
     try {
       // resolve context
       if (contextFn) {
-        this.context =
-          typeof contextFn === 'function'
-            ? await contextFn(initContext)
-            : contextFn;
-      } else this.context = initContext;
-      if (!this.context) throw new GraphQLError('Prohibited connection!');
+        this.contextPromise = Promise.resolve(
+          typeof contextFn === 'function' ? contextFn(initContext) : contextFn
+        );
+      } else this.contextPromise = Promise.resolve(initContext);
+      if (!(await this.contextPromise))
+        throw new GraphQLError('Prohibited connection!');
       this.sendMessage(GQL_CONNECTION_ACK);
     } catch (err) {
       this.sendError(GQL_CONNECTION_ERROR, data.id, err);
@@ -126,10 +125,15 @@ export class GraphyneWebSocketConnection {
       if (operation !== 'subscription')
         throw new GraphQLError('Not a subscription operation');
 
+      const context = (await this.contextPromise) || {};
+
       const executionResult = await subscribe({
         schema: this.graphyne.schema,
         document,
-        contextValue: this.context,
+        contextValue: Object.assign(
+          Object.create(Object.getPrototypeOf(context)),
+          context
+        ),
         variableValues: variables,
         operationName,
       });
@@ -137,6 +141,11 @@ export class GraphyneWebSocketConnection {
       const executionIterable = isAsyncIterable(executionResult)
         ? executionResult
         : createAsyncIterator([executionResult]);
+
+      if (this.operations.get(id)) {
+        // unsubscribe from existing subscription first
+        this.handleGQLStop(id);
+      }
 
       this.operations.set(id, executionIterable);
 
