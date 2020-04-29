@@ -1,6 +1,6 @@
 {
   "name": "graphyne-ws",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GraphQL Subscriptions implementation for Graphyne",
   "author": "Hoang Vo (https://www.hoangvvo.com)",
   "keywords": [

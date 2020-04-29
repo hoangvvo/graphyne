@@ -1,6 +1,6 @@
 {
   "name": "graphyne-server",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Lightning-fast JavaScript GraphQL Server",
   "author": "Hoang Vo (https://www.hoangvvo.com)",
   "keywords": [
