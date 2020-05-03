@@ -54,7 +54,7 @@ export class GraphyneServer extends GraphyneServerBase {
 
       const sendResponse = (result: QueryResponse) =>
         options?.onResponse
-          ? options?.onResponse(result, ...args)
+          ? options.onResponse(result, ...args)
           : sendresponse(result, req, res);
 
       // Parse req.url
