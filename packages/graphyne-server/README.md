@@ -54,23 +54,26 @@ If you do not use Node HTTP Server (which is likely), see [framework-specific in
 
 Constructing a Graphyne GraphQL server. It accepts the following options:
 
-- `schema`: (required) A `GraphQLSchema` instance. It can be created using `makeExecutableSchema` from [graphql-tools](https://github.com/apollographql/graphql-tools).
-- `context`: An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [signature function](#framework-specific-integration).
-- `rootValue`: A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor.
-- `cache`: `GraphyneServer` creates **two** in-memory LRU cache: One for compiled queries and another for invalid queries. This value defines max items to hold in **each** cache. Pass `false` to disable cache.
+| options | description | default |
+|---------|-------------|---------|
+| schema | A `GraphQLSchema` instance. It can be created using `makeExecutableSchema` from [graphql-tools](https://github.com/apollographql/graphql-tools). | (required) |
+| context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [signature function](#framework-specific-integration). | `{}` |
+| rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
+| cache | `GraphyneServer` creates **two** in-memory LRU cache: One for compiled queries and another for invalid queries. This value defines max items to hold in **each** cache. Pass `false` to disable cache. | `1024` |
 
 ### `GraphyneServer#createHandler(options)`
 
 Create a handler for HTTP server, `options` accepts the following:
 
-- `path`: Specify a path for the GraphQL endpoint. It default to `/graphql` if no path is specified.
-- `playground`: Pass in `true` to present [Playground](https://github.com/prisma-labs/graphql-playground) when being loaded from a browser. Alternatively, you can also pass in an options object:
-  - `path`: Specify a custom path to present `Playground`. It defaults to `/playground` if not specified.
-- `onNoMatch`: A handler function when `req.url` does not match `options.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration). By default, `graphyne` tries to call `req.statusCode = 404` and `res.end('not found')`. See examples in [framework-specific integration](#framework-specific-integration).
-- `integrationFn`: ([Example](#koa)) A function to resolve frameworks with non-standard signature function. Its *arguments* depend on the framework's [signature function](#framework-specific-integration). It should return an object with:
-  - `request`: `IncomingMessage` from Node.js request listener
-  - `response`: `ServerResponse` from Node.js request listener
-  - `sendResponse`: (optional) A function to override how response is sent. It accepts an object of `status` (the status code that should be set), `headers` (the headers that should be set), and `body` (the stringified response body).
+| options | description | default |
+|---------|-------------|---------|
+| path | Specify a path for the GraphQL endpoint. | `/graphql` |
+| playground | Pass in `true` to present [Playground](https://github.com/prisma-labs/graphql-playground) when being loaded from a browser. Alternatively, you can also pass in an object with `path` that specify a custom path to present `Playground` | `false`, `{ path: '/playground' }` if `true` |
+| integrationFn | A function to resolve frameworks with non-standard signature function. Its *arguments* depend on the framework's [signature function](#framework-specific-integration). It should return an object with `request` (`IncomingMessage` from Node.js request listener) and `response` (`ServerResponse` from Node.js request listener) | `(req, res) => ({ request: req, response: res }))` (node signature) |
+| onResponse | A handler function to send response. It accepts as the first arguments an object of `status` (the status code that should be set), `headers` (the headers that should be set), and `body` (the stringified response body). The rest of the arguments are those of the framework's [signature function] | A function calling `response.setHeader`, `response.statusCode`, `response.end`, where `request` and `response` are from `integrationFn` `integrationFn` |
+| onNoMatch | A handler function when `req.url` does not match `options.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration) | `onResponse(result, request, response)`, where `request` and `response` are from `integrationFn` |
+
+For examples on using `integrationFn`, `onResponse`, and `onNoMatch`, see [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration)
 
 ## Additional features
 
@@ -150,12 +153,12 @@ app.use(
       return {
         request: ctx.req,
         response: ctx.res,
-        sendResponse: ({ headers, body, status }) => {
-          ctx.status = status;
-          ctx.set(headers);
-          ctx.body = body;
-        },
       };
+    },
+    onResponse: ({ headers, body, status }, ctx) => {
+      ctx.status = status;
+      ctx.set(headers);
+      ctx.body = body;
     },
     onNoMatch: (ctx) => {
       ctx.status = 404;
