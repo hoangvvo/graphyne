@@ -68,22 +68,23 @@ export class GraphyneServer extends GraphyneServerBase {
 
       if (pathname === path) {
         // serve GraphQL
-        parseNodeRequest(req, (err, parsedBody) => {
+        parseNodeRequest(req, async (err, parsedBody) => {
           if (err)
             return sendResponse({
               status: err.status || 500,
               body: JSON.stringify(err),
               headers: {},
             });
-          (async () => {
-            let context;
+
+          let context;
+
+          const contextFn = this.options.context;
+          if (contextFn) {
             try {
-              const contextFn = this.options.context;
-              if (contextFn)
-                context =
-                  typeof contextFn === 'function'
-                    ? await contextFn(...args)
-                    : contextFn;
+              context =
+                typeof contextFn === 'function'
+                  ? await contextFn(...args)
+                  : contextFn;
             } catch (err) {
               return sendResponse({
                 status: err.status || 400,
@@ -96,25 +97,22 @@ export class GraphyneServer extends GraphyneServerBase {
                 headers: { 'content-type': 'application/json' },
               });
             }
-            const queryParams = req.query || parseUrl(req, true).query;
-            const { query, variables, operationName } = getGraphQLParams({
-              queryParams: queryParams || {},
-              body: parsedBody,
-            });
-            this.runQuery(
-              {
-                query,
-                context,
-                variables,
-                operationName,
-                http: {
-                  request: req,
-                  response: res,
-                },
-              },
-              (err, result) => sendResponse(result)
-            );
-          })();
+          }
+          const queryParams = req.query || parseUrl(req, true).query;
+          const { query, variables, operationName } = getGraphQLParams({
+            queryParams: queryParams || {},
+            body: parsedBody,
+          });
+          this.runQuery(
+            {
+              query,
+              context,
+              variables,
+              operationName,
+              http: { request: req, response: res },
+            },
+            (err, result) => sendResponse(result)
+          );
         });
       } else if (playground && pathname === playgroundPath) {
         sendResponse({
