@@ -131,6 +131,13 @@ exports.runBench = async function run({
   return results;
 };
 
-process.on('exit', () => {
-  if (forked) forked.kill('SIGINT');
-});
+function cleanup() {
+  if (forked) {
+    forked.kill('SIGINT');
+    console.log('Process killed');
+  }
+}
+
+process.on('exit', cleanup);
+process.on('disconnect', cleanup);
+process.on('SIGINT', cleanup);
