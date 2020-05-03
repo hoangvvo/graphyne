@@ -114,14 +114,15 @@ describe('createHandler', () => {
         }),
         onResponse: (result, req, res) => {
           res.setHeader('test', 'ok');
-          res.end('');
+          res.end(result.body);
         },
       })
     );
     await request(server)
       .get('/graphql')
       .query({ query: 'query { hello }' })
-      .expect('test', 'ok');
+      .expect('test', 'ok')
+      .expect('world');
   });
   describe('when path no match ', () => {
     const graphyne = new GraphyneServer({
