@@ -13,6 +13,7 @@
     "express-graphql": "latest",
     "faker": "^4.1.0",
     "fastify": "^2.13.1",
+    "fastify-gql": "^3.4.0",
     "graphql-yoga": "latest",
     "graphyne-server": "latest",
     "koa": "^2.11.0",
