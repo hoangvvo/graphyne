@@ -1,5 +1,7 @@
 # GraphQL Server Benchmarks
 
+*Adapted from [fastify/benchmarks](https://github.com/fastify/benchmarks)*
+
 Benchmarks GraphQL Servers using [autocannon](https://github.com/mcollina/autocannon). Each run includes two rounds: one 5-second round to warm up and one to measure.
 
 The benchmark is run once a week using Github Actions. The latest version of each library is used.
@@ -43,7 +45,6 @@ Add a server simply by creating a file in [benchmarks](benchmarks). The server s
 | [graphyne-server](benchmarks/graphyne-server.js)                 |   4644.0   |  21.26  |     28.86     |
 | [graphyne-server-fastify](benchmarks/graphyne-server-fastify.js) |   4507.4   |  21.90  |     28.01     |
 | [graphyne-server-express](benchmarks/graphyne-server-express.js) |   4381.1   |  22.53  |     27.33     |
-| [graphyne-server-koa](benchmarks/graphyne-server-koa.js)         |   4317.8   |  22.87  |      0.64     |
 | [express-graphql](benchmarks/express-graphql.js)                 |   1529.3   |  64.34  |      9.63     |
 | [graphql-yoga](benchmarks/graphql-yoga.js)                       |   1362.5   |  72.25  |      8.54     |
 | [apollo-server-fastify](benchmarks/apollo-server-fastify.js)     |   1353.8   |  72.71  |      8.46     |
