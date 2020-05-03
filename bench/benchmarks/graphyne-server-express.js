@@ -7,6 +7,13 @@ const graphyne = new GraphyneServer({
 });
 
 const app = express();
-app.post('/graphql', graphyne.createHandler());
+app.post(
+  '/graphql',
+  graphyne.createHandler({
+    onNoMatch: (req, res, next) => {
+      next();
+    },
+  })
+);
 
 app.listen(4001);

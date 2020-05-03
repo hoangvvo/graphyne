@@ -6,6 +6,12 @@ const graphyne = new GraphyneServer({
   schema,
 });
 
-fastify.use(graphyne.createHandler());
+fastify.use(
+  graphyne.createHandler({
+    onNoMatch: (req, res, next) => {
+      next();
+    },
+  })
+);
 
 fastify.listen(4001);
