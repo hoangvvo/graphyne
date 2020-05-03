@@ -1,12 +1,14 @@
 # GraphQL Server Benchmarks
 
-*Adapted from [fastify/benchmarks](https://github.com/fastify/benchmarks)*
+*Adapted from [benawad/node-graphql-benchmarks](https://github.com/benawad/node-graphql-benchmarks)*
 
 Benchmarks GraphQL Servers using [autocannon](https://github.com/mcollina/autocannon). Each run includes two rounds: one 5-second round to warm up and one to measure.
 
 The benchmark is run once a week using Github Actions. The latest version of each library is used.
 
 ## Usage
+
+### Run benchmarks
 
 [bench.js](bench.js) is the CLI used to benchmark the servers.
 
@@ -19,6 +21,10 @@ The following optional arguments are accepted:
 - `-d, --duration`: Number of seconds to run
 - `-c, --connections`: Number of concurrent connections
 - `-p, --pipelining`:  The number of pipelined requests to use
+- `-pkgs, --packages`: Select the packages to be benchmarked. Use `--all-packages` to select all.
+- `--silent`: Disable logging. May improve test results.
+
+### Compare benchmarks
 
 [compare.js](compare.js) is the CLI used to display result.
 
@@ -26,7 +32,10 @@ The following optional arguments are accepted:
 node compare [arguments]
 ```
 
+The following optional arguments are accepted:
+
 - `--table`: Display a table of the results
+- `--includeLinks`: (for CI) Include markdown links for use in [README](README.md)
 
 ## Add a server
 
