@@ -100,7 +100,6 @@ A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) 
 ```javascript
 app.use(
   graphyne.createHandler({
-    // other options
     onNoMatch: (req, res, next) => {
       // Continue to next handler in middleware chain
       next();
@@ -119,13 +118,12 @@ app.use(
 const { send } = require('micro');
 
 module.exports = graphyne.createHandler({
-  // other options
   onResponse: async ({ headers, body, status }, req, res) => {
     for (const key in headers) {
-      res.setHeader(key, headers[key] as string);
+      res.setHeader(key, headers[key]);
     }
     send(res, status, body);
-  }
+  },
   onNoMatch: async (req, res) => {
     send(res, 404, 'not found');
   },
@@ -141,7 +139,6 @@ module.exports = graphyne.createHandler({
 ```javascript
 fastify.use(
   graphyne.createHandler({
-    // other options
     onNoMatch: (req, res, next) => {
       next();
     }
