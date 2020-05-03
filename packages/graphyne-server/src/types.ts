@@ -5,7 +5,6 @@ type IntegrationFunction = (
 ) => {
   request: IncomingMessage;
   response: ServerResponse;
-  sendResponse?: ({ status, body, headers }: QueryResponse) => void;
 };
 
 export interface HandlerConfig {
@@ -16,5 +15,9 @@ export interface HandlerConfig {
         path: string;
       };
   onNoMatch?: (...args: any[]) => void;
+  onResponse?: (
+    { status, body, headers }: QueryResponse,
+    ...args: any[]
+  ) => void;
   integrationFn?: IntegrationFunction;
 }
