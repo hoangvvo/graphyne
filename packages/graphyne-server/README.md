@@ -113,14 +113,21 @@ app.use(
 
 [Example](/examples/with-micro)
 
+*This is not actually required since `micro` function signature is the same as `Node HTTP Server`. `module.exports = graphyne.createHandler()` would work.*
+
 ```javascript
 const { send } = require('micro');
 
 module.exports = graphyne.createHandler({
   // other options
+  onResponse: async ({ headers, body, status }, req, res) => {
+    for (const key in headers) {
+      res.setHeader(key, headers[key] as string);
+    }
+    send(res, status, body);
+  }
   onNoMatch: async (req, res) => {
-    const statusCode = 400;
-    send(res, statusCode, 'not found');
+    send(res, 404, 'not found');
   },
 });
 ```
