@@ -18,10 +18,8 @@ jobs:
         node-version: 12
     - name: run benchmarks
       run: |
-cd bench
 yarn install
 node bench/bench -c 100 -d 40 -p 10 --silent --all-packages --write
-cd ..
     - name: commit benchmarks
       run: |
 node_version=$(node --version)
