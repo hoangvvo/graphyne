@@ -52,25 +52,22 @@ export class GraphyneServer extends GraphyneServerBase {
         response = integrate.response;
       }
 
-      const result: QueryResponse = {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-        body: '',
-      };
-
-      const sendResponse = () =>
-        onResponse
+      const sendResponse = (result: QueryResponse) => {
+        return onResponse
           ? onResponse(result, ...args)
           : sendresponse(result, request, response);
+      };
 
       // Parse req.url
       switch (request.path || parseUrl(request, true).pathname) {
         case path:
-          parseNodeRequest(request, async (err, parsedBody) => {
+          return parseNodeRequest(request, async (err, parsedBody) => {
             if (err) {
-              result.status = err.status || 500;
-              result.body = JSON.stringify(new GraphQLError(err.message));
-              return sendResponse();
+              return sendResponse({
+                status: err.status || 500,
+                body: JSON.stringify(new GraphQLError(err.message)),
+                headers: { 'content-type': 'application/json' },
+              });
             }
 
             let context;
@@ -80,20 +77,23 @@ export class GraphyneServer extends GraphyneServerBase {
                   ? await contextFn(...args)
                   : contextFn;
             } catch (err) {
-              result.status = err.status || 400;
-              result.body = JSON.stringify({
-                errors: [
-                  // TODO: More context
-                  new GraphQLError(`Context creation failed: ${err.message}`),
-                ],
+              return sendResponse({
+                status: err.status || 500,
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  errors: [
+                    // TODO: More context
+                    new GraphQLError(`Context creation failed: ${err.message}`),
+                  ],
+                }),
               });
-              return sendResponse();
             }
 
             const params = getGraphQLParams({
               queryParams: request.query || parseUrl(request, true).query || {},
               body: parsedBody,
             });
+
             this.runQuery(
               {
                 query: params.query,
@@ -104,27 +104,26 @@ export class GraphyneServer extends GraphyneServerBase {
                   method: request.method as string,
                 },
               },
-              (err, queryResult) =>
-                Object.assign(result, queryResult) && sendResponse()
+              sendResponse
             );
           });
-          break;
         case playgroundPath:
-          result.body = renderPlayground({
-            endpoint: path,
-            subscriptionEndpoint: this.subscriptionPath,
+          return sendResponse({
+            status: 200,
+            body: renderPlayground({
+              endpoint: path,
+              subscriptionEndpoint: this.subscriptionPath,
+            }),
+            headers: { 'content-type': 'text/html; charset=utf-8' },
           });
-          result.headers['content-type'] = 'text/html; charset=utf-8';
-          sendResponse();
-          break;
         default:
-          if (onNoMatch) {
-            onNoMatch(...args);
-          } else {
-            result.headers['content-type'] = 'text/html; charset=utf-8';
-            result.status = 404;
-            sendResponse();
-          }
+          return onNoMatch
+            ? onNoMatch(...args)
+            : sendResponse({
+                status: 404,
+                body: 'not found',
+                headers: { 'content-type': 'text/html; charset=utf-8' },
+              });
       }
     };
   }

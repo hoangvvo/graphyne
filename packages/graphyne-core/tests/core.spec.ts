@@ -50,7 +50,7 @@ function testCase(
       schema,
       ...options,
       // @ts-ignore
-    }).runQuery(queryRequest, (err, result) => {
+    }).runQuery(queryRequest, (result) => {
       if (typeof expected.body === 'function') {
         return expected.body(result.body) ? resolve() : reject('no match');
       }
