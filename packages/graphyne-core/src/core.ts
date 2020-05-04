@@ -68,15 +68,7 @@ function buildCache(opts: Config) {
   return lru(1024);
 }
 
-type GraphyneError = Error & {
-  status?: number;
-  errors?: readonly GraphQLError[];
-};
-
-function createGraphyneError({
-  errors,
-  status,
-}: Pick<GraphyneError, 'status' | 'errors'>): GraphyneError {
+function createGraphyneError(status: number, errors: readonly GraphQLError[]) {
   const error = new GraphQLError('Error');
   Object.assign(error, { errors, status });
   return error;
@@ -128,19 +120,12 @@ export class GraphyneServerBase {
       return cached;
     } else {
       const errCached = this.lruErrors !== null && this.lruErrors.get(query);
-      if (errCached)
-        throw createGraphyneError({
-          errors: errCached.errors,
-          status: 400,
-        });
+      if (errCached) throw createGraphyneError(400, errCached.errors);
 
       try {
         document = parse(query);
       } catch (syntaxErr) {
-        throw createGraphyneError({
-          errors: [syntaxErr],
-          status: 400,
-        });
+        throw createGraphyneError(400, [syntaxErr]);
       }
 
       const validationErrors = validate(this.schema, document);
@@ -152,22 +137,16 @@ export class GraphyneServerBase {
             errors: validationErrors,
           });
         }
-        throw createGraphyneError({
-          errors: validationErrors,
-          status: 400,
-        });
+        throw createGraphyneError(400, validationErrors);
       }
 
       const operation = getOperationAST(document, operationName)?.operation;
       if (!operation)
-        throw createGraphyneError({
-          errors: [
-            new GraphQLError(
-              'Must provide operation name if query contains multiple operations.'
-            ),
-          ],
-          status: 400,
-        });
+        throw createGraphyneError(400, [
+          new GraphQLError(
+            'Must provide operation name if query contains multiple operations.'
+          ),
+        ]);
 
       const compiledQuery = compileQuery(this.schema, document, operationName, {
         customJSONSerializer: true,
@@ -206,10 +185,9 @@ export class GraphyneServerBase {
 
     try {
       if (!query)
-        throw createGraphyneError({
-          errors: [new GraphQLError('Must provide query string.')],
-          status: 400,
-        });
+        throw createGraphyneError(400, [
+          new GraphQLError('Must provide query string.'),
+        ]);
 
       // Get graphql-jit compiled query and parsed document
       const {
