@@ -17,8 +17,8 @@ jobs:
       id: check
       with:
         trigger: '@graphyne bench'
-        reaction: '+1'
-        prefix_only: 'true'
+        reaction: eyes
+        prefix_only: true
       env:
         GITHUB_TOKEN: ${{github.token}}
     - uses: actions/checkout@v2
