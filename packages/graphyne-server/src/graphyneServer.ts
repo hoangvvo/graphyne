@@ -61,8 +61,7 @@ export class GraphyneServer extends GraphyneServerBase {
           : sendresponse(result, req, res);
 
       // Parse req.url
-      const pathname = req.path || parseUrl(req, true).pathname;
-      switch (pathname) {
+      switch (req.path || parseUrl(req, true).pathname) {
         case path:
           parseNodeRequest(req, async (err, parsedBody) => {
             if (err)
