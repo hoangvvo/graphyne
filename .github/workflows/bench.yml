@@ -11,25 +11,19 @@ on:
 
 jobs:
   bench:
-    if: github.event.pull_request
     runs-on: ubuntu-latest
     steps:
+    - uses: khan/pull-request-comment-trigger@master
+      id: check
+      with:
+        trigger: '@graphyne bench'
+        reaction: '+1'
+        prefix_only: 'true'
+      env:
+        GITHUB_TOKEN: ${{github.token}}
     - uses: actions/checkout@v2
     - uses: ./.github/actions/graphql-bench-pr
+      if: ${{ github.event_name == 'pull_request' || steps.check.outputs.triggered == 'true' }}
       with:
         repoToken: ${{github.token}}
-  bench-manual:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: khan/pull-request-comment-trigger@master
-        id: check
-        with:
-          trigger: '@graphyne bench'
-          reaction: '+1'
-          prefix_only: 'true'
-        env:
-          GITHUB_TOKEN: ${{github.token}}
-      - uses: actions/checkout@v2
-      - run: 'echo Found it!'
-        if: steps.check.outputs.triggered == 'true'
         
