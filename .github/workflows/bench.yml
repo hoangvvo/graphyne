@@ -26,6 +26,7 @@ jobs:
         with:
           trigger: '@graphyne bench'
           reaction: '+1'
+          prefix_only: 'true'
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - uses: actions/checkout@v2
