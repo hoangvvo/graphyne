@@ -190,9 +190,7 @@ export class GraphyneServerBase {
     { query, variables, operationName, context, httpRequest }: QueryRequest,
     cb: (result: QueryResponse) => void
   ): void | Promise<void> {
-    let compiledQuery: CompiledQuery | ExecutionResult,
-      operation: string,
-      document: DocumentNode;
+    let compiledQuery: CompiledQuery | ExecutionResult;
 
     const createResponse = (code: number, obj: ExecutionResult) => {
       const payload = (compiledQuery && isCompiledQuery(compiledQuery)
@@ -206,44 +204,49 @@ export class GraphyneServerBase {
       });
     };
 
-    if (!query)
-      return createResponse(400, {
-        errors: [new GraphQLError('Must provide query string.')],
-      });
-
-    // Get graphql-jit compiled query and parsed document
     try {
-      const cache = this.getCompiledQuery(query, operationName);
-      compiledQuery = cache.compiledQuery;
-      operation = cache.operation;
-      document = cache.document;
+      if (!query)
+        throw createGraphyneError({
+          errors: [new GraphQLError('Must provide query string.')],
+          status: 400,
+        });
+
+      // Get graphql-jit compiled query and parsed document
+      const {
+        document,
+        operation,
+        compiledQuery: compiled,
+      } = this.getCompiledQuery(query, operationName);
+      compiledQuery = compiled;
+      // http.request is not available in ws
+      if (
+        httpRequest &&
+        httpRequest.method === 'GET' &&
+        operation !== 'query'
+      ) {
+        // Mutation is not allowed with GET request
+        return createResponse(405, {
+          errors: [
+            new GraphQLError(
+              `Operation ${operation} cannot be performed via a GET request`
+            ),
+          ],
+        });
+      }
+      const result = (compiledQuery as CompiledQuery).query(
+        typeof this.options.rootValue === 'function'
+          ? this.options.rootValue(document)
+          : this.options.rootValue || {},
+        context,
+        variables
+      );
+      return 'then' in result
+        ? result.then((finished) => createResponse(200, finished))
+        : createResponse(200, result);
     } catch (err) {
       return createResponse(err.status ?? 500, {
         errors: err.errors,
       });
     }
-    // http.request is not available in ws
-    if (httpRequest && httpRequest.method === 'GET' && operation !== 'query') {
-      // Mutation is not allowed with GET request
-      return createResponse(405, {
-        errors: [
-          new GraphQLError(
-            `Operation ${operation} cannot be performed via a GET request`
-          ),
-        ],
-      });
-    }
-
-    const result = (compiledQuery as CompiledQuery).query(
-      typeof this.options.rootValue === 'function'
-        ? this.options.rootValue(document)
-        : this.options.rootValue || {},
-      context,
-      variables
-    );
-
-    return 'then' in result
-      ? result.then((finished) => createResponse(200, finished))
-      : createResponse(200, result);
   }
 }
