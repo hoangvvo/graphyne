@@ -40,7 +40,6 @@ export class GraphyneServer extends GraphyneServerBase {
       : null;
     return (...args: any[]) => {
       // Integration mapping
-
       let req: IncomingMessage & {
         path?: string;
         query?: Record<string, string>;
@@ -97,9 +96,8 @@ export class GraphyneServer extends GraphyneServerBase {
                 });
               }
             }
-            const queryParams = req.query || parseUrl(req, true).query;
             const { query, variables, operationName } = getGraphQLParams({
-              queryParams: queryParams || {},
+              queryParams: req.query || parseUrl(req, true).query || {},
               body: parsedBody,
             });
             this.runQuery(
