@@ -44,13 +44,6 @@ const schemaHello = makeExecutableSchema({
 });
 
 describe('createHandler', () => {
-  it('throws if onNoMatch is not a function', () => {
-    const graphyne = new GraphyneServer({
-      schema: schemaHello,
-    });
-    // @ts-ignore
-    assert.throws(() => graphyne.createHandler({ onNoMatch: 'boom' }));
-  });
   it('maps req and res using integrationFn', async () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,
@@ -66,27 +59,6 @@ describe('createHandler', () => {
       .get('/graphql')
       .query({ query: 'query { hello }' })
       .expect('{"data":{"hello":"world"}}');
-  });
-  it('allow custom sendResponse using integrationFn', async () => {
-    const graphyne = new GraphyneServer({
-      schema: schemaHello,
-    });
-    const server = createServer(
-      graphyne.createHandler({
-        integrationFn: (req, res) => ({
-          request: req,
-          response: res,
-          sendResponse: () => {
-            res.setHeader('test', 'ok');
-            res.end('');
-          },
-        }),
-      })
-    );
-    await request(server)
-      .get('/graphql')
-      .query({ query: 'query { hello }' })
-      .expect('test', 'ok');
   });
   describe('renders GraphiQL', () => {
     const graphyne = new GraphyneServer({
@@ -129,6 +101,28 @@ describe('createHandler', () => {
         )
       );
     });
+  });
+  it('allow custom onResponse', async () => {
+    const graphyne = new GraphyneServer({
+      schema: schemaHello,
+    });
+    const server = createServer(
+      graphyne.createHandler({
+        integrationFn: (req, res) => ({
+          request: req,
+          response: res,
+        }),
+        onResponse: (result, req, res) => {
+          res.setHeader('test', 'ok');
+          res.end(result.body);
+        },
+      })
+    );
+    await request(server)
+      .get('/graphql')
+      .query({ query: 'query { hello }' })
+      .expect('test', 'ok')
+      .expect('world');
   });
   describe('when path no match ', () => {
     const graphyne = new GraphyneServer({

@@ -28,8 +28,21 @@ module.exports = graphyne.createHandler({
   playground: {
     path: '/playground',
   },
+  onResponse: async ({ headers, body, status }, req, res) => {
+    for (const key in headers) res.setHeader(key, headers[key]);
+    send(res, status, body);
+  },
   onNoMatch: async (req, res) => {
-    const statusCode = 400;
-    send(res, statusCode, 'not found');
+    send(res, 404, 'not found');
   },
 });
+
+/**
+ * This still works:
+ * module.exports = graphyne.createHandler({
+    path: '/graphql',
+    playground: {
+      path: '/playground',
+    },
+  }
+ */

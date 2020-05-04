@@ -15,17 +15,25 @@ import { HandlerConfig } from './types';
 const DEFAULT_PATH = '/graphql';
 const DEFAULT_PLAYGROUND_PATH = '/playground';
 
+const sendresponse = (
+  result: QueryResponse,
+  req: IncomingMessage,
+  res: ServerResponse
+) => {
+  const { status, body, headers } = result;
+  for (const key in headers) {
+    res.setHeader(key, headers[key] as string);
+  }
+  res.statusCode = status;
+  res.end(body);
+};
+
 export class GraphyneServer extends GraphyneServerBase {
   constructor(options: Config) {
     super(options);
   }
 
   createHandler(options?: HandlerConfig): RequestListener | any {
-    // Validate options
-    if (options?.onNoMatch && typeof options.onNoMatch !== 'function') {
-      throw new Error('createHandler: options.onNoMatch must be a function');
-    }
-
     return (...args: any[]) => {
       // Integration mapping
 
@@ -35,25 +43,19 @@ export class GraphyneServer extends GraphyneServerBase {
       };
       let res: ServerResponse;
 
-      let sendResponse = (result: QueryResponse) => {
-        const { status, body, headers } = result;
-        for (const key in headers) {
-          res.setHeader(key, headers[key] as string);
-        }
-        res.statusCode = status;
-        res.end(body);
-      };
-
       if (options?.integrationFn) {
         const {
           request: mappedRequest,
           response: mappedResponse,
-          sendResponse: customSendResponse,
         } = options.integrationFn(...args);
         req = mappedRequest;
         res = mappedResponse;
-        sendResponse = customSendResponse || sendResponse;
       } else [req, res] = args;
+
+      const sendResponse = (result: QueryResponse) =>
+        options?.onResponse
+          ? options.onResponse(result, ...args)
+          : sendresponse(result, req, res);
 
       // Parse req.url
       const pathname = req.path || parseUrl(req, true).pathname;
@@ -66,22 +68,23 @@ export class GraphyneServer extends GraphyneServerBase {
 
       if (pathname === path) {
         // serve GraphQL
-        parseNodeRequest(req, (err, parsedBody) => {
+        parseNodeRequest(req, async (err, parsedBody) => {
           if (err)
             return sendResponse({
               status: err.status || 500,
               body: JSON.stringify(err),
               headers: {},
             });
-          (async () => {
-            let context;
+
+          let context;
+
+          const contextFn = this.options.context;
+          if (contextFn) {
             try {
-              const contextFn = this.options.context;
-              if (contextFn)
-                context =
-                  typeof contextFn === 'function'
-                    ? await contextFn(...args)
-                    : contextFn;
+              context =
+                typeof contextFn === 'function'
+                  ? await contextFn(...args)
+                  : contextFn;
             } catch (err) {
               return sendResponse({
                 status: err.status || 400,
@@ -94,25 +97,22 @@ export class GraphyneServer extends GraphyneServerBase {
                 headers: { 'content-type': 'application/json' },
               });
             }
-            const queryParams = req.query || parseUrl(req, true).query;
-            const { query, variables, operationName } = getGraphQLParams({
-              queryParams: queryParams || {},
-              body: parsedBody,
-            });
-            this.runQuery(
-              {
-                query,
-                context,
-                variables,
-                operationName,
-                http: {
-                  request: req,
-                  response: res,
-                },
-              },
-              (err, result) => sendResponse(result)
-            );
-          })();
+          }
+          const queryParams = req.query || parseUrl(req, true).query;
+          const { query, variables, operationName } = getGraphQLParams({
+            queryParams: queryParams || {},
+            body: parsedBody,
+          });
+          this.runQuery(
+            {
+              query,
+              context,
+              variables,
+              operationName,
+              http: { request: req, response: res },
+            },
+            (err, result) => sendResponse(result)
+          );
         });
       } else if (playground && pathname === playgroundPath) {
         sendResponse({
@@ -124,15 +124,12 @@ export class GraphyneServer extends GraphyneServerBase {
           headers: { 'content-type': 'text/html; charset=utf-8' },
         });
       } else {
-        // onNoMatch
         if (options?.onNoMatch) options.onNoMatch(...args);
         else
           sendResponse({
             status: 404,
             body: 'not found',
-            headers: {
-              'content-type': 'text/html; charset=utf-8',
-            },
+            headers: { 'content-type': 'text/html; charset=utf-8' },
           });
       }
     };

@@ -35,12 +35,12 @@ app.use(
       return {
         request: ctx.req,
         response: ctx.res,
-        sendResponse: ({ headers, body, status }) => {
-          ctx.status = status;
-          ctx.set(headers);
-          ctx.body = body;
-        },
       };
+    },
+    onResonse: ({ headers, body, status }, ctx) => {
+      ctx.status = status;
+      ctx.set(headers);
+      ctx.body = body;
     },
     onNoMatch: (ctx) => {
       ctx.status = 404;
