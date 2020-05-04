@@ -199,23 +199,27 @@ export class GraphyneServerBase {
 
   public async runQuery(
     requestCtx: QueryRequest,
-    cb: (err: any, result: QueryResponse) => void
-  ): Promise<void> {
+    cb?: (err: any, result: QueryResponse) => void
+  ): Promise<QueryResponse> {
     let compiledQuery: CompiledQuery | ExecutionResult;
-    const headers: HTTPHeaders = { 'content-type': 'application/json' };
 
-    function createResponse(code: number, obj: ExecutionResult): void {
+    const response: QueryResponse = {
+      headers: { 'content-type': 'application/json' },
+      body: '',
+      status: 200,
+    };
+
+    function createResponse(code: number, obj: ExecutionResult) {
       const stringify =
         compiledQuery && isCompiledQuery(compiledQuery)
           ? compiledQuery.stringify
           : fastStringify;
       const payload = stringify(obj);
       flatstr(payload);
-      cb(null, {
-        status: code,
-        body: payload,
-        headers,
-      });
+      response.body = payload;
+      response.status = code;
+      if (cb) cb(null, response);
+      return response;
     }
 
     const {
@@ -264,13 +268,7 @@ export class GraphyneServerBase {
         } else rootValue = rootValueFn;
       }
 
-      const result = (compiledQuery as CompiledQuery).query(
-        rootValue,
-        context,
-        variables
-      );
-
-      createResponse(
+      return createResponse(
         200,
         await (compiledQuery as CompiledQuery).query(
           rootValue,
@@ -279,7 +277,7 @@ export class GraphyneServerBase {
         )
       );
     } catch (err) {
-      createResponse(err.status ?? 500, {
+      return createResponse(err.status ?? 500, {
         errors: err.errors,
       });
     }
