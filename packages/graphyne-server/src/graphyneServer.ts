@@ -33,6 +33,11 @@ export class GraphyneServer extends GraphyneServerBase {
   }
 
   createHandler(options?: HandlerConfig): RequestListener | any {
+    const path = options?.path || DEFAULT_PATH;
+    const playgroundPath = options?.playground
+      ? (typeof options.playground === 'object' && options.playground.path) ||
+        DEFAULT_PLAYGROUND_PATH
+      : null;
     return (...args: any[]) => {
       // Integration mapping
 
@@ -58,80 +63,77 @@ export class GraphyneServer extends GraphyneServerBase {
 
       // Parse req.url
       const pathname = req.path || parseUrl(req, true).pathname;
-      const path = options?.path ?? DEFAULT_PATH;
-
-      const playground = options?.playground;
-      const playgroundPath =
-        (typeof playground === 'object' && playground.path) ||
-        DEFAULT_PLAYGROUND_PATH;
-
-      if (pathname === path) {
-        // serve GraphQL
-        parseNodeRequest(req, async (err, parsedBody) => {
-          if (err)
-            return sendResponse({
-              status: err.status || 500,
-              body: JSON.stringify(err),
-              headers: {},
-            });
-
-          let context;
-
-          const contextFn = this.options.context;
-          if (contextFn) {
-            try {
-              context =
-                typeof contextFn === 'function'
-                  ? await contextFn(...args)
-                  : contextFn;
-            } catch (err) {
+      switch (pathname) {
+        case path:
+          parseNodeRequest(req, async (err, parsedBody) => {
+            if (err)
               return sendResponse({
-                status: err.status || 400,
-                body: JSON.stringify({
-                  errors: [
-                    // TODO: More context
-                    new GraphQLError(`Context creation failed: ${err.message}`),
-                  ],
-                }),
-                headers: { 'content-type': 'application/json' },
+                status: err.status || 500,
+                body: JSON.stringify(err),
+                headers: {},
               });
+
+            let context;
+
+            const contextFn = this.options.context;
+            if (contextFn) {
+              try {
+                context =
+                  typeof contextFn === 'function'
+                    ? await contextFn(...args)
+                    : contextFn;
+              } catch (err) {
+                return sendResponse({
+                  status: err.status || 400,
+                  body: JSON.stringify({
+                    errors: [
+                      // TODO: More context
+                      new GraphQLError(
+                        `Context creation failed: ${err.message}`
+                      ),
+                    ],
+                  }),
+                  headers: { 'content-type': 'application/json' },
+                });
+              }
             }
-          }
-          const queryParams = req.query || parseUrl(req, true).query;
-          const { query, variables, operationName } = getGraphQLParams({
-            queryParams: queryParams || {},
-            body: parsedBody,
-          });
-          this.runQuery(
-            {
-              query,
-              context,
-              variables,
-              operationName,
-              httpRequest: {
-                method: req.method as string,
+            const queryParams = req.query || parseUrl(req, true).query;
+            const { query, variables, operationName } = getGraphQLParams({
+              queryParams: queryParams || {},
+              body: parsedBody,
+            });
+            this.runQuery(
+              {
+                query,
+                context,
+                variables,
+                operationName,
+                httpRequest: {
+                  method: req.method as string,
+                },
               },
-            },
-            (err, result) => sendResponse(result)
-          );
-        });
-      } else if (playground && pathname === playgroundPath) {
-        sendResponse({
-          status: 200,
-          body: renderPlayground({
-            endpoint: path,
-            subscriptionEndpoint: this.subscriptionPath,
-          }),
-          headers: { 'content-type': 'text/html; charset=utf-8' },
-        });
-      } else {
-        if (options?.onNoMatch) options.onNoMatch(...args);
-        else
+              (err, result) => sendResponse(result)
+            );
+          });
+          break;
+        case playgroundPath:
           sendResponse({
-            status: 404,
-            body: 'not found',
+            status: 200,
+            body: renderPlayground({
+              endpoint: path,
+              subscriptionEndpoint: this.subscriptionPath,
+            }),
             headers: { 'content-type': 'text/html; charset=utf-8' },
           });
+          break;
+        default:
+          if (options?.onNoMatch) options.onNoMatch(...args);
+          else
+            sendResponse({
+              status: 404,
+              body: 'not found',
+              headers: { 'content-type': 'text/html; charset=utf-8' },
+            });
       }
     };
   }
