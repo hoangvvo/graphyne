@@ -11,13 +11,7 @@ import {
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
 import lru, { Lru } from 'tiny-lru';
 import fastJson from 'fast-json-stringify';
-import {
-  Config,
-  QueryCache,
-  QueryRequest,
-  HTTPHeaders,
-  QueryResponse,
-} from './types';
+import { Config, QueryCache, QueryRequest, QueryResponse } from './types';
 // @ts-ignore
 import flatstr from 'flatstr';
 
@@ -134,12 +128,11 @@ export class GraphyneServerBase {
       return cached;
     } else {
       const errCached = this.lruErrors !== null && this.lruErrors.get(query);
-      if (errCached) {
+      if (errCached)
         throw createGraphyneError({
           errors: errCached.errors,
           status: 400,
         });
-      }
 
       try {
         document = parse(query);
@@ -203,23 +196,19 @@ export class GraphyneServerBase {
   ): Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
 
-    const response: QueryResponse = {
-      headers: { 'content-type': 'application/json' },
-      body: '',
-      status: 200,
-    };
-
-    function createResponse(code: number, obj: ExecutionResult) {
+    const createResponse = (code: number, obj: ExecutionResult) => {
       const stringify =
         compiledQuery && isCompiledQuery(compiledQuery)
           ? compiledQuery.stringify
           : fastStringify;
       const payload = stringify(obj);
       flatstr(payload);
-      response.body = payload;
-      response.status = code;
-      cb(null, response);
-    }
+      cb(null, {
+        body: payload,
+        status: code,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
 
     const {
       query,
