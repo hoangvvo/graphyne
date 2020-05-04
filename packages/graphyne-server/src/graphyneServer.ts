@@ -55,7 +55,7 @@ export class GraphyneServer extends GraphyneServerBase {
         res = mappedResponse;
       } else [req, res] = args;
 
-      const sendResponse = (result: QueryResponse) =>
+      const sendResponse = (err: any, result: QueryResponse) =>
         options?.onResponse
           ? options.onResponse(result, ...args)
           : sendresponse(result, req, res);
@@ -66,7 +66,7 @@ export class GraphyneServer extends GraphyneServerBase {
         case path:
           parseNodeRequest(req, async (err, parsedBody) => {
             if (err)
-              return sendResponse({
+              return sendResponse(null, {
                 status: err.status || 500,
                 body: JSON.stringify(err),
                 headers: {},
@@ -82,7 +82,7 @@ export class GraphyneServer extends GraphyneServerBase {
                     ? await contextFn(...args)
                     : contextFn;
               } catch (err) {
-                return sendResponse({
+                return sendResponse(null, {
                   status: err.status || 400,
                   body: JSON.stringify({
                     errors: [
@@ -110,12 +110,12 @@ export class GraphyneServer extends GraphyneServerBase {
                   method: req.method as string,
                 },
               },
-              (err, result) => sendResponse(result)
+              sendResponse
             );
           });
           break;
         case playgroundPath:
-          sendResponse({
+          sendResponse(null, {
             status: 200,
             body: renderPlayground({
               endpoint: path,
@@ -127,7 +127,7 @@ export class GraphyneServer extends GraphyneServerBase {
         default:
           if (options?.onNoMatch) options.onNoMatch(...args);
           else
-            sendResponse({
+            sendResponse(null, {
               status: 404,
               body: 'not found',
               headers: { 'content-type': 'text/html; charset=utf-8' },
