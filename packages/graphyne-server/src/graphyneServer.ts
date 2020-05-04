@@ -9,7 +9,7 @@ import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
 import { GraphQLError } from 'graphql';
-import { HandlerConfig, IntegrationFunction } from './types';
+import { HandlerConfig } from './types';
 
 const DEFAULT_PATH = '/graphql';
 const DEFAULT_PLAYGROUND_PATH = '/playground';
