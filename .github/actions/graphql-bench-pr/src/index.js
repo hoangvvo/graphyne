@@ -32,12 +32,23 @@ async function prepareRepo(repo, ref, outDir) {
   await exec(`git clone ${url} ${outDir}`);
   await exec(`cd ${outDir} && git checkout ${ref}`);
   // Yarn link benchmark dependencies to packages
-  const pkgPath = join(cwd, outDir, 'package.json');
-  const package = JSON.parse(readFileSync(pkgPath).toString());
-  package.workspaces.push('bench');
-  await writeFile(pkgPath, JSON.stringify(package, null, '  '));
-  // yarn/issues/5500
-  await exec(`cd ${outDir} && rm yarn.lock && yarn install --silent`);
+  
+
+  const f1 = async () => {
+    const pkgPath = join(cwd, outDir, 'package.json');
+    const package = JSON.parse(readFileSync(pkgPath).toString());
+    package.workspaces.push('bench');
+    await writeFile(pkgPath, JSON.stringify(package, null, '  '));
+    await exec(`cd ${outDir} && rm yarn.lock && yarn install --silent`);
+  }
+
+  const f2 =async () => {
+    const filePath = join(cwd, outDir, 'bench', 'benchmarks', 'graphyne-server.js');
+    const file = readFileSync(filePath).toString()
+    await writeFile(filePath, file.replace(`require('graphyne-server')`, `require('../../packages/graphyne-server')`));
+  }
+
+  await Promise.all([f1,f2]);  
 }
 
 async function runManyBenches(dir, packages) {
