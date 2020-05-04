@@ -9,7 +9,7 @@ import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
 import { GraphQLError } from 'graphql';
-import { HandlerConfig } from './types';
+import { HandlerConfig, IntegrationFunction } from './types';
 
 const DEFAULT_PATH = '/graphql';
 const DEFAULT_PLAYGROUND_PATH = '/playground';
@@ -27,6 +27,11 @@ const sendresponse = (
   res.end(body);
 };
 
+const integrationfn: IntegrationFunction = (request, response) => ({
+  request,
+  response,
+});
+
 export class GraphyneServer extends GraphyneServerBase {
   constructor(options: Config) {
     super(options);
@@ -38,32 +43,19 @@ export class GraphyneServer extends GraphyneServerBase {
       ? (typeof options.playground === 'object' && options.playground.path) ||
         DEFAULT_PLAYGROUND_PATH
       : null;
+    const integrationFn = options?.integrationFn || integrationfn;
     return (...args: any[]) => {
-      // Integration mapping
-      let req: IncomingMessage & {
-        path?: string;
-        query?: Record<string, string>;
-      };
-      let res: ServerResponse;
-
-      if (options?.integrationFn) {
-        const {
-          request: mappedRequest,
-          response: mappedResponse,
-        } = options.integrationFn(...args);
-        req = mappedRequest;
-        res = mappedResponse;
-      } else [req, res] = args;
+      const { request, response } = integrationFn(...args);
 
       const sendResponse = (err: any, result: QueryResponse) =>
         options?.onResponse
           ? options.onResponse(result, ...args)
-          : sendresponse(result, req, res);
+          : sendresponse(result, request, response);
 
       // Parse req.url
-      switch (req.path || parseUrl(req, true).pathname) {
+      switch (request.path || parseUrl(request, true).pathname) {
         case path:
-          parseNodeRequest(req, async (err, parsedBody) => {
+          parseNodeRequest(request, async (err, parsedBody) => {
             if (err)
               return sendResponse(null, {
                 status: err.status || 500,
@@ -96,7 +88,7 @@ export class GraphyneServer extends GraphyneServerBase {
               }
             }
             const { query, variables, operationName } = getGraphQLParams({
-              queryParams: req.query || parseUrl(req, true).query || {},
+              queryParams: request.query || parseUrl(request, true).query || {},
               body: parsedBody,
             });
             this.runQuery(
@@ -106,7 +98,7 @@ export class GraphyneServer extends GraphyneServerBase {
                 variables,
                 operationName,
                 httpRequest: {
-                  method: req.method as string,
+                  method: request.method as string,
                 },
               },
               sendResponse
