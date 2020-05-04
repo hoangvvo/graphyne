@@ -27,11 +27,6 @@ const sendresponse = (
   res.end(body);
 };
 
-const integrationfn: IntegrationFunction = (request, response) => ({
-  request,
-  response,
-});
-
 export class GraphyneServer extends GraphyneServerBase {
   constructor(options: Config) {
     super(options);
@@ -43,10 +38,14 @@ export class GraphyneServer extends GraphyneServerBase {
       ? (typeof options.playground === 'object' && options.playground.path) ||
         DEFAULT_PLAYGROUND_PATH
       : null;
-    const integrationFn = options?.integrationFn || integrationfn;
     const contextFn = this.options.context ?? {};
     return (...args: any[]) => {
-      const { request, response } = integrationFn(...args);
+      const { request, response } = options?.integrationFn
+        ? options.integrationFn(...args)
+        : {
+            request: args[0],
+            response: args[1],
+          };
 
       const sendResponse = (err: any, result: QueryResponse) =>
         options?.onResponse
