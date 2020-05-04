@@ -34,24 +34,27 @@ export class GraphyneServer extends GraphyneServerBase {
 
   createHandler(options: HandlerConfig = {}): RequestListener | any {
     const path = options.path || DEFAULT_PATH;
-    const playgroundPath = options.playground
+    const playgroundPath = options?.playground
       ? (typeof options.playground === 'object' && options.playground.path) ||
         DEFAULT_PLAYGROUND_PATH
       : null;
     const contextFn = this.options.context ?? {};
+    const integrationFn = options?.integrationFn;
+    const onResponse = options?.onResponse;
+    const onNoMatch = options?.onNoMatch;
     return (...args: any[]) => {
       let request = args[0],
         response = args[1];
 
-      if (options.integrationFn) {
-        const integrate = options.integrationFn(...args);
+      if (integrationFn) {
+        const integrate = integrationFn(...args);
         request = integrate.request;
         response = integrate.response;
       }
 
       const sendResponse = (err: any, result: QueryResponse) =>
-        options.onResponse
-          ? options.onResponse(result, ...args)
+        onResponse
+          ? onResponse(result, ...args)
           : sendresponse(result, request, response);
 
       // Parse req.url
@@ -113,7 +116,7 @@ export class GraphyneServer extends GraphyneServerBase {
           });
           break;
         default:
-          if (options.onNoMatch) options.onNoMatch(...args);
+          if (onNoMatch) onNoMatch(...args);
           else
             sendResponse(null, {
               status: 404,
