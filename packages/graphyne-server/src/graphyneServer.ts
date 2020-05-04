@@ -37,14 +37,17 @@ export class GraphyneServer extends GraphyneServerBase {
           '/playground'
         : null;
 
-      let request = args[0],
-        response = args[1];
+      let request: IncomingMessage & {
+          path?: string;
+          query?: Record<string, string>;
+        },
+        response: ServerResponse;
 
       if (options?.integrationFn) {
         const integrate = options.integrationFn(...args);
         request = integrate.request;
         response = integrate.response;
-      }
+      } else [request, response] = args;
 
       const sendResponse = (result: QueryResponse) => {
         return options?.onResponse
