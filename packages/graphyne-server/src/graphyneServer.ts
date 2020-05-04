@@ -11,9 +11,6 @@ import { parseNodeRequest, getGraphQLParams } from './utils';
 import parseUrl from '@polka/url';
 import { HandlerConfig } from './types';
 
-const DEFAULT_PATH = '/graphql';
-const DEFAULT_PLAYGROUND_PATH = '/playground';
-
 const sendresponse = (
   result: QueryResponse,
   req: IncomingMessage,
@@ -33,12 +30,13 @@ export class GraphyneServer extends GraphyneServerBase {
   }
 
   createHandler(options?: HandlerConfig): RequestListener | any {
-    const path = options?.path || DEFAULT_PATH;
-    const playgroundPath = options?.playground
-      ? (typeof options.playground === 'object' && options.playground.path) ||
-        DEFAULT_PLAYGROUND_PATH
-      : null;
     return (...args: any[]) => {
+      const path = options?.path || '/graphql';
+      const playgroundPath = options?.playground
+        ? (typeof options.playground === 'object' && options.playground.path) ||
+          '/playground'
+        : null;
+
       let request = args[0],
         response = args[1];
 
@@ -68,10 +66,11 @@ export class GraphyneServer extends GraphyneServerBase {
 
             let context;
             try {
+              const contextFn = this.options.context || {};
               context =
-                typeof this.options.context === 'function'
-                  ? await this.options.context(...args)
-                  : this.options.context || {};
+                typeof contextFn === 'function'
+                  ? await contextFn(...args)
+                  : contextFn;
             } catch (err) {
               err.message = `Context creation failed: ${err.message}`;
               return sendResponse({
