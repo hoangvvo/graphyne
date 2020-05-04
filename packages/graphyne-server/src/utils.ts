@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
-import { VariableValues, QueryBody, QueryRequest } from './types';
+import { VariableValues, QueryBody, QueryRequest } from 'graphyne-core';
 
 type GraphQLParams = Partial<QueryRequest>;
 type GraphQLParamsInput = {

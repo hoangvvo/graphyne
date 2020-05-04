@@ -122,7 +122,7 @@ describe('createHandler', () => {
       .get('/graphql')
       .query({ query: 'query { hello }' })
       .expect('test', 'ok')
-      .expect('world');
+      .expect('{"data":{"hello":"world"}}');
   });
   describe('when path no match ', () => {
     const graphyne = new GraphyneServer({

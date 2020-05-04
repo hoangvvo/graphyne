@@ -223,7 +223,7 @@ export class GraphyneServerBase {
       variables,
       operationName,
       context,
-      http: { request } = {},
+      httpRequest,
     } = requestCtx;
 
     if (!query) {
@@ -241,7 +241,11 @@ export class GraphyneServerBase {
         operationName
       );
       // http.request is not available in ws
-      if (request && request.method === 'GET' && operation !== 'query') {
+      if (
+        httpRequest &&
+        httpRequest.method === 'GET' &&
+        operation !== 'query'
+      ) {
         // Mutation is not allowed with GET request
         throw createGraphyneError({
           status: 405,
