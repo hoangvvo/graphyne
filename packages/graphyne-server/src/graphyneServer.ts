@@ -4,11 +4,11 @@ import {
   Config,
   QueryResponse,
   renderPlayground,
+  fastStringify,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
-import { GraphQLError } from 'graphql';
 import { HandlerConfig } from './types';
 
 const DEFAULT_PATH = '/graphql';
@@ -65,7 +65,7 @@ export class GraphyneServer extends GraphyneServerBase {
             if (err) {
               return sendResponse({
                 status: err.status || 500,
-                body: JSON.stringify(new GraphQLError(err.message)),
+                body: fastStringify({ errors: [err] }),
                 headers: { 'content-type': 'application/json' },
               });
             }
@@ -77,14 +77,12 @@ export class GraphyneServer extends GraphyneServerBase {
                   ? await contextFn(...args)
                   : contextFn;
             } catch (err) {
+              err.message = `Context creation failed: ${err.message}`;
               return sendResponse({
                 status: err.status || 500,
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                  errors: [
-                    // TODO: More context
-                    new GraphQLError(`Context creation failed: ${err.message}`),
-                  ],
+                body: fastStringify({
+                  errors: [err],
                 }),
               });
             }

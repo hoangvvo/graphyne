@@ -16,7 +16,7 @@ import { Config, QueryCache, QueryRequest, QueryResponse } from './types';
 import flatstr from 'flatstr';
 
 // Default stringify fallback if no graphql-jit compiled query available.
-const fastStringify = fastJson({
+export const fastStringify = fastJson({
   type: 'object',
   properties: {
     data: {
@@ -182,11 +182,7 @@ export class GraphyneServerBase {
         });
       }
 
-      return {
-        operation,
-        compiledQuery,
-        document,
-      };
+      return { operation, compiledQuery, document };
     }
   }
 
