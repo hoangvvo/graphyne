@@ -38,23 +38,19 @@ export class GraphyneServer extends GraphyneServerBase {
       ? (typeof options.playground === 'object' && options.playground.path) ||
         DEFAULT_PLAYGROUND_PATH
       : null;
-    const contextFn = this.options.context ?? {};
-    const integrationFn = options?.integrationFn;
-    const onResponse = options?.onResponse;
-    const onNoMatch = options?.onNoMatch;
     return (...args: any[]) => {
       let request = args[0],
         response = args[1];
 
-      if (integrationFn) {
-        const integrate = integrationFn(...args);
+      if (options?.integrationFn) {
+        const integrate = options.integrationFn(...args);
         request = integrate.request;
         response = integrate.response;
       }
 
       const sendResponse = (result: QueryResponse) => {
-        return onResponse
-          ? onResponse(result, ...args)
+        return options?.onResponse
+          ? options.onResponse(result, ...args)
           : sendresponse(result, request, response);
       };
 
@@ -73,9 +69,9 @@ export class GraphyneServer extends GraphyneServerBase {
             let context;
             try {
               context =
-                typeof contextFn === 'function'
-                  ? await contextFn(...args)
-                  : contextFn;
+                typeof this.options.context === 'function'
+                  ? await this.options.context(...args)
+                  : this.options.context || {};
             } catch (err) {
               err.message = `Context creation failed: ${err.message}`;
               return sendResponse({
@@ -115,8 +111,8 @@ export class GraphyneServer extends GraphyneServerBase {
             headers: { 'content-type': 'text/html; charset=utf-8' },
           });
         default:
-          return onNoMatch
-            ? onNoMatch(...args)
+          return options?.onNoMatch
+            ? options.onNoMatch(...args)
             : sendResponse({
                 status: 404,
                 body: 'not found',
