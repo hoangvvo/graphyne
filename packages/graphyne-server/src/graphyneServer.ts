@@ -2,11 +2,10 @@ import { RequestListener, IncomingMessage, ServerResponse } from 'http';
 import {
   GraphyneServerBase,
   Config,
-  parseNodeRequest,
-  getGraphQLParams,
   QueryResponse,
   renderPlayground,
 } from 'graphyne-core';
+import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
 import { GraphQLError } from 'graphql';
@@ -109,7 +108,9 @@ export class GraphyneServer extends GraphyneServerBase {
               context,
               variables,
               operationName,
-              http: { request: req, response: res },
+              httpRequest: {
+                method: req.method as string,
+              },
             },
             (err, result) => sendResponse(result)
           );

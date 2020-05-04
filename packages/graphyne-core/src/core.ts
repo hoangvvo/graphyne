@@ -197,25 +197,28 @@ export class GraphyneServerBase {
     }
   }
 
-  public runQuery(
+  public async runQuery(
     requestCtx: QueryRequest,
     cb: (err: any, result: QueryResponse) => void
-  ): void {
+  ): Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
-    const headers: HTTPHeaders = { 'content-type': 'application/json' };
 
-    function createResponse(code: number, obj: ExecutionResult): void {
+    const response: QueryResponse = {
+      headers: { 'content-type': 'application/json' },
+      body: '',
+      status: 200,
+    };
+
+    function createResponse(code: number, obj: ExecutionResult) {
       const stringify =
         compiledQuery && isCompiledQuery(compiledQuery)
           ? compiledQuery.stringify
           : fastStringify;
       const payload = stringify(obj);
       flatstr(payload);
-      cb(null, {
-        status: code,
-        body: payload,
-        headers,
-      });
+      response.body = payload;
+      response.status = code;
+      cb(null, response);
     }
 
     const {
@@ -223,7 +226,7 @@ export class GraphyneServerBase {
       variables,
       operationName,
       context,
-      http: { request } = {},
+      httpRequest,
     } = requestCtx;
 
     if (!query) {
@@ -241,7 +244,11 @@ export class GraphyneServerBase {
         operationName
       );
       // http.request is not available in ws
-      if (request && request.method === 'GET' && operation !== 'query') {
+      if (
+        httpRequest &&
+        httpRequest.method === 'GET' &&
+        operation !== 'query'
+      ) {
         // Mutation is not allowed with GET request
         throw createGraphyneError({
           status: 405,
@@ -260,18 +267,16 @@ export class GraphyneServerBase {
         } else rootValue = rootValueFn;
       }
 
-      (async () => {
-        createResponse(
-          200,
-          await (compiledQuery as CompiledQuery).query(
-            rootValue,
-            context,
-            variables
-          )
-        );
-      })();
+      return createResponse(
+        200,
+        await (compiledQuery as CompiledQuery).query(
+          rootValue,
+          context,
+          variables
+        )
+      );
     } catch (err) {
-      createResponse(err.status ?? 500, {
+      return createResponse(err.status ?? 500, {
         errors: err.errors,
       });
     }

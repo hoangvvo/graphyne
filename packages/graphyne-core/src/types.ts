@@ -1,6 +1,5 @@
 import { GraphQLError, GraphQLSchema, DocumentNode } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
-import { IncomingMessage, ServerResponse } from 'http';
 
 export interface Config<TContext = Record<string, any>, TRootValue = any> {
   schema: GraphQLSchema;
@@ -21,9 +20,8 @@ export interface QueryBody {
 
 export interface QueryRequest extends QueryBody {
   context: Record<string, any>;
-  http?: {
-    request: Pick<IncomingMessage, 'method'>;
-    response: ServerResponse;
+  httpRequest?: {
+    method: string;
   };
 }
 
