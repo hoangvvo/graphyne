@@ -44,6 +44,7 @@ export class GraphyneServer extends GraphyneServerBase {
         DEFAULT_PLAYGROUND_PATH
       : null;
     const integrationFn = options?.integrationFn || integrationfn;
+    const contextFn = this.options.context ?? {};
     return (...args: any[]) => {
       const { request, response } = integrationFn(...args);
 
@@ -64,29 +65,24 @@ export class GraphyneServer extends GraphyneServerBase {
               });
 
             let context;
-
-            const contextFn = this.options.context;
-            if (contextFn) {
-              try {
-                context =
-                  typeof contextFn === 'function'
-                    ? await contextFn(...args)
-                    : contextFn;
-              } catch (err) {
-                return sendResponse(null, {
-                  status: err.status || 400,
-                  body: JSON.stringify({
-                    errors: [
-                      // TODO: More context
-                      new GraphQLError(
-                        `Context creation failed: ${err.message}`
-                      ),
-                    ],
-                  }),
-                  headers: { 'content-type': 'application/json' },
-                });
-              }
+            try {
+              context =
+                typeof contextFn === 'function'
+                  ? await contextFn(...args)
+                  : contextFn;
+            } catch (err) {
+              return sendResponse(null, {
+                status: err.status || 400,
+                body: JSON.stringify({
+                  errors: [
+                    // TODO: More context
+                    new GraphQLError(`Context creation failed: ${err.message}`),
+                  ],
+                }),
+                headers: { 'content-type': 'application/json' },
+              });
             }
+
             const { query, variables, operationName } = getGraphQLParams({
               queryParams: request.query || parseUrl(request, true).query || {},
               body: parsedBody,
