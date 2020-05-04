@@ -191,7 +191,7 @@ export class GraphyneServerBase {
   }
 
   public async runQuery(
-    requestCtx: QueryRequest,
+    { query, variables, operationName, context, httpRequest }: QueryRequest,
     cb: (err: any, result: QueryResponse) => void
   ): Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
@@ -209,14 +209,6 @@ export class GraphyneServerBase {
         headers: { 'content-type': 'application/json' },
       });
     };
-
-    const {
-      query,
-      variables,
-      operationName,
-      context,
-      httpRequest,
-    } = requestCtx;
 
     if (!query) {
       return createResponse(400, {
