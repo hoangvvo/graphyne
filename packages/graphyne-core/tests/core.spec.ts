@@ -6,6 +6,7 @@ import {
   QueryRequest,
   QueryResponse,
   Config,
+  QueryBody,
 } from '../src';
 
 const schema = makeExecutableSchema({
@@ -15,6 +16,7 @@ const schema = makeExecutableSchema({
       helloWorld: String
       helloRoot: String
       throwMe: String
+      helloContext: String
     }
     type Mutation {
       sayHello(who: String!): String
@@ -28,6 +30,7 @@ const schema = makeExecutableSchema({
       throwMe: async () => {
         throw new Error('weeeeee');
       },
+      helloContext: (obj, args, context) => 'Hello ' + context.robot,
     },
     Mutation: {
       sayHello: (obj, args) => 'Hello ' + args.who,
@@ -36,14 +39,17 @@ const schema = makeExecutableSchema({
 });
 
 function testCase(
-  queryRequest: QueryRequest,
+  queryRequest: QueryBody &
+    Pick<QueryRequest, 'httpRequest'> & { context?: Record<string, any> },
   expected: Partial<QueryResponse> | { body: (b: string) => boolean },
   options?: Partial<Config>
 ) {
+  if (!queryRequest.context) queryRequest.context = {};
   return new Promise((resolve, reject) => {
     new GraphyneServerBase({
       schema,
       ...options,
+      // @ts-ignore
     }).runQuery(queryRequest, (err, result) => {
       if (typeof expected.body === 'function') {
         return expected.body(result.body) ? resolve() : reject('no match');
@@ -119,10 +125,7 @@ describe('Operations', () => {});
 describe('HTTP Operations', () => {
   it('allows regular request', () => {
     return testCase(
-      {
-        query: 'query { helloWorld }',
-        context: {},
-      },
+      { query: 'query { helloWorld }' },
       { body: `{"data":{"helloWorld":"world"}}` }
     );
   });
@@ -131,7 +134,6 @@ describe('HTTP Operations', () => {
       {
         query: 'query helloWho($who: String!) { hello(who: $who) }',
         variables: { who: 'John' },
-        context: {},
       },
       { body: `{"data":{"hello":"John"}}` }
     );
@@ -142,7 +144,6 @@ describe('HTTP Operations', () => {
         query: `query helloJohn { hello(who: "John") }
       query helloJane { hello(who: "Jane") }
       `,
-        context: {},
       },
       {
         status: 400,
@@ -158,12 +159,11 @@ describe('HTTP Operations', () => {
         query helloJane { hello(who: "Jane") }
         `,
         operationName: 'helloJane',
-        context: {},
       },
       { body: '{"data":{"hello":"Jane"}}' }
     );
   });
-  it('errors when missing query', async () => {
+  it('errors when missing query', () => {
     return testCase(
       { context: {} },
       {
@@ -176,10 +176,7 @@ describe('HTTP Operations', () => {
     return testCase(
       {
         query: `mutation sayHelloWho { sayHello(who: "Jane") }`,
-        httpRequest: {
-          method: 'GET',
-        },
-        context: {},
+        httpRequest: { method: 'GET' },
       },
       {
         status: 405,
@@ -190,13 +187,19 @@ describe('HTTP Operations', () => {
   });
   it('allows sending a mutation via POST request', () => {
     return testCase(
+      { query: `mutation sayHelloWho { sayHello(who: "Jane") }` },
+      { body: '{"data":{"sayHello":"Hello Jane"}}' }
+    );
+  });
+  it('allows runQuery with a context', () => {
+    return testCase(
       {
-        query: `mutation sayHelloWho { sayHello(who: "Jane") }`,
-        context: {},
+        query: `{ helloContext }`,
+        context: {
+          robot: 'R2-D2',
+        },
       },
-      {
-        body: '{"data":{"sayHello":"Hello Jane"}}',
-      }
+      { body: '{"data":{"helloContext":"Hello R2-D2"}}' }
     );
   });
   describe('allows defining options.rootValue', () => {
@@ -206,31 +209,15 @@ describe('HTTP Operations', () => {
     // FIXME: need better test
     it('with an object', () => {
       return testCase(
-        {
-          query: 'query { helloRoot }',
-          httpRequest: {
-            method: 'GET',
-          },
-          context: {},
-        },
-        {
-          body: '{"data":{"helloRoot":"Luke"}}',
-        },
+        { query: 'query { helloRoot }', httpRequest: { method: 'GET' } },
+        { body: '{"data":{"helloRoot":"Luke"}}' },
         { rootValue }
       );
     });
     it('with a function', () => {
       return testCase(
-        {
-          query: 'query { helloRoot }',
-          httpRequest: {
-            method: 'GET',
-          },
-          context: {},
-        },
-        {
-          body: '{"data":{"helloRoot":"Luke"}}',
-        },
+        { query: 'query { helloRoot }', httpRequest: { method: 'GET' } },
+        { body: '{"data":{"helloRoot":"Luke"}}' },
         { rootValue: () => rootValue }
       );
     });
@@ -238,10 +225,7 @@ describe('HTTP Operations', () => {
   describe('errors on validation errors', () => {
     it('when there are unknown fields', () => {
       return testCase(
-        {
-          query: `query { xinchao, hola, hello }`,
-          context: {},
-        },
+        { query: `query { xinchao, hola, hello }` },
         {
           body: (str) => {
             const {
@@ -262,10 +246,7 @@ describe('HTTP Operations', () => {
     });
     it('when missing required arguments', () => {
       return testCase(
-        {
-          query: `query { hello }`,
-          context: {},
-        },
+        { query: `query { hello }` },
         {
           body: (str) => {
             const {
@@ -284,10 +265,7 @@ describe('HTTP Operations', () => {
       return testCase(
         {
           query: 'query helloWho($who: String!) { hello(who: $who) }',
-          variables: {
-            who: 12,
-          },
-          context: {},
+          variables: { who: 12 },
         },
         {
           body: (str) => {
@@ -305,10 +283,7 @@ describe('HTTP Operations', () => {
     });
     it('when query is malformed', () => {
       return testCase(
-        {
-          query: 'query { helloWorld ',
-          context: {},
-        },
+        { query: 'query { helloWorld ' },
         {
           body: (str) => {
             const {
@@ -324,12 +299,9 @@ describe('HTTP Operations', () => {
       );
     });
   });
-  it('catches error thrown in resolver function', async () => {
+  it('catches error thrown in resolver function', () => {
     return testCase(
-      {
-        query: 'query { throwMe }',
-        context: {},
-      },
+      { query: 'query { throwMe }' },
       {
         body: (str) => {
           const {

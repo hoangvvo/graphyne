@@ -124,7 +124,7 @@ describe('createHandler', () => {
       .expect('test', 'ok')
       .expect('{"data":{"hello":"world"}}');
   });
-  describe('when path no match ', () => {
+  describe('when path is not match ', () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,
     });
