@@ -1,0 +1,18 @@
+name: Benchmark on demand
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - uses: Eomm/action-journalist@v1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        keywords: '["#journalist run benchmark"]'
+        command: yarn install && node bench/bench -c 5 -d 5 -p 1 --silent --all-packages --write && node bench/compare --table
