@@ -208,13 +208,10 @@ export class GraphyneServerBase {
       });
     };
 
-    if (!query) {
+    if (!query)
       return createResponse(400, {
         errors: [new GraphQLError('Must provide query string.')],
       });
-    }
-
-    const { rootValue: rootValueFn } = this.options;
 
     // Get graphql-jit compiled query and parsed document
     try {
@@ -239,17 +236,12 @@ export class GraphyneServerBase {
         });
       }
 
-      let rootValue = {};
-      if (rootValueFn) {
-        if (typeof rootValueFn === 'function') {
-          rootValue = rootValueFn(document);
-        } else rootValue = rootValueFn;
-      }
-
       return createResponse(
         200,
         await (compiledQuery as CompiledQuery).query(
-          rootValue,
+          typeof this.options.rootValue === 'function'
+            ? this.options.rootValue(document)
+            : this.options.rootValue || {},
           context,
           variables
         )
