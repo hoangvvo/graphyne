@@ -84,16 +84,16 @@ export class GraphyneServer extends GraphyneServerBase {
               });
             }
 
-            const { query, variables, operationName } = getGraphQLParams({
+            const params = getGraphQLParams({
               queryParams: request.query || parseUrl(request, true).query || {},
               body: parsedBody,
             });
             this.runQuery(
               {
-                query,
+                query: params.query,
                 context,
-                variables,
-                operationName,
+                variables: params.variables,
+                operationName: params.operationName,
                 httpRequest: {
                   method: request.method as string,
                 },
