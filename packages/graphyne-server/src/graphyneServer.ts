@@ -40,12 +40,14 @@ export class GraphyneServer extends GraphyneServerBase {
       : null;
     const contextFn = this.options.context ?? {};
     return (...args: any[]) => {
-      const { request, response } = options?.integrationFn
-        ? options.integrationFn(...args)
-        : {
-            request: args[0],
-            response: args[1],
-          };
+      let request = args[0],
+        response = args[1];
+
+      if (options?.integrationFn) {
+        const integrate = options.integrationFn(...args);
+        request = integrate.request;
+        response = integrate.response;
+      }
 
       const sendResponse = (err: any, result: QueryResponse) =>
         options?.onResponse
