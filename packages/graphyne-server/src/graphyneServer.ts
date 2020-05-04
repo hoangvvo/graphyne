@@ -32,8 +32,8 @@ export class GraphyneServer extends GraphyneServerBase {
     super(options);
   }
 
-  createHandler(options: HandlerConfig = {}): RequestListener | any {
-    const path = options.path || DEFAULT_PATH;
+  createHandler(options?: HandlerConfig): RequestListener | any {
+    const path = options?.path || DEFAULT_PATH;
     const playgroundPath = options?.playground
       ? (typeof options.playground === 'object' && options.playground.path) ||
         DEFAULT_PLAYGROUND_PATH
@@ -52,7 +52,13 @@ export class GraphyneServer extends GraphyneServerBase {
         response = integrate.response;
       }
 
-      const sendResponse = (err: any, result: QueryResponse) =>
+      const result: QueryResponse = {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: '',
+      };
+
+      const sendResponse = () =>
         onResponse
           ? onResponse(result, ...args)
           : sendresponse(result, request, response);
@@ -61,12 +67,11 @@ export class GraphyneServer extends GraphyneServerBase {
       switch (request.path || parseUrl(request, true).pathname) {
         case path:
           parseNodeRequest(request, async (err, parsedBody) => {
-            if (err)
-              return sendResponse(null, {
-                status: err.status || 500,
-                body: JSON.stringify(err),
-                headers: {},
-              });
+            if (err) {
+              result.status = err.status || 500;
+              result.body = JSON.stringify(new GraphQLError(err.message));
+              return sendResponse();
+            }
 
             let context;
             try {
@@ -75,16 +80,14 @@ export class GraphyneServer extends GraphyneServerBase {
                   ? await contextFn(...args)
                   : contextFn;
             } catch (err) {
-              return sendResponse(null, {
-                status: err.status || 400,
-                body: JSON.stringify({
-                  errors: [
-                    // TODO: More context
-                    new GraphQLError(`Context creation failed: ${err.message}`),
-                  ],
-                }),
-                headers: { 'content-type': 'application/json' },
+              result.status = err.status || 400;
+              result.body = JSON.stringify({
+                errors: [
+                  // TODO: More context
+                  new GraphQLError(`Context creation failed: ${err.message}`),
+                ],
               });
+              return sendResponse();
             }
 
             const params = getGraphQLParams({
@@ -101,28 +104,27 @@ export class GraphyneServer extends GraphyneServerBase {
                   method: request.method as string,
                 },
               },
-              sendResponse
+              (err, queryResult) =>
+                Object.assign(result, queryResult) && sendResponse()
             );
           });
           break;
         case playgroundPath:
-          sendResponse(null, {
-            status: 200,
-            body: renderPlayground({
-              endpoint: path,
-              subscriptionEndpoint: this.subscriptionPath,
-            }),
-            headers: { 'content-type': 'text/html; charset=utf-8' },
+          result.body = renderPlayground({
+            endpoint: path,
+            subscriptionEndpoint: this.subscriptionPath,
           });
+          result.headers['content-type'] = 'text/html; charset=utf-8';
+          sendResponse();
           break;
         default:
-          if (onNoMatch) onNoMatch(...args);
-          else
-            sendResponse(null, {
-              status: 404,
-              body: 'not found',
-              headers: { 'content-type': 'text/html; charset=utf-8' },
-            });
+          if (onNoMatch) {
+            onNoMatch(...args);
+          } else {
+            result.headers['content-type'] = 'text/html; charset=utf-8';
+            result.status = 404;
+            sendResponse();
+          }
       }
     };
   }
