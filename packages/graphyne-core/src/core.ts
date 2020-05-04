@@ -199,8 +199,8 @@ export class GraphyneServerBase {
 
   public async runQuery(
     requestCtx: QueryRequest,
-    cb?: (err: any, result: QueryResponse) => void
-  ): Promise<QueryResponse> {
+    cb: (err: any, result: QueryResponse) => void
+  ): Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
 
     const response: QueryResponse = {
@@ -218,8 +218,7 @@ export class GraphyneServerBase {
       flatstr(payload);
       response.body = payload;
       response.status = code;
-      if (cb) cb(null, response);
-      return response;
+      cb(null, response);
     }
 
     const {
