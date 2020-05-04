@@ -197,11 +197,9 @@ export class GraphyneServerBase {
     let compiledQuery: CompiledQuery | ExecutionResult;
 
     const createResponse = (code: number, obj: ExecutionResult) => {
-      const stringify =
-        compiledQuery && isCompiledQuery(compiledQuery)
-          ? compiledQuery.stringify
-          : fastStringify;
-      const payload = stringify(obj);
+      const payload = (compiledQuery && isCompiledQuery(compiledQuery)
+        ? compiledQuery.stringify
+        : fastStringify)(obj);
       flatstr(payload);
       cb(null, {
         body: payload,
