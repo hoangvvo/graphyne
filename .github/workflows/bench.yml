@@ -28,7 +28,7 @@ jobs:
           reaction: '+1'
           prefix_only: 'true'
         env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          GITHUB_TOKEN: ${{github.token}}
       - uses: actions/checkout@v2
       - run: 'echo Found it!'
         if: steps.check.outputs.triggered == 'true'
