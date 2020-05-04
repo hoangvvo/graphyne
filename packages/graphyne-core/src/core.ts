@@ -197,10 +197,10 @@ export class GraphyneServerBase {
     }
   }
 
-  public runQuery(
+  public async runQuery(
     requestCtx: QueryRequest,
     cb: (err: any, result: QueryResponse) => void
-  ): void {
+  ): Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
     const headers: HTTPHeaders = { 'content-type': 'application/json' };
 
@@ -264,16 +264,20 @@ export class GraphyneServerBase {
         } else rootValue = rootValueFn;
       }
 
-      (async () => {
-        createResponse(
-          200,
-          await (compiledQuery as CompiledQuery).query(
-            rootValue,
-            context,
-            variables
-          )
-        );
-      })();
+      const result = (compiledQuery as CompiledQuery).query(
+        rootValue,
+        context,
+        variables
+      );
+
+      createResponse(
+        200,
+        await (compiledQuery as CompiledQuery).query(
+          rootValue,
+          context,
+          variables
+        )
+      );
     } catch (err) {
       createResponse(err.status ?? 500, {
         errors: err.errors,
