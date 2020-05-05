@@ -19,6 +19,7 @@
     "prepublish": "lerna run build",
     "lint": "eslint packages/*/src/**/*.{js,ts}",
     "test": "nyc mocha",
+    "bench": "cd packages/graphyne-server/bench && concurrently -k -s first \"node server\" \"sleep 5 && hey -D body.txt -T application/json -z 10s -m POST http://localhost:4001/graphql\"",
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov"
   },
   "devDependencies": {
