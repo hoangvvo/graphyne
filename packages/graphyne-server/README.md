@@ -17,8 +17,6 @@ A **lightning-fast** JavaScript GraphQL Server, featuring:
 
 `Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([more than 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
 
-Check out the [benchmarks](/bench).
-
 ## Install
 
 Install `Graphyne Server` and `graphql` dependencies using:
@@ -173,3 +171,11 @@ app.use(
 ```
 
 (If there is any framework you fail to integrate, feel free to create an issue)
+
+## Contributing
+
+Please see my [contributing.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)

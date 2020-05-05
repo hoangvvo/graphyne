@@ -1,9 +1,9 @@
 const http = require('http');
 const { GraphyneServer } = require('graphyne-server');
-const { schema } = require('../buildSchema');
+const { schema } = require('./schema');
 
 const graphyne = new GraphyneServer({
-  schema,
+  schema: schema(),
 });
 
 const server = http.createServer(graphyne.createHandler());
