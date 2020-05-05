@@ -4,15 +4,12 @@ import {
   Config,
   QueryResponse,
   renderPlayground,
+  fastStringify,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
-import { GraphQLError } from 'graphql';
 import { HandlerConfig } from './types';
-
-const DEFAULT_PATH = '/graphql';
-const DEFAULT_PLAYGROUND_PATH = '/playground';
 
 const sendresponse = (
   result: QueryResponse,
@@ -34,104 +31,95 @@ export class GraphyneServer extends GraphyneServerBase {
 
   createHandler(options?: HandlerConfig): RequestListener | any {
     return (...args: any[]) => {
-      // Integration mapping
+      const path = options?.path || '/graphql';
+      const playgroundPath = options?.playground
+        ? (typeof options.playground === 'object' && options.playground.path) ||
+          '/playground'
+        : null;
 
-      let req: IncomingMessage & {
-        path?: string;
-        query?: Record<string, string>;
-      };
-      let res: ServerResponse;
+      let request: IncomingMessage & {
+          path?: string;
+          query?: Record<string, string>;
+        },
+        response: ServerResponse;
 
       if (options?.integrationFn) {
-        const {
-          request: mappedRequest,
-          response: mappedResponse,
-        } = options.integrationFn(...args);
-        req = mappedRequest;
-        res = mappedResponse;
-      } else [req, res] = args;
+        const integrate = options.integrationFn(...args);
+        request = integrate.request;
+        response = integrate.response;
+      } else [request, response] = args;
 
-      const sendResponse = (result: QueryResponse) =>
-        options?.onResponse
+      const sendResponse = (result: QueryResponse) => {
+        return options?.onResponse
           ? options.onResponse(result, ...args)
-          : sendresponse(result, req, res);
+          : sendresponse(result, request, response);
+      };
 
       // Parse req.url
-      const pathname = req.path || parseUrl(req, true).pathname;
-      const path = options?.path ?? DEFAULT_PATH;
+      switch (request.path || parseUrl(request, true).pathname) {
+        case path:
+          return parseNodeRequest(request, async (err, parsedBody) => {
+            if (err) {
+              return sendResponse({
+                status: err.status || 500,
+                body: fastStringify({ errors: [err] }),
+                headers: { 'content-type': 'application/json' },
+              });
+            }
 
-      const playground = options?.playground;
-      const playgroundPath =
-        (typeof playground === 'object' && playground.path) ||
-        DEFAULT_PLAYGROUND_PATH;
-
-      if (pathname === path) {
-        // serve GraphQL
-        parseNodeRequest(req, async (err, parsedBody) => {
-          if (err)
-            return sendResponse({
-              status: err.status || 500,
-              body: JSON.stringify(err),
-              headers: {},
-            });
-
-          let context;
-
-          const contextFn = this.options.context;
-          if (contextFn) {
+            let context;
             try {
+              const contextFn = this.options.context || {};
               context =
                 typeof contextFn === 'function'
                   ? await contextFn(...args)
                   : contextFn;
             } catch (err) {
+              err.message = `Context creation failed: ${err.message}`;
               return sendResponse({
-                status: err.status || 400,
-                body: JSON.stringify({
-                  errors: [
-                    // TODO: More context
-                    new GraphQLError(`Context creation failed: ${err.message}`),
-                  ],
-                }),
+                status: err.status || 500,
                 headers: { 'content-type': 'application/json' },
+                body: fastStringify({
+                  errors: [err],
+                }),
               });
             }
-          }
-          const queryParams = req.query || parseUrl(req, true).query;
-          const { query, variables, operationName } = getGraphQLParams({
-            queryParams: queryParams || {},
-            body: parsedBody,
-          });
-          this.runQuery(
-            {
-              query,
-              context,
-              variables,
-              operationName,
-              httpRequest: {
-                method: req.method as string,
+
+            const params = getGraphQLParams({
+              queryParams: request.query || parseUrl(request, true).query || {},
+              body: parsedBody,
+            });
+
+            this.runQuery(
+              {
+                query: params.query,
+                context,
+                variables: params.variables,
+                operationName: params.operationName,
+                httpRequest: {
+                  method: request.method as string,
+                },
               },
-            },
-            (err, result) => sendResponse(result)
-          );
-        });
-      } else if (playground && pathname === playgroundPath) {
-        sendResponse({
-          status: 200,
-          body: renderPlayground({
-            endpoint: path,
-            subscriptionEndpoint: this.subscriptionPath,
-          }),
-          headers: { 'content-type': 'text/html; charset=utf-8' },
-        });
-      } else {
-        if (options?.onNoMatch) options.onNoMatch(...args);
-        else
-          sendResponse({
-            status: 404,
-            body: 'not found',
+              sendResponse
+            );
+          });
+        case playgroundPath:
+          return sendResponse({
+            status: 200,
+            body: renderPlayground({
+              endpoint: path,
+              subscriptionEndpoint: this.subscriptionPath,
+            }),
             headers: { 'content-type': 'text/html; charset=utf-8' },
           });
+        default:
+          return options?.onNoMatch
+            ? options.onNoMatch(...args)
+            : sendResponse({
+                status: 404,
+                body: 'not found',
+                headers: { 'content-type': 'text/html; charset=utf-8' },
+              });
       }
     };
   }

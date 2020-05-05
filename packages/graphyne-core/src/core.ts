@@ -11,18 +11,12 @@ import {
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
 import lru, { Lru } from 'tiny-lru';
 import fastJson from 'fast-json-stringify';
-import {
-  Config,
-  QueryCache,
-  QueryRequest,
-  HTTPHeaders,
-  QueryResponse,
-} from './types';
+import { Config, QueryCache, QueryRequest, QueryResponse } from './types';
 // @ts-ignore
 import flatstr from 'flatstr';
 
 // Default stringify fallback if no graphql-jit compiled query available.
-const fastStringify = fastJson({
+export const fastStringify = fastJson({
   type: 'object',
   properties: {
     data: {
@@ -74,15 +68,7 @@ function buildCache(opts: Config) {
   return lru(1024);
 }
 
-type GraphyneError = Error & {
-  status?: number;
-  errors?: readonly GraphQLError[];
-};
-
-function createGraphyneError({
-  errors,
-  status,
-}: Pick<GraphyneError, 'status' | 'errors'>): GraphyneError {
+function createGraphyneError(status: number, errors: readonly GraphQLError[]) {
   const error = new GraphQLError('Error');
   Object.assign(error, { errors, status });
   return error;
@@ -134,20 +120,12 @@ export class GraphyneServerBase {
       return cached;
     } else {
       const errCached = this.lruErrors !== null && this.lruErrors.get(query);
-      if (errCached) {
-        throw createGraphyneError({
-          errors: errCached.errors,
-          status: 400,
-        });
-      }
+      if (errCached) throw createGraphyneError(400, errCached.errors);
 
       try {
         document = parse(query);
       } catch (syntaxErr) {
-        throw createGraphyneError({
-          errors: [syntaxErr],
-          status: 400,
-        });
+        throw createGraphyneError(400, [syntaxErr]);
       }
 
       const validationErrors = validate(this.schema, document);
@@ -159,22 +137,16 @@ export class GraphyneServerBase {
             errors: validationErrors,
           });
         }
-        throw createGraphyneError({
-          errors: validationErrors,
-          status: 400,
-        });
+        throw createGraphyneError(400, validationErrors);
       }
 
       const operation = getOperationAST(document, operationName)?.operation;
       if (!operation)
-        throw createGraphyneError({
-          errors: [
-            new GraphQLError(
-              'Must provide operation name if query contains multiple operations.'
-            ),
-          ],
-          status: 400,
-        });
+        throw createGraphyneError(400, [
+          new GraphQLError(
+            'Must provide operation name if query contains multiple operations.'
+          ),
+        ]);
 
       const compiledQuery = compileQuery(this.schema, document, operationName, {
         customJSONSerializer: true,
@@ -189,60 +161,41 @@ export class GraphyneServerBase {
         });
       }
 
-      return {
-        operation,
-        compiledQuery,
-        document,
-      };
+      return { operation, compiledQuery, document };
     }
   }
 
-  public async runQuery(
-    requestCtx: QueryRequest,
-    cb: (err: any, result: QueryResponse) => void
-  ): Promise<void> {
+  public runQuery(
+    { query, variables, operationName, context, httpRequest }: QueryRequest,
+    cb: (result: QueryResponse) => void
+  ): void | Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
 
-    const response: QueryResponse = {
-      headers: { 'content-type': 'application/json' },
-      body: '',
-      status: 200,
+    const createResponse = (code: number, obj: ExecutionResult) => {
+      const payload = (compiledQuery && isCompiledQuery(compiledQuery)
+        ? compiledQuery.stringify
+        : fastStringify)(obj);
+      flatstr(payload);
+      cb({
+        body: payload,
+        status: code,
+        headers: { 'content-type': 'application/json' },
+      });
     };
 
-    function createResponse(code: number, obj: ExecutionResult) {
-      const stringify =
-        compiledQuery && isCompiledQuery(compiledQuery)
-          ? compiledQuery.stringify
-          : fastStringify;
-      const payload = stringify(obj);
-      flatstr(payload);
-      response.body = payload;
-      response.status = code;
-      cb(null, response);
-    }
-
-    const {
-      query,
-      variables,
-      operationName,
-      context,
-      httpRequest,
-    } = requestCtx;
-
-    if (!query) {
-      return createResponse(400, {
-        errors: [new GraphQLError('Must provide query string.')],
-      });
-    }
-
-    const { rootValue: rootValueFn } = this.options;
-
-    // Get graphql-jit compiled query and parsed document
     try {
-      const { compiledQuery, document, operation } = this.getCompiledQuery(
-        query,
-        operationName
-      );
+      if (!query)
+        throw createGraphyneError(400, [
+          new GraphQLError('Must provide query string.'),
+        ]);
+
+      // Get graphql-jit compiled query and parsed document
+      const {
+        document,
+        operation,
+        compiledQuery: compiled,
+      } = this.getCompiledQuery(query, operationName);
+      compiledQuery = compiled;
       // http.request is not available in ws
       if (
         httpRequest &&
@@ -250,8 +203,7 @@ export class GraphyneServerBase {
         operation !== 'query'
       ) {
         // Mutation is not allowed with GET request
-        throw createGraphyneError({
-          status: 405,
+        return createResponse(405, {
           errors: [
             new GraphQLError(
               `Operation ${operation} cannot be performed via a GET request`
@@ -259,22 +211,16 @@ export class GraphyneServerBase {
           ],
         });
       }
-
-      let rootValue = {};
-      if (rootValueFn) {
-        if (typeof rootValueFn === 'function') {
-          rootValue = rootValueFn(document);
-        } else rootValue = rootValueFn;
-      }
-
-      return createResponse(
-        200,
-        await (compiledQuery as CompiledQuery).query(
-          rootValue,
-          context,
-          variables
-        )
+      const result = (compiledQuery as CompiledQuery).query(
+        typeof this.options.rootValue === 'function'
+          ? this.options.rootValue(document)
+          : this.options.rootValue || {},
+        context,
+        variables
       );
+      return 'then' in result
+        ? result.then((finished) => createResponse(200, finished))
+        : createResponse(200, result);
     } catch (err) {
       return createResponse(err.status ?? 500, {
         errors: err.errors,

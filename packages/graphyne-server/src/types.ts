@@ -1,9 +1,13 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { QueryResponse } from 'graphyne-core';
-type IntegrationFunction = (
+
+export type IntegrationFunction = (
   ...args: any[]
 ) => {
-  request: IncomingMessage;
+  request: IncomingMessage & {
+    path?: string;
+    query?: Record<string, string>;
+  };
   response: ServerResponse;
 };
 

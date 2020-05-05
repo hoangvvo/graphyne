@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
-import { VariableValues, QueryBody, QueryRequest } from 'graphyne-core';
+import { QueryBody, QueryRequest } from 'graphyne-core';
 
 type GraphQLParams = Partial<QueryRequest>;
 type GraphQLParamsInput = {
@@ -11,18 +11,15 @@ export function getGraphQLParams({
   queryParams,
   body,
 }: GraphQLParamsInput): GraphQLParams {
-  let variables: VariableValues[] | undefined;
-  const query =
-    queryParams.query || (typeof body === 'object' ? body.query : body);
   const varr =
     (typeof body === 'object' && body.variables) || queryParams.variables;
-  if (varr) {
-    variables = typeof varr === 'string' ? JSON.parse(varr) : varr;
-  }
-  const operationName =
-    (typeof body === 'object' && body.operationName) ||
-    queryParams.operationName;
-  return { query, variables, operationName };
+  return {
+    query: queryParams.query || (typeof body === 'object' ? body.query : body),
+    variables: typeof varr === 'string' ? JSON.parse(varr) : varr,
+    operationName:
+      (typeof body === 'object' && body.operationName) ||
+      queryParams.operationName,
+  };
 }
 
 export function parseNodeRequest(
