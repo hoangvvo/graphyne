@@ -28,7 +28,7 @@ export interface QueryRequest extends QueryBody {
 export interface QueryResponse {
   status: number;
   body: string;
-  headers: HTTPHeaders;
+  headers: Record<string, string>;
 }
 
 export interface QueryCache {
