@@ -1,0 +1,30 @@
+{
+  "name": "graphyne-worker",
+  "version": "0.0.0",
+  "description": "Graphyne GraphQL Execution for Web Workers",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "Hoang Vo (https://hoangvvo.com)",
+  "keywords": [
+    "graphql",
+    "server",
+    "api",
+    "web",
+    "workers"
+  ],
+  "repository": "git+https://github.com/hoangvvo/graphyne.git",
+  "bugs": {
+    "url": "https://github.com/hoangvvo/graphyne/issues"
+  },
+  "homepage": "https://github.com/hoangvvo/graphyne#readme",
+  "license": "MIT",
+  "dependencies": {
+    "graphyne-core": "^0.6.1"
+  }
+}
