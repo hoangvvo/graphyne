@@ -2,7 +2,7 @@ import { makeExecutableSchema } from 'graphql-tools';
 import { GraphQLSchema } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
 import {
-  GraphyneServerBase,
+  GraphyneCore,
   QueryRequest,
   QueryResponse,
   Config,
@@ -46,7 +46,7 @@ function testCase(
 ) {
   if (!queryRequest.context) queryRequest.context = {};
   return new Promise((resolve, reject) => {
-    new GraphyneServerBase({
+    new GraphyneCore({
       schema,
       ...options,
       // @ts-ignore
@@ -75,12 +75,12 @@ describe('graphyne-core', () => {
   it('throws if initializing instance with no option', () => {
     assert.throws(() => {
       // @ts-ignore
-      new GraphyneServerBase();
+      new GraphyneCore();
     });
   });
   it('throws if options.context is not a function or object', () => {
     assert.throws(() => {
-      new GraphyneServerBase({
+      new GraphyneCore({
         // @ts-ignore
         context: 1,
         schema,
@@ -89,7 +89,7 @@ describe('graphyne-core', () => {
   });
   it('throws if schema is invalid', () => {
     assert.throws(() => {
-      new GraphyneServerBase({
+      new GraphyneCore({
         // @ts-ignore
         schema: new GraphQLSchema({ directives: [null] }),
       });
@@ -99,19 +99,19 @@ describe('graphyne-core', () => {
     it('throws if options.cache is not a number or boolean', () => {
       assert.doesNotThrow(() => {
         // TODO: Need test for actual behavior
-        new GraphyneServerBase({
+        new GraphyneCore({
           // @ts-ignore
           cache: true,
           schema,
         });
-        new GraphyneServerBase({
+        new GraphyneCore({
           // @ts-ignore
           cache: 12,
           schema,
         });
       });
       assert.throws(() => {
-        new GraphyneServerBase({
+        new GraphyneCore({
           // @ts-ignore
           cache: {},
         });

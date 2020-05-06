@@ -1,5 +1,5 @@
 import { GraphQLError, ExecutionResult, subscribe } from 'graphql';
-import { QueryBody, GraphyneServerBase as GraphyneServer } from 'graphyne-core';
+import { QueryBody, GraphyneCore } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -37,7 +37,7 @@ interface InitContext {
 
 interface GraphyneWSOptions extends WebSocket.ServerOptions {
   context?: ContextFn;
-  graphyne: GraphyneServer;
+  graphyne: GraphyneCore;
 }
 
 type ContextFn =
@@ -45,7 +45,7 @@ type ContextFn =
   | ((initContext: InitContext) => Record<string, any>);
 
 export class GraphyneWebSocketConnection {
-  private graphyne: GraphyneServer;
+  private graphyne: GraphyneCore;
   public socket: WebSocket;
   private request: IncomingMessage;
   private wss: GraphyneWebSocketServer;
@@ -203,7 +203,7 @@ export class GraphyneWebSocketConnection {
 }
 
 export class GraphyneWebSocketServer extends WebSocket.Server {
-  public graphyne: GraphyneServer;
+  public graphyne: GraphyneCore;
   public contextFn?: ContextFn;
   constructor(options: GraphyneWSOptions) {
     super(options);
