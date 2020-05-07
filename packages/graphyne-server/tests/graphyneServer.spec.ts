@@ -126,9 +126,20 @@ describe('createHandler', () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,
     });
-    it('by default renders 404', async () => {
-      const server = createServer(graphyne.createHandler());
-      await request(server).get('/api').expect('not found');
+    it('by default calling `onResponse', async () => {
+      const server = createServer(
+        graphyne.createHandler({
+          onResponse: (result, req, res) => {
+            res.setHeader('test', 'ok');
+            res.writeHead(result.status, result.headers).end(result.body);
+          },
+        })
+      );
+      await request(server)
+        .get('/api')
+        .expect('not found')
+        .expect(404)
+        .expect('test', 'ok');
     });
     it('renders custom behavior in onNoMatch', async () => {
       const server = createServer(
