@@ -55,14 +55,14 @@ async function testRequest(
   });
 }
 
-describe('Event handler', () => {
-  beforeEach(() => {
-    // @ts-ignore
-    global.Request = fetch.Request;
-    // @ts-ignore
-    global.Response = fetch.Response;
-  });
+beforeEach(() => {
+  // @ts-ignore
+  global.Request = fetch.Request;
+  // @ts-ignore
+  global.Response = fetch.Response;
+});
 
+describe('Event handler', () => {
   it('works with queryParams', async () => {
     await testRequest(
       '/graphql?query={ hello }',
@@ -185,5 +185,14 @@ describe('Event handler', () => {
         },
       }
     );
+  });
+});
+
+describe('handleRequest', () => {
+  it('can be used to execute query manually', async () => {
+    const response = await new GraphyneWorker({ schema }).handleRequest(
+      new Request('http://localhost:0/graphql?query={hello}')
+    );
+    assert.strictEqual(await response.text(), `{"data":{"hello":"world"}}`);
   });
 });
