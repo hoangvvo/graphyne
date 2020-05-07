@@ -78,7 +78,7 @@ A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) 
 
 **Signature function** refers to framework-specific's handler function. For example, in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)` just like `Node HTTP Server`.
 
-### How to work with frameworks with non-standard signature
+### Integrate with non-standard signature frameworks
 
 By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa does not follow the convention. In such cases `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
 
@@ -94,11 +94,11 @@ In `koa`, however, the handler function has a signature of `(ctx, next)`, and th
 
 ```javascript
 graphyne.createHandler({
-    onRequest: ([ctx, next], done) => {
-      // ctx is the first argument in koa's signature function
-      // req is a property of ctx in koa (ctx.request is the flavored request object)
-      done(ctx.req);
-    },
+  onRequest: ([ctx, next], done) => {
+    // ctx is the first argument in koa's signature function
+    // req is a property of ctx in koa (ctx.request is the flavored request object)
+    done(ctx.req);
+  },
 })
 ```
 
@@ -116,28 +116,27 @@ In `koa`, however, not only that `response` is not the second argument, it has a
 
 ```javascript
 graphyne.createHandler({
-    onResponse: ({ headers, body, status }, ctx, next) => {
-      ctx.status = status;
-      ctx.set(headers);
-      ctx.body = body;
-    }
-  })
+  onResponse: ({ headers, body, status }, ctx, next) => {
+    ctx.status = status;
+    ctx.set(headers);
+    ctx.body = body;
+  }
+})
 ```
 
 `onNoMatch(result, ...args)`
 
-By default, `onNoMatch` would call `onResponse` with the `result = {status: 404, body:"not found", headers:{}}`.
+By default, `onNoMatch` would call `onResponse` with `result = {status: 404, body: "not found", headers: {}}`.
 
 If you configurate `onResponse` correctly for `koa` earlier. This will work just fine. However, let's define this function anyway to see how it will work for other frameworks. Similarly, the arguments of `onNoMatch` will be `(ctx, next)` (like `onResponse` without the `result` argument) so we can integrate like so:
 
 ```javascript
 graphyne.createHandler({
-    onNoMatch: (ctx, next) => {
-      ctx.status = 404;
-      ctx.set(headers);
-      ctx.body = body;
-    }
-  })
+  onNoMatch: (ctx, next) => {
+    ctx.status = 404;
+    ctx.body = 'not found';
+  }
+})
 ```
 
 ### Examples
@@ -203,17 +202,12 @@ fastify.use(
 app.use(
   graphyne.createHandler({
     onRequest: ([ctx, next], done) => {
-      // ctx is the first argument in koa's signature function
       done(ctx.req);
     },
     onResponse: ({ headers, body, status }, ctx) => {
       ctx.status = status;
       ctx.set(headers);
       ctx.body = body;
-    },
-    onNoMatch: (ctx) => {
-      ctx.status = 404;
-      ctx.body = 'not found';
     },
   })
 );

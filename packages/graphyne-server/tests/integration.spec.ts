@@ -140,22 +140,23 @@ describe('Integrations', () => {
   describe('koa', () => {
     const Koa = require('koa');
     const app = new Koa();
-    const handler = graphyne.createHandler({
-      playground: true,
-      onRequest: ([ctx], done) => {
-        done(ctx.req);
-      },
-      onResponse: ({ headers, body, status }, ctx) => {
-        ctx.status = status;
-        ctx.set(headers);
-        ctx.body = body;
-      },
-      onNoMatch: (ctx) => {
-        ctx.status = 404;
-        ctx.body = 'not found';
-      },
-    });
-    app.use(async (ctx, next) => handler(ctx));
+    app.use(
+      graphyne.createHandler({
+        playground: true,
+        onRequest: ([ctx], done) => {
+          done(ctx.req);
+        },
+        onResponse: ({ headers, body, status }, ctx) => {
+          ctx.status = status;
+          ctx.set(headers);
+          ctx.body = body;
+        },
+        onNoMatch: (ctx) => {
+          ctx.status = 404;
+          ctx.body = 'not found';
+        },
+      })
+    );
     let server;
     beforeEach(() => {
       server = app.listen();
