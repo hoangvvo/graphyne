@@ -85,6 +85,8 @@ Create a handler for [fetchEvents](https://developer.mozilla.org/en-US/docs/Web/
 
 Instead of using `GraphyneWorker#createHandler`, you can handle a [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) (`fetchEvent.request`) of a `fetchEvent` manually.
 
+Returns a promise of [`Resposne`](https://developer.mozilla.org/en-US/docs/Web/API/Response)
+
 ## Contributing
 
 Please see my [contributing.md](/CONTRIBUTING.md).
