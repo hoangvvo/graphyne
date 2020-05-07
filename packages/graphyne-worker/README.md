@@ -55,6 +55,8 @@ const graphyneWorker = new Worker('worker.js');
 
 See [Using Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers) for more info.
 
+**Note:** `graphyne-worker` can be large in size for use in browser. Consider lazy loading it and implement [Offline/Progressive Web Apps](https://web.dev/progressive-web-apps/).
+
 ## API
 
 ### `new GraphyneWorker(options)`
