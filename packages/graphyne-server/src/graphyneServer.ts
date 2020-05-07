@@ -14,12 +14,6 @@ import { parseNodeRequest, getGraphQLParams } from './utils';
 import parseUrl from '@polka/url';
 import { HandlerConfig, ExtendedRequest } from './types';
 
-const sendresponse = (result: QueryResponse, res: ServerResponse) =>
-  res.writeHead(result.status, result.headers).end(result.body);
-
-const onrequest = (args: any[], done: (req: IncomingMessage) => void) =>
-  done(args[0]);
-
 export class GraphyneServer extends GraphyneCore {
   constructor(options: Config) {
     super(options);
@@ -36,7 +30,7 @@ export class GraphyneServer extends GraphyneCore {
       const that = this;
 
       if (options?.onRequest) options.onRequest(args, onRequestResolve);
-      else onrequest(args, onRequestResolve);
+      else onRequestResolve(args[0]);
 
       function onRequestResolve(request: ExtendedRequest) {
         switch (request.path || parseUrl(request, true).pathname) {
@@ -115,9 +109,11 @@ export class GraphyneServer extends GraphyneCore {
       }
 
       function sendResponse(result: QueryResponse) {
-        return options?.onResponse
-          ? options.onResponse(result, ...args)
-          : sendresponse(result, args[1]);
+        if (options?.onResponse) return options.onResponse(result, ...args);
+        else
+          return args[1]
+            .writeHead(result.status, result.headers)
+            .end(result.body);
       }
 
       function sendError(error: any) {
