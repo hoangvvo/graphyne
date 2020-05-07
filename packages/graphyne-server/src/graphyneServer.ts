@@ -1,6 +1,6 @@
 import { RequestListener, IncomingMessage, ServerResponse } from 'http';
 import {
-  GraphyneServerBase,
+  GraphyneCore,
   Config,
   QueryResponse,
   renderPlayground,
@@ -24,7 +24,7 @@ const sendresponse = (
   res.end(body);
 };
 
-export class GraphyneServer extends GraphyneServerBase {
+export class GraphyneServer extends GraphyneCore {
   constructor(options: Config) {
     super(options);
   }

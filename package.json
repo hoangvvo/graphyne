@@ -13,7 +13,8 @@
   },
   "homepage": "https://github.com/hoangvvo/graphyne#readme",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/graphyne-worker-simple"
   ],
   "scripts": {
     "prepublish": "lerna run build",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^7.0.2",
+    "@types/node-fetch": "^2.5.7",
     "@types/supertest": "^2.0.9",
     "@typescript-eslint/eslint-plugin": "^2.31.0",
     "@typescript-eslint/parser": "^2.31.0",

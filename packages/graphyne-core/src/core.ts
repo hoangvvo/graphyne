@@ -74,7 +74,7 @@ function createGraphyneError(status: number, errors: readonly GraphQLError[]) {
   return error;
 }
 
-export class GraphyneServerBase {
+export class GraphyneCore {
   private lru: Lru<
     Pick<QueryCache, 'document' | 'operation' | 'compiledQuery'>
   > | null;

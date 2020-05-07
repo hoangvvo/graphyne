@@ -1,0 +1,1 @@
+export { GraphyneWorker } from './graphyneWorker';

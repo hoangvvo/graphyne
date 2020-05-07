@@ -1,6 +1,6 @@
 {
   "spec": ["packages/*/**/*.spec.ts"],
-  "require": ["ts-node/register"],
+  "require": ["ts-node/register/transpile-only"],
   "extension": ["js", "ts"],
   "colors": true
 }
