@@ -17,10 +17,6 @@ import { HandlerConfig, ExtendedRequest } from './types';
 const sendresponse = (result: QueryResponse, res: ServerResponse) =>
   res.writeHead(result.status, result.headers).end(result.body);
 
-const onnomatch = (res: ServerResponse) => {
-  res.writeHead(404).end('not found');
-};
-
 const onrequest = (args: any[], done: (req: IncomingMessage) => void) =>
   done(args[0]);
 
@@ -58,7 +54,7 @@ export class GraphyneServer extends GraphyneCore {
           default:
             return options?.onNoMatch
               ? options.onNoMatch(...args)
-              : onnomatch(args[1]);
+              : sendResponse({ body: 'not found', status: 404, headers: {} });
         }
       }
 
