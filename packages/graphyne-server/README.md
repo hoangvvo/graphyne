@@ -239,7 +239,7 @@ exports.handler = graphyne.createHandler({
 
 #### Other frameworks
 
-As long as the framework exposes Node.js `IncomingMessage`, `graphyne-server` will work by configuring using `onRequest`, `onResponse`, and `onNoMatch`. If not, you can try to construct one by creating an object with `request.path`, `request.body`, `request.headers` and `request.method`.
+As long as the framework exposes Node.js `IncomingMessage`, `graphyne-server` will work by configuring using `onRequest`, `onResponse`, and `onNoMatch`. If not, you can try to construct one by creating an object with `request.url`, `request.body`, `request.headers`, `request.method`.
 
 My plan is to provide prepared config/presets within this package (perhaps by importing from `graphyne-server/integrations`). Yet, since Node.js ecosystem has a wide range of frameworks, it will be impossible to add one for each of them. If there is any framework you fail to integrate, feel free to create an issue.
 
