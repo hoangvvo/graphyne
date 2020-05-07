@@ -77,9 +77,7 @@ export class GraphyneWorker extends GraphyneCore {
     });
   }
 
-  // @ts-ignore
   createHandler(options: HandlerConfig): (event: FetchEvent) => void {
-    // @ts-ignore
     return (event: FetchEvent) => {
       const url = new URL(event.request.url);
       event.respondWith(this.handleRequest(event.request, url));
