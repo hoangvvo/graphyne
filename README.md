@@ -8,7 +8,7 @@ A **lightning-fast** JavaScript GraphQL Server, featuring:
 
 - Caching of query validation and compilation with LRU strategy.
 - Highly performant Just-In-Time compiler via [graphql-jit](https://github.com/zalando-incubator/graphql-jit)
-- Framework-agnostic: Works out-of-the-box with most JavaScript frameworks, such as Express, Micro.
+- Framework-agnostic: Works out-of-the-box with most Node.js frameworks, in the browser ([Web Worker](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API)), and in serverless environments.
 
 ## Why
 
