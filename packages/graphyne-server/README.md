@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
-Fast and low overhead GraphQL Server for any Node.js framework. A package of [Graphyne](/).
+Fast and low overhead GraphQL Server for any Node.js frameworks or severless environments. A package of [Graphyne](/).
 
 ## Install
 
@@ -88,7 +88,7 @@ Let's take a look at an example with `koa`.
 
 This will be a function to resolve frameworks with non-standard signature function. It accepts an array of *arguments* from a framework's [signature function](#framework-specific-integration) and a function `done` to be called with `request` (`IncomingMessage` from Node.js request listener).
 
-By default, `onRequest` assumes `request` as the fist argument of the signature function. In Node.js HTTP Server the array argument is `[req, res]`, and `onRequest` would be `([req, res], done) => done(req))`.
+By default, `onRequest` assumes `request` is the fist argument of the signature function. In Node.js HTTP Server the array argument is `[req, res]`, and `onRequest` would be `([req, res], done) => done(req))`.
 
 In `koa`, however, the handler function has a signature of `(ctx, next)`, and thus the array argument will be `[ctx, next]` and calling `done(ctx)` by default will result in error. We fix it like so:
 
@@ -110,7 +110,7 @@ This will be a function called to send back the HTTP response, where `args` are 
 - `headers` (the headers that should be set)
 - `body` (the stringified response body).
 
-By default, `onResponse` assumes `response` as the second argument of the signature function and call `response.writeHead` and `response.end` accordingly.
+By default, `onResponse` assumes `response` is the second argument of the signature function and call `response.writeHead` and `response.end` accordingly.
 
 In `koa`, however, not only that `response` is not the second argument, it has a distinctive way to send response using `ctx.body`. We know that the arguments of `koa` is `(ctx, next)`. Thus, the arguments of `onResponse` will be `(result, ctx, next)`. We can integrate like so:
 
@@ -219,9 +219,33 @@ app.use(
 );
 ```
 
-### Other frameworks
+#### [AWS Lambda](https://aws.amazon.com/lambda/)
 
-As long as the framework exposes Node.js `IncomingMessage`, `graphyne-server` will work by configuring using `onRequest`, `onResponse`, and `onNoMatch`.
+Lambda will not have Node.js `IncomingMessage`, but you can still transform it into a compatible `IncomingMessage` object. `graphyne-server` would need `request.path`, `request.body`, `request.headers` and `request.method`.
+
+```javascript
+exports.handler = graphyne.createHandler({
+  onRequest: ([event, context, callback], done) => {
+    // Construct a IncomingMessage compatible object
+    const request = {
+      url: event.path,
+      body: event.body ? JSON.parse(event.body) : null,
+      headers: event.headers,
+      method: event.httpMethod
+    };
+    done(request);
+  },
+  onResponse: ({ headers, body, status }, event, context, callback) => {
+    callback(null, {
+      body, headers, statusCode: status
+    });
+  },
+})
+```
+
+#### Other frameworks
+
+As long as the framework exposes Node.js `IncomingMessage`, `graphyne-server` will work by configuring using `onRequest`, `onResponse`, and `onNoMatch`. If not, you can try to construct one by creating an object with `request.path`, `request.body`, `request.headers` and `request.method`.
 
 My plan is to provide prepared config/presets within this package (perhaps by importing from `graphyne-server/integrations`). Yet, since Node.js ecosystem has a wide range of frameworks, it will be impossible to add one for each of them. If there is any framework you fail to integrate, feel free to create an issue.
 
