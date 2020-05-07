@@ -164,7 +164,7 @@ app.use(
 
 ### Other frameworks
 
-As long as the framework exposes Node.js `IncomingMessage` and `ServerResponse`~ (only if `onResponse`, and `onNoMatch` is not supplied), `graphyne-server` will work by configuring using `integrationFn`, `onResponse`, and `onNoMatch`.
+As long as the framework exposes Node.js `IncomingMessage` and ~~`ServerResponse`~~ (only if `onResponse`, and `onNoMatch` is not supplied), `graphyne-server` will work by configuring using `integrationFn`, `onResponse`, and `onNoMatch`.
 
 My plan is to provide prepared config/presets within this package (perhaps by importing from `graphyne-server/integrations`). Yet, since Node.js ecosystem has a wide range of frameworks, it will be impossible to add one for each of them. If there is any framework you fail to integrate, feel free to create an issue.
 
