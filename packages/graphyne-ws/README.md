@@ -5,9 +5,7 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
-The GraphQL WebSocket server to facilitate GraphQL queries, mutations and subscriptions over WebSocket. Implements [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
-
-This library is meant to be used exclusively with [Graphyne](https://github.com/hoangvvo/graphyne).
+WebSocket support for [`graphyne-server`](/packages/graphyne-server) implementing [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md). A package of [Graphyne](/).
 
 ## Install
 
@@ -106,3 +104,11 @@ const wss = startSubscriptionServer({
   // other options
 });
 ```
+
+## Contributing
+
+Please see my [contributing.md](/CONTRIBUTING.md).
+
+## License
+
+[MIT](/LICENSE)

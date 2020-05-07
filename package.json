@@ -13,8 +13,7 @@
   },
   "homepage": "https://github.com/hoangvvo/graphyne#readme",
   "workspaces": [
-    "packages/*",
-    "examples/graphyne-worker-simple"
+    "packages/*"
   ],
   "scripts": {
     "prepublish": "lerna run build",
