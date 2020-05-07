@@ -57,11 +57,8 @@ Create a handler for HTTP server, `options` accepts the following:
 |---------|-------------|---------|
 | path | Specify a path for the GraphQL endpoint. | `/graphql` |
 | playground | Pass in `true` to present [Playground](https://github.com/prisma-labs/graphql-playground) when being loaded from a browser. Alternatively, you can also pass in an object with `path` that specify a custom path to present `Playground` | `false`, `{ path: '/playground' }` if `true` |
-| onRequest | A function to resolve frameworks with non-standard signature function. It accepts an array of *arguments* from a framework's [signature function](#framework-specific-integration) and a function `done` to be called with `request` (`IncomingMessage` from Node.js request listener) | `([req], done) => { done(req) }` (node signature) |
-| onResponse | A handler function to send response. It accepts as the first arguments an object of `status` (the status code that should be set), `headers` (the headers that should be set), and `body` (the stringified response body). The rest of the arguments are those of the framework's [signature function] | A function calling `response.writeHead` and `response.end`, where `response` are assumed to be the second argument from a framework's [signature function](#framework-specific-integration) |
-| onNoMatch | A handler function when `request.url` does not match `options.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration) | `onResponse` with `body = "not found"` |
 
-For examples on using `onRequest`, `onResponse`, and `onNoMatch`, see [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration)
+In addition, `options` also accepts `onRequest`, `onResponse`, and `onNoMatch`. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration).
 
 ## Additional features
 
@@ -81,9 +78,71 @@ A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) 
 
 **Signature function** refers to framework-specific's handler function. For example, in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)` just like `Node HTTP Server`.
 
-By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, this can be configured using `onRequest`, `onResponse`, and `onNoMatch` to work with any Node.js frameworks or even serverless environment.
+### How to work with frameworks with non-standard signature
 
-### [Express](https://github.com/expressjs/express)
+By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa does not follow the convention. In such cases `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
+
+Let's take a look at an example with `koa`.
+
+`onRequest(args, done)`
+
+This will be a function to resolve frameworks with non-standard signature function. It accepts an array of *arguments* from a framework's [signature function](#framework-specific-integration) and a function `done` to be called with `request` (`IncomingMessage` from Node.js request listener).
+
+By default, `onRequest` assumes `request` as the fist argument of the signature function. In Node.js HTTP Server the array argument is `[req, res]`, and `onRequest` would be `([req, res], done) => done(req))`.
+
+In `koa`, however, the handler function has a signature of `(ctx, next)`, and thus the array argument will be `[ctx, next]` and calling `done(ctx)` by default will result in error. We fix it like so:
+
+```javascript
+graphyne.createHandler({
+    onRequest: ([ctx, next], done) => {
+      // ctx is the first argument in koa's signature function
+      // req is a property of ctx in koa (ctx.request is the flavored request object)
+      done(ctx.req);
+    },
+})
+```
+
+`onResponse(result, ...args)`
+
+This will be a function called to send back the HTTP response, where `args` are spreaded arguments of the framework signature function and `result` is always an object of:
+
+- `status` (the status code that should be set)
+- `headers` (the headers that should be set)
+- `body` (the stringified response body).
+
+By default, `onResponse` assumes `response` as the second argument of the signature function and call `response.writeHead` and `response.end` accordingly.
+
+In `koa`, however, not only that `response` is not the second argument, it has a distinctive way to send response using `ctx.body`. We know that the arguments of `koa` is `(ctx, next)`. Thus, the arguments of `onResponse` will be `(result, ctx, next)`. We can integrate like so:
+
+```javascript
+graphyne.createHandler({
+    onResponse: ({ headers, body, status }, ctx, next) => {
+      ctx.status = status;
+      ctx.set(headers);
+      ctx.body = body;
+    }
+  })
+```
+
+`onNoMatch(result, ...args)`
+
+By default, `onNoMatch` would call `onResponse` with the `result = {status: 404, body:"not found", headers:{}}`.
+
+If you configurate `onResponse` correctly for `koa` earlier. This will work just fine. However, let's define this function anyway to see how it will work for other frameworks. Similarly, the arguments of `onNoMatch` will be `(ctx, next)` (like `onResponse` without the `result` argument) so we can integrate like so:
+
+```javascript
+graphyne.createHandler({
+    onNoMatch: (ctx, next) => {
+      ctx.status = 404;
+      ctx.set(headers);
+      ctx.body = body;
+    }
+  })
+```
+
+### Examples
+
+#### [Express](https://github.com/expressjs/express)
 
 [Example](/examples/with-express)
 
@@ -98,7 +157,7 @@ app.use(
 );
 ```
 
-### [Micro](https://github.com/zeit/micro)
+#### [Micro](https://github.com/zeit/micro)
 
 [Example](/examples/with-micro)
 
@@ -120,7 +179,7 @@ module.exports = graphyne.createHandler({
 });
 ```
 
-### [Fastify](https://github.com/fastify/fastify)
+#### [Fastify](https://github.com/fastify/fastify)
 
 **Note:** This is an unofficial integration. For a solution in the ecosystem, check out [fastify-gql](https://github.com/mcollina/fastify-gql).
 
@@ -136,7 +195,7 @@ fastify.use(
 );
 ```
 
-### [Koa](https://github.com/koajs/koa)
+#### [Koa](https://github.com/koajs/koa)
 
 [Example](/examples/with-koa)
 
