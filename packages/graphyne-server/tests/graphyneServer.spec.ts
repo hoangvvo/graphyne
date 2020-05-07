@@ -166,6 +166,17 @@ describe('HTTP handler', () => {
       .get('/graphql')
       .query({ query: 'query { helloMe }' })
       .expect('{"errors":[{"message":"Context creation failed: uh oh"}]}');
+    // Non promise function
+    const server2 = createGQLServer({
+      schema: schemaHello,
+      context: () => {
+        throw new Error('uh oh');
+      },
+    });
+    await request(server2)
+      .get('/graphql')
+      .query({ query: 'query { helloMe }' })
+      .expect('{"errors":[{"message":"Context creation failed: uh oh"}]}');
   });
   describe('resolves options.context that is', () => {
     it('an object', async () => {
