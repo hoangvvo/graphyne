@@ -25,7 +25,8 @@
   },
   "dependencies": {
     "@polka/url": "^1.0.0-next.11",
-    "graphyne-core": "^0.6.2"
+    "graphyne-core": "^0.6.2",
+    "reusify": "^1.0.4"
   },
   "devDependencies": {
     "@types/node": "^13.11.0"

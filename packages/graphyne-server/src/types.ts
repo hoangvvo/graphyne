@@ -1,5 +1,11 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { QueryResponse } from 'graphyne-core';
+import {
+  QueryResponse,
+  QueryBody,
+  QueryRequest,
+  Config,
+  GraphyneCore,
+} from 'graphyne-core';
 
 export type IntegrationFunction = (
   ...args: any[]
@@ -30,3 +36,25 @@ export type ExtendedRequest = IncomingMessage & {
   path?: string;
   query?: Record<string, string>;
 };
+
+export interface HandlerInstance {
+  next: null;
+  args: any[];
+  options: HandlerConfig | undefined;
+  onRequestResolve: (request: ExtendedRequest) => void;
+  onBodyParsed: (
+    parseErr: any,
+    request: ExtendedRequest,
+    parsedBody?: QueryBody
+  ) => void;
+  onParamParsed: (params: Partial<QueryRequest>) => void;
+  onContextResolved: (
+    context: Record<string, any>,
+    params: Partial<QueryRequest>
+  ) => void;
+  sendResponse: (result: QueryResponse) => void;
+  sendError: (error: any) => void;
+  graphyneOpt: Config;
+  runQuery: GraphyneCore['runQuery'];
+  subscriptionPath: GraphyneCore['subscriptionPath'];
+}
