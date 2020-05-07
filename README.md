@@ -48,12 +48,12 @@ Add WebSocket support to `graphyne-server`. Implements [GraphQL over WebSocket P
 
 `Graphyne` is a work-in-progress. It is obviously not battle-tested and lack several features. My plan for now is to implement the following:
 
-- [x] WebSocket
+- [x] WebSocket/Subscriptions
 - [ ] Persisted queries
 - [ ] Federation
 - [ ] Gateway
 
-GraphQL execution layer is also bound by the limitation of [graphql-jit](https://github.com/zalando-incubator/graphql-jit#differences-to-graphql-js). Yet, I have been using it in production and see no problems for my use-cases.
+GraphQL execution layer is also bounded by the limitation of [graphql-jit](https://github.com/zalando-incubator/graphql-jit#differences-to-graphql-js). Yet, I have been using it in production and see no problems for my use-cases.
 
 To keep the code light-weight, some features (such as File Upload) is intentionally left out but can be [easily implemented](packages/graphyne-server#file-uploads) if needed.
 
