@@ -5,12 +5,9 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
+GraphQL execution layer in the browser and at the edge. A package of [Graphyne](/).
+
 This is a **WIP**.
-
-**lightning-fast** JavaScript GraphQL execution in browser and at the edge.
-
-- Highly performant Just-In-Time compiler via [graphql-jit](https://github.com/zalando-incubator/graphql-jit)
-- Works in the browser with [Web Workers support](https://caniuse.com/#feat=webworkers) or on [Cloudflare Workers®](https://workers.cloudflare.com/).
 
 ## Why GraphQL in the browser
 

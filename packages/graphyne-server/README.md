@@ -5,15 +5,7 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
-A **lightning-fast** JavaScript GraphQL Server, featuring:
-
-- Caching of query validation and compilation with LRU strategy.
-- Highly performant Just-In-Time compiler via [graphql-jit](https://github.com/zalando-incubator/graphql-jit)
-- Framework-agnostic: Works out-of-the-box with most JavaScript frameworks, such as Express, Micro.
-
-## Why
-
-`Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([more than 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
+Fast and low overhead GraphQL Server for any Node.js framework. A package of [Graphyne](/).
 
 ## Install
 
@@ -172,8 +164,8 @@ app.use(
 
 ## Contributing
 
-Please see my [contributing.md](CONTRIBUTING.md).
+Please see my [contributing.md](/CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](/LICENSE)
