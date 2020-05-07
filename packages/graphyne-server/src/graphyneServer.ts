@@ -15,14 +15,7 @@ const sendresponse = (
   result: QueryResponse,
   req: IncomingMessage,
   res: ServerResponse
-) => {
-  const { status, body, headers } = result;
-  for (const key in headers) {
-    res.setHeader(key, headers[key] as string);
-  }
-  res.statusCode = status;
-  res.end(body);
-};
+) => res.writeHead(result.status, result.headers).end(result.body);
 
 export class GraphyneServer extends GraphyneCore {
   constructor(options: Config) {
