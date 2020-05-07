@@ -44,12 +44,14 @@ const schemaHello = makeExecutableSchema({
 });
 
 describe('createHandler', () => {
-  it('maps req and res using integrationFn', async () => {
+  it('maps request using onRequest', async () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,
     });
     const handler = graphyne.createHandler({
-      integrationFn: ({ req, res }) => ({ request: req, response: res }),
+      onRequest: ([ctx], done) => done(ctx.req),
+      onResponse: ({ status, body, headers }, ctx) =>
+        ctx.res.writeHead(status, headers).end(body),
     });
     const server = createServer((req, res) => {
       const ctx = { req, res };
@@ -108,10 +110,6 @@ describe('createHandler', () => {
     });
     const server = createServer(
       graphyne.createHandler({
-        integrationFn: (req, res) => ({
-          request: req,
-          response: res,
-        }),
         onResponse: (result, req, res) => {
           res.setHeader('test', 'ok');
           res.end(result.body);
@@ -128,9 +126,20 @@ describe('createHandler', () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,
     });
-    it('by default renders 404', async () => {
-      const server = createServer(graphyne.createHandler());
-      await request(server).get('/api').expect('not found');
+    it('by default calling `onResponse', async () => {
+      const server = createServer(
+        graphyne.createHandler({
+          onResponse: (result, req, res) => {
+            res.setHeader('test', 'ok');
+            res.writeHead(result.status, result.headers).end(result.body);
+          },
+        })
+      );
+      await request(server)
+        .get('/api')
+        .expect('not found')
+        .expect(404)
+        .expect('test', 'ok');
     });
     it('renders custom behavior in onNoMatch', async () => {
       const server = createServer(
@@ -163,6 +172,17 @@ describe('HTTP handler', () => {
       },
     });
     await request(server)
+      .get('/graphql')
+      .query({ query: 'query { helloMe }' })
+      .expect('{"errors":[{"message":"Context creation failed: uh oh"}]}');
+    // Non promise function
+    const server2 = createGQLServer({
+      schema: schemaHello,
+      context: () => {
+        throw new Error('uh oh');
+      },
+    });
+    await request(server2)
       .get('/graphql')
       .query({ query: 'query { helloMe }' })
       .expect('{"errors":[{"message":"Context creation failed: uh oh"}]}');

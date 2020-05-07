@@ -1,21 +1,18 @@
-import { RequestListener, IncomingMessage, ServerResponse } from 'http';
+import { RequestListener } from 'http';
 import {
   GraphyneCore,
   Config,
   QueryResponse,
   renderPlayground,
   fastStringify,
+  QueryBody,
+  TContext,
+  QueryRequest,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
-import { HandlerConfig } from './types';
-
-const sendresponse = (
-  result: QueryResponse,
-  req: IncomingMessage,
-  res: ServerResponse
-) => res.writeHead(result.status, result.headers).end(result.body);
+import { HandlerConfig, ExtendedRequest } from './types';
 
 export class GraphyneServer extends GraphyneCore {
   constructor(options: Config) {
@@ -23,96 +20,108 @@ export class GraphyneServer extends GraphyneCore {
   }
 
   createHandler(options?: HandlerConfig): RequestListener | any {
+    const path = options?.path || '/graphql';
+    const playgroundPath = options?.playground
+      ? (typeof options.playground === 'object' && options.playground.path) ||
+        '/playground'
+      : null;
+
     return (...args: any[]) => {
-      const path = options?.path || '/graphql';
-      const playgroundPath = options?.playground
-        ? (typeof options.playground === 'object' && options.playground.path) ||
-          '/playground'
-        : null;
+      const that = this;
 
-      let request: IncomingMessage & {
-          path?: string;
-          query?: Record<string, string>;
-        },
-        response: ServerResponse;
+      if (options?.onRequest) options.onRequest(args, onRequestResolve);
+      else onRequestResolve(args[0]);
 
-      if (options?.integrationFn) {
-        const integrate = options.integrationFn(...args);
-        request = integrate.request;
-        response = integrate.response;
-      } else [request, response] = args;
-
-      const sendResponse = (result: QueryResponse) => {
-        return options?.onResponse
-          ? options.onResponse(result, ...args)
-          : sendresponse(result, request, response);
-      };
-
-      // Parse req.url
-      switch (request.path || parseUrl(request, true).pathname) {
-        case path:
-          return parseNodeRequest(request, async (err, parsedBody) => {
-            if (err) {
-              return sendResponse({
-                status: err.status || 500,
-                body: fastStringify({ errors: [err] }),
-                headers: { 'content-type': 'application/json' },
-              });
-            }
-
-            let context;
-            try {
-              const contextFn = this.options.context || {};
-              context =
-                typeof contextFn === 'function'
-                  ? await contextFn(...args)
-                  : contextFn;
-            } catch (err) {
-              err.message = `Context creation failed: ${err.message}`;
-              return sendResponse({
-                status: err.status || 500,
-                headers: { 'content-type': 'application/json' },
-                body: fastStringify({
-                  errors: [err],
-                }),
-              });
-            }
-
-            const params = getGraphQLParams({
-              queryParams: request.query || parseUrl(request, true).query || {},
-              body: parsedBody,
+      function onRequestResolve(request: ExtendedRequest) {
+        switch (request.path || parseUrl(request, true).pathname) {
+          case path:
+            return parseNodeRequest(request, onBodyParsed);
+          case playgroundPath:
+            return sendResponse({
+              status: 200,
+              body: renderPlayground({
+                endpoint: path,
+                subscriptionEndpoint: that.subscriptionPath,
+              }),
+              headers: { 'content-type': 'text/html; charset=utf-8' },
             });
+          default:
+            return options?.onNoMatch
+              ? options.onNoMatch(...args)
+              : sendResponse({ body: 'not found', status: 404, headers: {} });
+        }
+      }
 
-            this.runQuery(
-              {
-                query: params.query,
-                context,
-                variables: params.variables,
-                operationName: params.operationName,
-                httpRequest: {
-                  method: request.method as string,
-                },
-              },
-              sendResponse
-            );
-          });
-        case playgroundPath:
-          return sendResponse({
-            status: 200,
-            body: renderPlayground({
-              endpoint: path,
-              subscriptionEndpoint: this.subscriptionPath,
-            }),
-            headers: { 'content-type': 'text/html; charset=utf-8' },
-          });
-        default:
-          return options?.onNoMatch
-            ? options.onNoMatch(...args)
-            : sendResponse({
-                status: 404,
-                body: 'not found',
-                headers: { 'content-type': 'text/html; charset=utf-8' },
-              });
+      function onBodyParsed(
+        parseErr: any,
+        request: ExtendedRequest,
+        parsedBody?: QueryBody
+      ) {
+        if (parseErr) return sendError(parseErr);
+        const params = getGraphQLParams({
+          queryParams: request.query || parseUrl(request, true).query || {},
+          body: parsedBody,
+        });
+        params.httpRequest = { method: request.method as string };
+        return onParamParsed(params);
+      }
+
+      function onParamParsed(params: Partial<QueryRequest>) {
+        try {
+          const contextFn = that.options.context;
+          const context: TContext | Promise<TContext> =
+            typeof contextFn === 'function'
+              ? contextFn(...args)
+              : contextFn || {};
+          // FIXME: Types error
+          return 'then' in context
+            ? context.then(
+                (resolvedCtx: TContext) =>
+                  onContextResolved(resolvedCtx, params),
+                (error: any) => {
+                  error.message = `Context creation failed: ${error.message}`;
+                  return sendError(error);
+                }
+              )
+            : onContextResolved(context, params);
+        } catch (error) {
+          error.message = `Context creation failed: ${error.message}`;
+          return sendError(error);
+        }
+      }
+
+      function onContextResolved(
+        context: Record<string, any>,
+        params: Partial<QueryRequest>
+      ) {
+        that.runQuery(
+          {
+            query: params.query,
+            context,
+            variables: params.variables,
+            operationName: params.operationName,
+            httpRequest: {
+              method: params.httpRequest?.method as string,
+            },
+          },
+          sendResponse
+        );
+      }
+
+      function sendResponse(result: QueryResponse) {
+        if (options?.onResponse) return options.onResponse(result, ...args);
+        else
+          return args[1]
+            .writeHead(result.status, result.headers)
+            .end(result.body);
+      }
+
+      function sendError(error: any) {
+        return sendResponse({
+          status: error.status || 500,
+          body: fastStringify({ errors: [error] }),
+          headers: { 'content-type': 'application/json' },
+        });
       }
     };
   }

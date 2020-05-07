@@ -31,11 +31,8 @@ app.use(
     playground: {
       path: '/playground',
     },
-    integrationFn: (ctx) => {
-      return {
-        request: ctx.req,
-        response: ctx.res,
-      };
+    onRequest: (args, done) => {
+      done(args[0].req);
     },
     onResonse: ({ headers, body, status }, ctx) => {
       ctx.status = status;

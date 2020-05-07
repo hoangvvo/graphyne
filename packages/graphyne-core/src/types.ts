@@ -1,10 +1,12 @@
 import { GraphQLError, GraphQLSchema, DocumentNode } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 
-export interface Config<TContext = Record<string, any>, TRootValue = any> {
+export type TContext = Record<string, any>;
+
+export interface Config {
   schema: GraphQLSchema;
-  context?: TContext | ((...args: any[]) => TContext);
-  rootValue?: ((parsedQuery: DocumentNode) => TRootValue) | TRootValue;
+  context?: TContext | ((...args: any[]) => TContext | Promise<TContext>);
+  rootValue?: ((parsedQuery: DocumentNode) => any) | any;
   cache?: number | boolean;
 }
 

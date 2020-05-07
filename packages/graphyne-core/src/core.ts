@@ -171,7 +171,7 @@ export class GraphyneCore {
   ): void | Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
 
-    const createResponse = (code: number, obj: ExecutionResult) => {
+    function createResponse(code: number, obj: ExecutionResult) {
       const payload = (compiledQuery && isCompiledQuery(compiledQuery)
         ? compiledQuery.stringify
         : fastStringify)(obj);
@@ -181,7 +181,7 @@ export class GraphyneCore {
         status: code,
         headers: { 'content-type': 'application/json' },
       });
-    };
+    }
 
     try {
       if (!query)
