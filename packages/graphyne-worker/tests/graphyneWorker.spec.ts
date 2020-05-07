@@ -31,7 +31,7 @@ async function testRequest(
   const handle = new GraphyneWorker({
     schema,
     ...graphyneOpts,
-  }).createHandler({});
+  }).createHandler();
   return new Promise((resolve, reject) => {
     function respondWith(responsePromise: Promise<Response>) {
       responsePromise
@@ -47,7 +47,7 @@ async function testRequest(
     const fetchEvent = {
       respondWith,
       request: new fetch.Request(
-        input.startsWith('/') ? `http://localhost:0/${input}` : input,
+        input.startsWith('/') ? `http://localhost:0${input}` : input,
         init
       ),
     };
@@ -186,10 +186,50 @@ describe('Event handler', () => {
       }
     );
   });
+
+  describe('renders GraphiQL', () => {
+    const graphyne = new GraphyneWorker({ schema });
+    it('not by default', (done) => {
+      const fetchEvent = {
+        respondWith: (promise: Promise<Response>) => {
+          throw new Error('Should not call this');
+        },
+        request: new fetch.Request('http://localhost:0/playground'),
+      };
+      graphyne.createHandler()(fetchEvent);
+      done();
+    });
+    it('when graphiql is true', (done) => {
+      const fetchEvent = {
+        respondWith: (promise: Promise<Response>) => {
+          promise
+            .then((response) => response.text())
+            .then((text) => assert(text.includes('GraphQL Playground')))
+            .then(done);
+        },
+        request: new fetch.Request('http://localhost:0/playground'),
+      };
+      graphyne.createHandler({ playground: true })(fetchEvent);
+    });
+    it('when graphiql.path is set', (done) => {
+      const fetchEvent = {
+        respondWith: (promise: Promise<Response>) => {
+          promise
+            .then((response) => response.text())
+            .then((text) => assert(text.includes('GraphQL Playground')))
+            .then(done);
+        },
+        request: new fetch.Request('http://localhost:0/___graphql'),
+      };
+      graphyne.createHandler({ playground: { path: '/___graphql' } })(
+        fetchEvent
+      );
+    });
+  });
 });
 
 describe('handleRequest', () => {
-  it('can be used to execute query manually', async () => {
+  it('can be used to execute query programmatically', async () => {
     const response = await new GraphyneWorker({ schema }).handleRequest(
       new Request('http://localhost:0/graphql?query={hello}')
     );

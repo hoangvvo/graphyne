@@ -1,4 +1,10 @@
-import { GraphyneCore, Config, fastStringify, QueryBody } from 'graphyne-core';
+import {
+  GraphyneCore,
+  Config,
+  fastStringify,
+  QueryBody,
+  renderPlayground,
+} from 'graphyne-core';
 
 interface HandlerConfig {
   path?: string;
@@ -77,10 +83,30 @@ export class GraphyneWorker extends GraphyneCore {
     });
   }
 
-  createHandler(options: HandlerConfig): (event: FetchEvent) => void {
-    return (event: FetchEvent) => {
+  createHandler(options: HandlerConfig = {}): (event: FetchEvent) => void {
+    return (event) => {
+      const path = options.path || '/graphql';
+      const playgroundPath = options?.playground
+        ? (typeof options.playground === 'object' && options.playground.path) ||
+          '/playground'
+        : null;
       const url = new URL(event.request.url);
-      event.respondWith(this.handleRequest(event.request, url));
+      switch (url.pathname) {
+        case path:
+          return event.respondWith(this.handleRequest(event.request, url));
+        case playgroundPath:
+          return event.respondWith(
+            Promise.resolve(
+              new Response(
+                renderPlayground({
+                  endpoint: path,
+                  subscriptionEndpoint: this.subscriptionPath,
+                }),
+                { headers: { 'content-type': 'text/html; charset=utf-8' } }
+              )
+            )
+          );
+      }
     };
   }
 }
