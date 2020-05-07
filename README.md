@@ -24,25 +24,38 @@ See [examples](examples).
 
 [![npm](https://badgen.net/npm/v/graphyne-server)](https://www.npmjs.com/package/graphyne-server)
 
-Fast and low overhead GraphQL Server for **any** [yes](packages/graphyne-server#framework-specific-integration) Node.js frameworks. Also works in Serverless environment.
+Fast and low overhead GraphQL Server for **any** ([yes](packages/graphyne-server#framework-specific-integration)) Node.js frameworks. Also works in Serverless environment.
 
 [Documentation](packages/graphyne-server) [npm](https://www.npmjs.com/package/graphyne-server)
 
 ### Graphyne Worker
 
-[![npm](https://badgen.net/npm/v/graphyne-worker)](https://www.npmjs.com/package/graphyne-server)
+[![npm](https://badgen.net/npm/v/graphyne-worker)](https://www.npmjs.com/package/graphyne-worker)
 
-Run GraphQL execution layer in the browser ([Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API)) and at the edge ([Cloudflare Workers®](https://workers.cloudflare.com/))
+Run GraphQL execution layer in the browser ([Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API)) and at the edge ([Cloudflare Workers®](https://workers.cloudflare.com/)).
 
 [Documentation](packages/graphyne-worker) [npm](https://www.npmjs.com/package/graphyne-worker)
 
 ### Graphyne WebSocket
 
-[![npm](https://badgen.net/npm/v/graphyne-ws)](https://www.npmjs.com/package/graphyne-server)
+[![npm](https://badgen.net/npm/v/graphyne-ws)](https://www.npmjs.com/package/graphyne-ws)
 
 Add WebSocket support to `graphyne-server`. Implements [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
 
 [Documentation](packages/graphyne-ws) [npm](https://www.npmjs.com/package/graphyne-ws)
+
+## Features / TODO
+
+`Graphyne` is a work-in-progress. It is obviously not battle-tested and lack several features. My plan for now is to implement the following:
+
+- [x] WebSocket
+- [ ] Persisted queries
+- [ ] Federation
+- [ ] Gateway
+
+GraphQL execution layer is also bound by the limitation of [graphql-jit](https://github.com/zalando-incubator/graphql-jit#differences-to-graphql-js). Yet, I have been using it in production and see no problems for my use-cases.
+
+To keep the code light-weight, some features (such as File Upload) is intentionally left out but can be [easily implemented](packages/graphyne-server#file-uploads) if needed.
 
 ## Contributing
 

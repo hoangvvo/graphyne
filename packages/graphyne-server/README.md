@@ -81,6 +81,8 @@ A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) 
 
 **Signature function** refers to framework-specific's handler function. For example in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
 
+By default, `graphyne-server` expects the Node.js signature of `(req, res)`. However, this can be configured using `integrationFn`, `onResponse`, and `onNoMatch` to work in any Node.js frameworks or even serverless environment.
+
 ### [Express](https://github.com/expressjs/express)
 
 [Example](/examples/with-express)
@@ -160,7 +162,11 @@ app.use(
 );
 ```
 
-(If there is any framework you fail to integrate, feel free to create an issue)
+### Other frameworks
+
+As long as the framework exposes Node.js `IncomingMessage` and `ServerResponse`~ (only if `onResponse`, and `onNoMatch` is not supplied), `graphyne-server` will work by configuring using `integrationFn`, `onResponse`, and `onNoMatch`.
+
+My plan is to provide prepared config/presets within this package (perhaps by importing from `graphyne-server/integrations`). Yet, since Node.js ecosystem has a wide range of frameworks, it will be impossible to add one for each of them. If there is any framework you fail to integrate, feel free to create an issue.
 
 ## Contributing
 
