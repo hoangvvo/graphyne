@@ -48,7 +48,6 @@ addEventListener('fetch', (event) => {
     event.respondWith(graphyne.handleRequest(event.request))
   // if requesting something else, let the browser handles it
 });
-
 ```
 
 Use it to create a worker.
