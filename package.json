@@ -18,9 +18,9 @@
   "scripts": {
     "prepublish": "lerna run build",
     "lint": "eslint packages/*/src/**/*.{js,ts}",
-    "test": "c8 mocha",
+    "test": "nyc mocha",
     "bench": "cd packages/graphyne-server/bench && concurrently -k -s first \"node server\" \"sleep 5 && hey -D body.txt -T application/json -z 10s -m POST http://localhost:4001/graphql\"",
-    "coverage": "c8 report --reporter=text-lcov > coverage.lcov"
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov"
   },
   "devDependencies": {
     "@types/mocha": "^7.0.2",
@@ -28,7 +28,6 @@
     "@types/supertest": "^2.0.9",
     "@typescript-eslint/eslint-plugin": "^2.31.0",
     "@typescript-eslint/parser": "^2.31.0",
-    "c8": "^7.1.2",
     "concurrently": "^5.2.0",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.11.0",
