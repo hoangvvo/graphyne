@@ -1,5 +1,3 @@
-![Graphyne](https://github.com/hoangvvo/graphyne/blob/master/logo.png?raw=true)
-
 # Graphyne Server
 
 [![npm](https://badgen.net/npm/v/graphyne-server)](https://www.npmjs.com/package/graphyne-server)
