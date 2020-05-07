@@ -23,5 +23,10 @@ export interface HandlerConfig {
     { status, body, headers }: QueryResponse,
     ...args: any[]
   ) => void;
-  integrationFn?: IntegrationFunction;
+  onRequest?: (args: any[], done: (req: IncomingMessage) => void) => void;
 }
+
+export type ExtendedRequest = IncomingMessage & {
+  path?: string;
+  query?: Record<string, string>;
+};

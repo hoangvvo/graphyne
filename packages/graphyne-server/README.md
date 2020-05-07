@@ -57,11 +57,11 @@ Create a handler for HTTP server, `options` accepts the following:
 |---------|-------------|---------|
 | path | Specify a path for the GraphQL endpoint. | `/graphql` |
 | playground | Pass in `true` to present [Playground](https://github.com/prisma-labs/graphql-playground) when being loaded from a browser. Alternatively, you can also pass in an object with `path` that specify a custom path to present `Playground` | `false`, `{ path: '/playground' }` if `true` |
-| integrationFn | A function to resolve frameworks with non-standard signature function. Its *arguments* depend on the framework's [signature function](#framework-specific-integration). It should return an object with `request` (`IncomingMessage` from Node.js request listener) and `response` (`ServerResponse` from Node.js request listener) | `(req, res) => ({ request: req, response: res }))` (node signature) |
-| onResponse | A handler function to send response. It accepts as the first arguments an object of `status` (the status code that should be set), `headers` (the headers that should be set), and `body` (the stringified response body). The rest of the arguments are those of the framework's [signature function] | A function calling `response.setHeader`, `response.statusCode`, `response.end`, where `request` and `response` are scoped from `integrationFn` |
-| onNoMatch | A handler function when `req.url` does not match `options.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration) | `onResponse` |
+| onRequest | A function to resolve frameworks with non-standard signature function. It accepts an array of *arguments* from a framework's [signature function](#framework-specific-integration) and a function `done` to be called with `request` (`IncomingMessage` from Node.js request listener) | `([req], done) => { done(req) }` (node signature) |
+| onResponse | A handler function to send response. It accepts as the first arguments an object of `status` (the status code that should be set), `headers` (the headers that should be set), and `body` (the stringified response body). The rest of the arguments are those of the framework's [signature function] | A function calling `response.writeHead` and `response.end`, where `response` are assumed to be the second argument from a framework's [signature function](#framework-specific-integration) |
+| onNoMatch | A handler function when `request.url` does not match `options.path`. Its *arguments* depend on a framework's [signature function](#framework-specific-integration) | `onResponse` with `body = "not found"` |
 
-For examples on using `integrationFn`, `onResponse`, and `onNoMatch`, see [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration)
+For examples on using `onRequest`, `onResponse`, and `onNoMatch`, see [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration)
 
 ## Additional features
 
@@ -81,7 +81,7 @@ A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) 
 
 **Signature function** refers to framework-specific's handler function. For example, in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)` just like `Node HTTP Server`.
 
-By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, this can be configured using `integrationFn`, `onResponse`, and `onNoMatch` to work with any Node.js frameworks or even serverless environment.
+By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, this can be configured using `onRequest`, `onResponse`, and `onNoMatch` to work with any Node.js frameworks or even serverless environment.
 
 ### [Express](https://github.com/expressjs/express)
 
@@ -143,11 +143,9 @@ fastify.use(
 ```javascript
 app.use(
   graphyne.createHandler({
-    integrationFn: (ctx) => {
-      return {
-        request: ctx.req,
-        response: ctx.res,
-      };
+    onRequest: ([ctx, next], done) => {
+      // ctx is the first argument in koa's signature function
+      done(ctx.req);
     },
     onResponse: ({ headers, body, status }, ctx) => {
       ctx.status = status;
@@ -164,7 +162,7 @@ app.use(
 
 ### Other frameworks
 
-As long as the framework exposes Node.js `IncomingMessage` and ~~`ServerResponse`~~ (only if `onResponse`, and `onNoMatch` is not supplied), `graphyne-server` will work by configuring using `integrationFn`, `onResponse`, and `onNoMatch`.
+As long as the framework exposes Node.js `IncomingMessage`, `graphyne-server` will work by configuring using `onRequest`, `onResponse`, and `onNoMatch`.
 
 My plan is to provide prepared config/presets within this package (perhaps by importing from `graphyne-server/integrations`). Yet, since Node.js ecosystem has a wide range of frameworks, it will be impossible to add one for each of them. If there is any framework you fail to integrate, feel free to create an issue.
 

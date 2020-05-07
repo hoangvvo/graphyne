@@ -142,11 +142,8 @@ describe('Integrations', () => {
     const app = new Koa();
     const handler = graphyne.createHandler({
       playground: true,
-      integrationFn: (ctx) => {
-        return {
-          request: ctx.req,
-          response: ctx.res,
-        };
+      onRequest: ([ctx], done) => {
+        done(ctx.req);
       },
       onResponse: ({ headers, body, status }, ctx) => {
         ctx.status = status;

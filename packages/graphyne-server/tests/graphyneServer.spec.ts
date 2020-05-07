@@ -44,12 +44,14 @@ const schemaHello = makeExecutableSchema({
 });
 
 describe('createHandler', () => {
-  it('maps req and res using integrationFn', async () => {
+  it('maps request using onRequest', async () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,
     });
     const handler = graphyne.createHandler({
-      integrationFn: ({ req, res }) => ({ request: req, response: res }),
+      onRequest: ([ctx], done) => done(ctx.req),
+      onResponse: ({ status, body, headers }, ctx) =>
+        ctx.res.writeHead(status, headers).end(body),
     });
     const server = createServer((req, res) => {
       const ctx = { req, res };
@@ -108,10 +110,6 @@ describe('createHandler', () => {
     });
     const server = createServer(
       graphyne.createHandler({
-        integrationFn: (req, res) => ({
-          request: req,
-          response: res,
-        }),
         onResponse: (result, req, res) => {
           res.setHeader('test', 'ok');
           res.end(result.body);

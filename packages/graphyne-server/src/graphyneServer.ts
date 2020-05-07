@@ -7,21 +7,22 @@ import {
   fastStringify,
   QueryBody,
   TContext,
+  QueryRequest,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
-import { HandlerConfig } from './types';
+import { HandlerConfig, ExtendedRequest } from './types';
 
-const sendresponse = (
-  result: QueryResponse,
-  req: IncomingMessage,
-  res: ServerResponse
-) => res.writeHead(result.status, result.headers).end(result.body);
+const sendresponse = (result: QueryResponse, res: ServerResponse) =>
+  res.writeHead(result.status, result.headers).end(result.body);
 
 const onnomatch = (res: ServerResponse) => {
   res.writeHead(404).end('not found');
 };
+
+const onrequest = (args: any[], done: (req: IncomingMessage) => void) =>
+  done(args[0]);
 
 export class GraphyneServer extends GraphyneCore {
   constructor(options: Config) {
@@ -29,60 +30,53 @@ export class GraphyneServer extends GraphyneCore {
   }
 
   createHandler(options?: HandlerConfig): RequestListener | any {
+    const path = options?.path || '/graphql';
+    const playgroundPath = options?.playground
+      ? (typeof options.playground === 'object' && options.playground.path) ||
+        '/playground'
+      : null;
+
     return (...args: any[]) => {
       const that = this;
-      const path = options?.path || '/graphql';
-      const playgroundPath = options?.playground
-        ? (typeof options.playground === 'object' && options.playground.path) ||
-          '/playground'
-        : null;
 
-      let request: IncomingMessage & {
-          path?: string;
-          query?: Record<string, string>;
-        },
-        response: ServerResponse;
+      if (options?.onRequest) options.onRequest(args, onRequestResolve);
+      else onrequest(args, onRequestResolve);
 
-      if (options?.integrationFn) {
-        const integrate = options.integrationFn(...args);
-        request = integrate.request;
-        response = integrate.response;
-      } else [request, response] = args;
-      // Parse req.url
-      switch (request.path || parseUrl(request, true).pathname) {
-        case path:
-          return parseNodeRequest(request, onBodyParsed);
-        case playgroundPath:
-          return sendResponse({
-            status: 200,
-            body: renderPlayground({
-              endpoint: path,
-              subscriptionEndpoint: this.subscriptionPath,
-            }),
-            headers: { 'content-type': 'text/html; charset=utf-8' },
-          });
-        default:
-          return options?.onNoMatch
-            ? options.onNoMatch(...args)
-            : onnomatch(response);
+      function onRequestResolve(request: ExtendedRequest) {
+        switch (request.path || parseUrl(request, true).pathname) {
+          case path:
+            return parseNodeRequest(request, onBodyParsed);
+          case playgroundPath:
+            return sendResponse({
+              status: 200,
+              body: renderPlayground({
+                endpoint: path,
+                subscriptionEndpoint: that.subscriptionPath,
+              }),
+              headers: { 'content-type': 'text/html; charset=utf-8' },
+            });
+          default:
+            return options?.onNoMatch
+              ? options.onNoMatch(...args)
+              : onnomatch(args[1]);
+        }
       }
 
-      function sendResponse(result: QueryResponse) {
-        return options?.onResponse
-          ? options.onResponse(result, ...args)
-          : sendresponse(result, request, response);
-      }
-
-      function sendError(error: any) {
-        return sendResponse({
-          status: error.status || 500,
-          body: fastStringify({ errors: [error] }),
-          headers: { 'content-type': 'application/json' },
-        });
-      }
-
-      function onBodyParsed(parseErr: any, parsedBody?: QueryBody) {
+      function onBodyParsed(
+        parseErr: any,
+        request: ExtendedRequest,
+        parsedBody?: QueryBody
+      ) {
         if (parseErr) return sendError(parseErr);
+        const params = getGraphQLParams({
+          queryParams: request.query || parseUrl(request, true).query || {},
+          body: parsedBody,
+        });
+        params.httpRequest = { method: request.method as string };
+        return onParamParsed(params);
+      }
+
+      function onParamParsed(params: Partial<QueryRequest>) {
         try {
           const contextFn = that.options.context;
           const context: TContext | Promise<TContext> =
@@ -92,14 +86,14 @@ export class GraphyneServer extends GraphyneCore {
           // FIXME: Types error
           return 'then' in context
             ? context.then(
-                (ctx: TContext) =>
-                  onContextResolved(ctx, parsedBody as QueryBody),
+                (resolvedCtx: TContext) =>
+                  onContextResolved(resolvedCtx, params),
                 (error: any) => {
                   error.message = `Context creation failed: ${error.message}`;
                   return sendError(error);
                 }
               )
-            : onContextResolved(context, parsedBody as QueryBody);
+            : onContextResolved(context, params);
         } catch (error) {
           error.message = `Context creation failed: ${error.message}`;
           return sendError(error);
@@ -108,13 +102,8 @@ export class GraphyneServer extends GraphyneCore {
 
       function onContextResolved(
         context: Record<string, any>,
-        parsedBody: QueryBody
+        params: Partial<QueryRequest>
       ) {
-        const params = getGraphQLParams({
-          queryParams: request.query || parseUrl(request, true).query || {},
-          body: parsedBody,
-        });
-
         that.runQuery(
           {
             query: params.query,
@@ -122,11 +111,25 @@ export class GraphyneServer extends GraphyneCore {
             variables: params.variables,
             operationName: params.operationName,
             httpRequest: {
-              method: request.method as string,
+              method: params.httpRequest?.method as string,
             },
           },
           sendResponse
         );
+      }
+
+      function sendResponse(result: QueryResponse) {
+        return options?.onResponse
+          ? options.onResponse(result, ...args)
+          : sendresponse(result, args[1]);
+      }
+
+      function sendError(error: any) {
+        return sendResponse({
+          status: error.status || 500,
+          body: fastStringify({ errors: [error] }),
+          headers: { 'content-type': 'application/json' },
+        });
       }
     };
   }
