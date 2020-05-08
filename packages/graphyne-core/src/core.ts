@@ -210,19 +210,21 @@ export class GraphyneCore {
       } = this.getCompiledQuery(query, operationName);
       compiledQuery = compiled;
       // http.request is not available in ws
-      if (
-        httpRequest &&
-        httpRequest.method === 'GET' &&
-        operation !== 'query'
-      ) {
-        // Mutation is not allowed with GET request
-        return createResponse(405, {
-          errors: [
-            new GraphQLError(
-              `Operation ${operation} cannot be performed via a GET request`
-            ),
-          ],
-        });
+      if (httpRequest) {
+        if (httpRequest.method !== 'POST' && httpRequest.method !== 'GET')
+          return createResponse(405, {
+            errors: [
+              new GraphQLError(`GraphQL only supports GET and POST requests.`),
+            ],
+          });
+        if (httpRequest.method === 'GET' && operation !== 'query')
+          return createResponse(405, {
+            errors: [
+              new GraphQLError(
+                `Operation ${operation} cannot be performed via a GET request`
+              ),
+            ],
+          });
       }
       const result = (compiledQuery as CompiledQuery).query(
         typeof this.options.rootValue === 'function'

@@ -185,6 +185,19 @@ describe('HTTP Operations', () => {
       }
     );
   });
+  it('errors when sending GraphQL not via either GET or POST request', () => {
+    return testCase(
+      {
+        query: `mutation sayHelloWho { sayHello(who: "Jane") }`,
+        httpRequest: { method: 'PUT' },
+      },
+      {
+        status: 405,
+        body:
+          '{"errors":[{"message":"GraphQL only supports GET and POST requests."}]}',
+      }
+    );
+  });
   it('allows sending a mutation via POST request', () => {
     return testCase(
       { query: `mutation sayHelloWho { sayHello(who: "Jane") }` },
