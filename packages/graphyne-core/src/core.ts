@@ -179,12 +179,7 @@ export class GraphyneCore {
         errors?: GraphQLFormattedError[];
       } = {};
       if (obj.data) o.data = obj.data;
-      if (obj.errors) {
-        o.errors = [];
-        for (let i = 0; i < obj.errors.length; i += 1) {
-          o.errors[i] = formatError(obj.errors[i]);
-        }
-      }
+      if (obj.errors) o.errors = obj.errors.map(formatError);
       const payload = (compiledQuery && isCompiledQuery(compiledQuery)
         ? compiledQuery.stringify
         : fastStringify)(o);
