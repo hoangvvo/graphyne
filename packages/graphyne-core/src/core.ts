@@ -7,6 +7,8 @@ import {
   GraphQLSchema,
   ExecutionResult,
   DocumentNode,
+  formatError,
+  GraphQLFormattedError,
 } from 'graphql';
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
 import lru, { Lru } from 'tiny-lru';
@@ -172,9 +174,20 @@ export class GraphyneCore {
     let compiledQuery: CompiledQuery | ExecutionResult;
 
     function createResponse(code: number, obj: ExecutionResult) {
+      const o: {
+        data?: ExecutionResult['data'];
+        errors?: GraphQLFormattedError[];
+      } = {};
+      if (obj.data) o.data = obj.data;
+      if (obj.errors) {
+        o.errors = [];
+        for (let i = 0; i < obj.errors.length; i += 1) {
+          o.errors[i] = formatError(obj.errors[i]);
+        }
+      }
       const payload = (compiledQuery && isCompiledQuery(compiledQuery)
         ? compiledQuery.stringify
-        : fastStringify)(obj);
+        : fastStringify)(o);
       flatstr(payload);
       cb({
         body: payload,
