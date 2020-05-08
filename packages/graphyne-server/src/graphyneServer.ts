@@ -12,6 +12,7 @@ import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
 import { HandlerConfig, ExtendedRequest, HTTPQueryRequest } from './types';
+import { ExecutionResult } from 'graphql';
 
 export class GraphyneServer extends GraphyneCore {
   constructor(options: Config) {
@@ -105,7 +106,9 @@ export class GraphyneServer extends GraphyneCore {
         );
       }
 
-      function sendResponse(result: QueryResponse) {
+      function sendResponse(
+        result: Omit<QueryResponse, 'rawBody'> & { rawBody?: ExecutionResult }
+      ) {
         if (options?.onResponse) return options.onResponse(result, ...args);
         else
           return args[1]

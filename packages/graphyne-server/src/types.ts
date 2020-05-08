@@ -1,5 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { QueryResponse, QueryRequest } from 'graphyne-core';
+import { ExecutionResult } from 'graphql';
 
 export type IntegrationFunction = (
   ...args: any[]
@@ -20,7 +21,12 @@ export interface HandlerConfig {
       };
   onNoMatch?: (...args: any[]) => void;
   onResponse?: (
-    { status, body, headers }: QueryResponse,
+    {
+      status,
+      body,
+      headers,
+      rawBody,
+    }: Omit<QueryResponse, 'rawBody'> & { rawBody?: ExecutionResult },
     ...args: any[]
   ) => void;
   onRequest?: (args: any[], done: (req: IncomingMessage) => void) => void;
