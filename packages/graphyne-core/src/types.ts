@@ -1,4 +1,9 @@
-import { GraphQLError, GraphQLSchema, DocumentNode } from 'graphql';
+import {
+  GraphQLError,
+  GraphQLSchema,
+  DocumentNode,
+  ExecutionResult,
+} from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 
 export type TContext = Record<string, any>;
@@ -30,6 +35,7 @@ export interface QueryRequest extends QueryBody {
 export interface QueryResponse {
   status: number;
   body: string;
+  rawBody: ExecutionResult;
   headers: Record<string, string>;
 }
 

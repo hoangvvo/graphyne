@@ -190,6 +190,7 @@ export class GraphyneCore {
         : fastStringify)(o);
       flatstr(payload);
       cb({
+        rawBody: obj,
         body: payload,
         status: code,
         headers: { 'content-type': 'application/json' },
