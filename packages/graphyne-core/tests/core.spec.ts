@@ -51,6 +51,7 @@ function testCase(
       ...options,
       // @ts-ignore
     }).runQuery(queryRequest, (result) => {
+      delete result.rawBody;
       if (typeof expected.body === 'function') {
         return expected.body(result.body) ? resolve() : reject('no match');
       }
@@ -182,6 +183,19 @@ describe('HTTP Operations', () => {
         status: 405,
         body:
           '{"errors":[{"message":"Operation mutation cannot be performed via a GET request"}]}',
+      }
+    );
+  });
+  it('errors when sending GraphQL not via either GET or POST request', () => {
+    return testCase(
+      {
+        query: `mutation sayHelloWho { sayHello(who: "Jane") }`,
+        httpRequest: { method: 'PUT' },
+      },
+      {
+        status: 405,
+        body:
+          '{"errors":[{"message":"GraphQL only supports GET and POST requests."}]}',
       }
     );
   });

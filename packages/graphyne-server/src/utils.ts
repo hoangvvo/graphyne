@@ -7,20 +7,18 @@ type GraphQLParamsInput = {
   body: QueryBody | string | undefined;
 };
 
-export function getGraphQLParams({
+export const getGraphQLParams = ({
   queryParams,
   body,
-}: GraphQLParamsInput): GraphQLParams {
-  const varr =
-    (typeof body === 'object' && body.variables) || queryParams.variables;
-  return {
-    query: queryParams.query || (typeof body === 'object' ? body.query : body),
-    variables: typeof varr === 'string' ? JSON.parse(varr) : varr,
-    operationName:
-      (typeof body === 'object' && body.operationName) ||
-      queryParams.operationName,
-  };
-}
+}: GraphQLParamsInput): GraphQLParams => ({
+  query: queryParams.query || (typeof body === 'object' ? body.query : body),
+  variables:
+    (typeof body === 'object' && body.variables) ||
+    (queryParams.variables && JSON.parse(queryParams.variables)),
+  operationName:
+    (typeof body === 'object' && body.operationName) ||
+    queryParams.operationName,
+});
 
 export function parseNodeRequest(
   req: IncomingMessage & {
@@ -39,13 +37,13 @@ export function parseNodeRequest(
     return cb(null, req, req.body);
   }
 
+  const oCtype = req.headers['content-type'];
   // Skip requests without content types.
-  if (!req.headers['content-type']) {
+  if (!oCtype) {
     return cb(null, req, {});
   }
 
   // Parse content type
-  const oCtype = req.headers['content-type'];
   const semiIndex = oCtype.indexOf(';');
   const ctype = (semiIndex !== -1
     ? oCtype.substring(0, semiIndex)

@@ -78,7 +78,7 @@ A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) 
 
 **Signature function** refers to framework-specific's handler function. For example, in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)` just like `Node HTTP Server`.
 
-### Integrate with non-standard signature frameworks
+### Custom integration
 
 By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa does not follow the convention. In such cases `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
 
@@ -109,6 +109,7 @@ This will be a function called to send back the HTTP response, where `args` are 
 - `status` (the status code that should be set)
 - `headers` (the headers that should be set)
 - `body` (the stringified response body).
+- `rawBody` (the raw execution result object which contains `data` and the **unformatted** `errors`)
 
 By default, `onResponse` assumes `response` is the second argument of the signature function and call `response.writeHead` and `response.end` accordingly.
 
@@ -123,6 +124,8 @@ graphyne.createHandler({
   }
 })
 ```
+
+In addition to acting as a compatible layer, `onResponse` can be used to format GraphQL `errors` and customize behaviors (sending a different status code, etc.). It helps by exposing `result.rawBody`, which is GraphQL execution result.
 
 `onNoMatch(result, ...args)`
 
