@@ -7,12 +7,11 @@ import {
   fastStringify,
   QueryBody,
   TContext,
-  QueryRequest,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
-import { HandlerConfig, ExtendedRequest } from './types';
+import { HandlerConfig, ExtendedRequest, HTTPQueryRequest } from './types';
 
 export class GraphyneServer extends GraphyneCore {
   constructor(options: Config) {
@@ -63,10 +62,10 @@ export class GraphyneServer extends GraphyneCore {
           body: parsedBody,
         });
         params.httpRequest = { method: request.method as string };
-        return onParamParsed(params);
+        return onParamParsed(params as HTTPQueryRequest);
       }
 
-      function onParamParsed(params: Partial<QueryRequest>) {
+      function onParamParsed(params: HTTPQueryRequest) {
         try {
           const contextFn = that.options.context;
           const context: TContext | Promise<TContext> =
@@ -92,7 +91,7 @@ export class GraphyneServer extends GraphyneCore {
 
       function onContextResolved(
         context: Record<string, any>,
-        params: Partial<QueryRequest>
+        params: HTTPQueryRequest
       ) {
         that.runQuery(
           {
@@ -100,9 +99,7 @@ export class GraphyneServer extends GraphyneCore {
             context,
             variables: params.variables,
             operationName: params.operationName,
-            httpRequest: {
-              method: params.httpRequest?.method as string,
-            },
+            httpRequest: params.httpRequest,
           },
           sendResponse
         );

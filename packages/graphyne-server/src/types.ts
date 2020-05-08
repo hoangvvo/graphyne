@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { QueryResponse } from 'graphyne-core';
+import { QueryResponse, QueryRequest } from 'graphyne-core';
 
 export type IntegrationFunction = (
   ...args: any[]
@@ -29,4 +29,10 @@ export interface HandlerConfig {
 export type ExtendedRequest = IncomingMessage & {
   path?: string;
   query?: Record<string, string>;
+};
+
+export type HTTPQueryRequest = Partial<QueryRequest> & {
+  httpRequest: {
+    method: string;
+  };
 };
