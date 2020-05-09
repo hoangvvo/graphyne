@@ -14,6 +14,22 @@ A **lightning-fast** JavaScript GraphQL Server, featuring:
 
 `Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([more than 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
 
+```
+┌───────────────────────┬────────────┬─────────┬───────────────┐
+│ Server                │ Requests/s │ Latency │ Throughput/Mb │
+├───────────────────────┼────────────┼─────────┼───────────────┤
+│ graphyne-server       │ 5471.6     │ 0.30    │ 34.10         │
+├───────────────────────┼────────────┼─────────┼───────────────┤
+│ express-graphql       │ 1609.4     │ 2.73    │ 10.13         │
+├───────────────────────┼────────────┼─────────┼───────────────┤
+│ apollo-server-express │ 1481.0     │ 2.95    │ 9.28          │
+├───────────────────────┼────────────┼─────────┼───────────────┤
+│ graphql-yoga          │ 1240.2     │ 3.46    │ 7.84          │
+└───────────────────────┴────────────┴─────────┴───────────────┘
+```
+
+<sup>Benchmarks with popular GraphQL Server libraries using [benawad/node-graphql-benchmarks](https://github.com/benawad/node-graphql-benchmarks).</sup>
+
 ## Examples
 
 See [examples](examples).
