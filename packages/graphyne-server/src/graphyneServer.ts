@@ -17,7 +17,8 @@ import { ExecutionResult } from 'graphql';
 interface HandlerContext {
   graphyne: GraphyneCore;
   args: any[];
-  options: HandlerConfig;
+  onResponse: HandlerConfig['onResponse'];
+  onNoMatch: HandlerConfig['onNoMatch'];
   path: string;
   playgroundPath: string | null;
   contextFn: GraphyneCore['options']['context'];
@@ -50,8 +51,8 @@ function onRequestResolve(
         headers: { 'content-type': 'text/html; charset=utf-8' },
       });
     default:
-      return handlerContext.options.onNoMatch
-        ? handlerContext.options.onNoMatch(...handlerContext.args)
+      return handlerContext.onNoMatch
+        ? handlerContext.onNoMatch(...handlerContext.args)
         : sendResponse(handlerContext, {
             body: 'not found',
             status: 404,
@@ -108,8 +109,8 @@ function sendResponse(
   handlerContext: HandlerContext,
   result: Omit<QueryResponse, 'rawBody'> & { rawBody?: ExecutionResult }
 ) {
-  if (handlerContext.options.onResponse)
-    return handlerContext.options.onResponse(result, ...handlerContext.args);
+  if (handlerContext.onResponse)
+    return handlerContext.onResponse(result, ...handlerContext.args);
   else
     return handlerContext.args[1]
       .writeHead(result.status, result.headers)
@@ -140,10 +141,11 @@ export class GraphyneServer extends GraphyneCore {
       const handlerContext: HandlerContext = {
         graphyne: this,
         args,
-        options,
         path,
         playgroundPath,
         contextFn: this.options.context,
+        onResponse: options.onResponse,
+        onNoMatch: options.onNoMatch,
       };
       if (options?.onRequest)
         options.onRequest(args, (req) => onRequestResolve(handlerContext, req));
