@@ -31,14 +31,12 @@ function onRequestResolve(
     case handlerContext.path:
       return parseNodeRequest(request, (parseErr, parsedBody) => {
         if (parseErr) return sendError(handlerContext, parseErr);
-        const params = Object.assign(
-          getGraphQLParams({
-            queryParams: request.query || parseUrl(request, true).query || {},
-            body: parsedBody,
-          }),
-          { httpRequest: { method: request.method as string } }
-        );
-        return onParamParsed(handlerContext, params);
+        const params = getGraphQLParams({
+          queryParams: request.query || parseUrl(request, true).query || {},
+          body: parsedBody,
+        });
+        params.httpRequest = { method: request.method as string };
+        return onParamParsed(handlerContext, params as HTTPQueryRequest);
       });
     case handlerContext.playgroundPath:
       return sendResponse(handlerContext, {
