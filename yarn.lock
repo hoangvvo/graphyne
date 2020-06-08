@@ -3757,9 +3757,9 @@ fast-json-stringify@^1.13.0, fast-json-stringify@^1.18.0:
     string-similarity "^4.0.1"
 
 fast-json-stringify@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/fast-json-stringify/-/fast-json-stringify-2.0.0.tgz#37d3809000cdc05d4aa0fd2831847039c0d1940e"
-  integrity sha512-q3b2sMbYySzXdQSX4F9ILle3oJzpV1/7p5wPfpDL3mH2euzdL7qiEeg9B4lS/lGTjYBriAplSnpoqYLTy/p8Ew==
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/fast-json-stringify/-/fast-json-stringify-2.0.1.tgz#f8d7bfba7e705a1ef319954196a86e26691f9853"
+  integrity sha512-n3LQfUhYTk2p95RxPA0BEfzmAcCdJLCRQ0qphNiXMBmxHgteiCtUfBYc7ZNCzBTBWm/kHg81CI+hkxVwIHWTAw==
   dependencies:
     ajv "^6.11.0"
     deepmerge "^4.2.2"
