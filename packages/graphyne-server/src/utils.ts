@@ -24,23 +24,17 @@ export function parseNodeRequest(
   req: IncomingMessage & {
     body?: any;
   },
-  cb: (
-    err: any,
-    req: IncomingMessage & {
-      body?: any;
-    },
-    parsedBody?: QueryBody
-  ) => void
+  cb: (err: any, parsedBody?: QueryBody) => void
 ): void {
   // If body has been parsed as a keyed object, use it.
   if (typeof req.body === 'object' && !(req.body instanceof Buffer)) {
-    return cb(null, req, req.body);
+    return cb(null, req.body);
   }
 
   const oCtype = req.headers['content-type'];
   // Skip requests without content types.
   if (!oCtype) {
-    return cb(null, req, {});
+    return cb(null, {});
   }
 
   // Parse content type
@@ -54,22 +48,22 @@ export function parseNodeRequest(
   req.on('data', (chunk) => {
     rawBody += chunk;
   });
-  req.on('error', (err) => cb(err, req));
+  req.on('error', (err) => cb(err));
   req.on('end', () => {
     switch (ctype) {
       case 'application/graphql':
-        return cb(null, req, { query: rawBody });
+        return cb(null, { query: rawBody });
       case 'application/json':
         try {
-          cb(null, req, JSON.parse(rawBody));
+          cb(null, JSON.parse(rawBody));
         } catch (err) {
           err.status = 400;
-          cb(err, req);
+          cb(err);
         }
         break;
       default:
         // If no Content-Type header matches, parse nothing.
-        return cb(null, req, {});
+        return cb(null, {});
     }
   });
 }
