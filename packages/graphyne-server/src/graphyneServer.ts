@@ -1,4 +1,4 @@
-import { RequestListener } from 'http';
+import { RequestListener, ServerResponse } from 'http';
 import {
   GraphyneCore,
   Config,
@@ -106,7 +106,7 @@ export class GraphyneServer extends GraphyneCore {
       ) {
         if (options?.onResponse) return options.onResponse(result, ...args);
         else
-          return args[1]
+          return (args[1] as ServerResponse)
             .writeHead(result.status, result.headers)
             .end(result.body);
       }
