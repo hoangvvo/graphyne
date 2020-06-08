@@ -70,11 +70,10 @@ function buildCache(opts: Config) {
   return lru(1024);
 }
 
-function createGraphyneError(status: number, errors: readonly GraphQLError[]) {
-  const error = new GraphQLError('Error');
-  Object.assign(error, { errors, status });
-  return error;
-}
+const createGraphyneError = (
+  status: number,
+  errors: readonly GraphQLError[]
+) => ({ status, errors });
 
 export class GraphyneCore {
   private lru: Lru<
@@ -205,23 +204,21 @@ export class GraphyneCore {
         compiledQuery: compiled,
       } = this.getCompiledQuery(query, operationName);
       compiledQuery = compiled;
-      // http.request is not available in ws
-      if (httpMethod) {
-        if (httpMethod !== 'POST' && httpMethod !== 'GET')
-          return createResponse(405, {
-            errors: [
-              new GraphQLError(`GraphQL only supports GET and POST requests.`),
-            ],
-          });
-        if (httpMethod === 'GET' && operation !== 'query')
-          return createResponse(405, {
-            errors: [
-              new GraphQLError(
-                `Operation ${operation} cannot be performed via a GET request`
-              ),
-            ],
-          });
-      }
+      // httpMethod is not available in ws
+      if (httpMethod && httpMethod !== 'POST' && httpMethod !== 'GET')
+        return createResponse(405, {
+          errors: [
+            new GraphQLError(`GraphQL only supports GET and POST requests.`),
+          ],
+        });
+      if (httpMethod === 'GET' && operation !== 'query')
+        return createResponse(405, {
+          errors: [
+            new GraphQLError(
+              `Operation ${operation} cannot be performed via a GET request`
+            ),
+          ],
+        });
       const result = (compiledQuery as CompiledQuery).query(
         typeof this.options.rootValue === 'function'
           ? this.options.rootValue(document)
