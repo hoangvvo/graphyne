@@ -80,7 +80,7 @@ describe('core utils', () => {
     it('works with queryParams', () => {
       const { query, variables } = getGraphQLParams({
         queryParams: { query: 'ok', variables: `{ "ok": "no" }` },
-        body: {},
+        body: null,
       });
       assert.deepStrictEqual(query, 'ok');
       assert.deepStrictEqual(variables?.ok, 'no');
