@@ -5,13 +5,13 @@ import {
   QueryResponse,
   renderPlayground,
   fastStringify,
-  QueryBody,
   TContext,
+  QueryRequest,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
-import { HandlerConfig, ExtendedRequest, HTTPQueryRequest } from './types';
+import { HandlerConfig, ExtendedRequest } from './types';
 import { ExecutionResult } from 'graphql';
 
 export class GraphyneServer extends GraphyneCore {
@@ -41,7 +41,7 @@ export class GraphyneServer extends GraphyneCore {
                 queryParams:
                   request.query || parseUrl(request, true).query || {},
                 body,
-              }) as HTTPQueryRequest;
+              }) as QueryRequest;
               params.httpMethod = request.method as string;
               return onParamParsed(params);
             });
@@ -61,7 +61,7 @@ export class GraphyneServer extends GraphyneCore {
         }
       }
 
-      function onParamParsed(params: HTTPQueryRequest) {
+      function onParamParsed(params: QueryRequest) {
         try {
           const contextFn = that.options.context;
           const context: TContext | Promise<TContext> =
@@ -87,7 +87,7 @@ export class GraphyneServer extends GraphyneCore {
 
       function onContextResolved(
         context: Record<string, any>,
-        params: HTTPQueryRequest
+        params: QueryRequest
       ) {
         that.runQuery(
           {
