@@ -21,12 +21,7 @@ export interface HandlerConfig {
       };
   onNoMatch?: (...args: any[]) => void;
   onResponse?: (
-    {
-      status,
-      body,
-      headers,
-      rawBody,
-    }: Omit<QueryResponse, 'rawBody'> & { rawBody?: ExecutionResult },
+    { status, body, headers }: QueryResponse,
     ...args: any[]
   ) => void;
   onRequest?: (args: any[], done: (req: IncomingMessage) => void) => void;

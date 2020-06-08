@@ -51,7 +51,6 @@ function testCase(
       ...options,
       // @ts-ignore
     }).runQuery(queryRequest, (result) => {
-      delete result.rawBody;
       if (typeof expected.body === 'function') {
         return expected.body(result.body) ? resolve() : reject('no match');
       }

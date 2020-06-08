@@ -109,7 +109,6 @@ This will be a function called to send back the HTTP response, where `args` are 
 - `status` (the status code that should be set)
 - `headers` (the headers that should be set)
 - `body` (the stringified response body).
-- `rawBody` (the raw execution result object which contains `data` and the **unformatted** `errors`)
 
 By default, `onResponse` assumes `response` is the second argument of the signature function and call `response.writeHead` and `response.end` accordingly.
 
@@ -124,8 +123,6 @@ graphyne.createHandler({
   }
 })
 ```
-
-In addition to acting as a compatible layer, `onResponse` can be used to format GraphQL `errors` and customize behaviors (sending a different status code, etc.). It helps by exposing `result.rawBody`, which is GraphQL execution result.
 
 `onNoMatch(result, ...args)`
 

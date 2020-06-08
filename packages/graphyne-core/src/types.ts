@@ -35,7 +35,6 @@ export interface QueryRequest extends QueryBody {
 export interface QueryResponse {
   status: number;
   body: string;
-  rawBody: ExecutionResult;
   headers: Record<string, string>;
 }
 
