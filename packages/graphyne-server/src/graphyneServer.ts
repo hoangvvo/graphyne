@@ -35,7 +35,16 @@ export class GraphyneServer extends GraphyneCore {
       function onRequestResolve(request: ExtendedRequest) {
         switch (request.path || parseUrl(request, true).pathname) {
           case path:
-            return parseNodeRequest(request, onBodyParsed);
+            return parseNodeRequest(request, (err, body) => {
+              if (err) return sendError(err);
+              const params = getGraphQLParams({
+                queryParams:
+                  request.query || parseUrl(request, true).query || {},
+                body,
+              }) as HTTPQueryRequest;
+              params.httpMethod = request.method as string;
+              return onParamParsed(params);
+            });
           case playgroundPath:
             return sendResponse({
               status: 200,
@@ -50,20 +59,6 @@ export class GraphyneServer extends GraphyneCore {
               ? options.onNoMatch(...args)
               : sendResponse({ body: 'not found', status: 404, headers: {} });
         }
-      }
-
-      function onBodyParsed(
-        parseErr: any,
-        request: ExtendedRequest,
-        parsedBody?: QueryBody
-      ) {
-        if (parseErr) return sendError(parseErr);
-        const params = getGraphQLParams({
-          queryParams: request.query || parseUrl(request, true).query || {},
-          body: parsedBody,
-        }) as HTTPQueryRequest;
-        params.httpMethod = request.method as string;
-        return onParamParsed(params);
       }
 
       function onParamParsed(params: HTTPQueryRequest) {
