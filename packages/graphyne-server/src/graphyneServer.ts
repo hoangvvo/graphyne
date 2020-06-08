@@ -61,9 +61,9 @@ export class GraphyneServer extends GraphyneCore {
         const params = getGraphQLParams({
           queryParams: request.query || parseUrl(request, true).query || {},
           body: parsedBody,
-        });
-        params.httpRequest = { method: request.method as string };
-        return onParamParsed(params as HTTPQueryRequest);
+        }) as HTTPQueryRequest;
+        params.httpMethod = request.method as string;
+        return onParamParsed(params);
       }
 
       function onParamParsed(params: HTTPQueryRequest) {
@@ -100,7 +100,7 @@ export class GraphyneServer extends GraphyneCore {
             context,
             variables: params.variables,
             operationName: params.operationName,
-            httpRequest: params.httpRequest,
+            httpMethod: params.httpMethod,
           },
           sendResponse
         );

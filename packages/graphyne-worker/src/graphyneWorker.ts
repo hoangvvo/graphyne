@@ -73,9 +73,7 @@ export class GraphyneWorker extends GraphyneCore {
             body?.operationName ||
             url.searchParams.get('operationName') ||
             undefined,
-          httpRequest: {
-            method: request.method,
-          },
+          httpMethod: request.method,
         },
         ({ status, body, headers }) =>
           resolve(new Response(body, { status, headers }))

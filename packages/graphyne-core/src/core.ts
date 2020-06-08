@@ -168,7 +168,7 @@ export class GraphyneCore {
   }
 
   public runQuery(
-    { query, variables, operationName, context, httpRequest }: QueryRequest,
+    { query, variables, operationName, context, httpMethod }: QueryRequest,
     cb: (result: QueryResponse) => void
   ): void | Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
@@ -206,14 +206,14 @@ export class GraphyneCore {
       } = this.getCompiledQuery(query, operationName);
       compiledQuery = compiled;
       // http.request is not available in ws
-      if (httpRequest) {
-        if (httpRequest.method !== 'POST' && httpRequest.method !== 'GET')
+      if (httpMethod) {
+        if (httpMethod !== 'POST' && httpMethod !== 'GET')
           return createResponse(405, {
             errors: [
               new GraphQLError(`GraphQL only supports GET and POST requests.`),
             ],
           });
-        if (httpRequest.method === 'GET' && operation !== 'query')
+        if (httpMethod === 'GET' && operation !== 'query')
           return createResponse(405, {
             errors: [
               new GraphQLError(
