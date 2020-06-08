@@ -5,7 +5,6 @@ import {
   QueryResponse,
   renderPlayground,
   fastStringify,
-  QueryBody,
   TContext,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
