@@ -22,7 +22,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | cache | `GraphyneServer` creates **two** in-memory LRU cache: One for compiled queries and another for invalid queries. This value defines max items to hold in **each** cache. Pass `false` to disable cache. | `1024` |
 
-### `GraphyneServer#runQuery({ query, variables, operationName, context, httpRequest }, callback)`
+### `GraphyneServer#runQuery({ query, variables, operationName, context, httpMethod }, callback)`
 
 Execute the GraphQL query:
 
@@ -30,8 +30,7 @@ Execute the GraphQL query:
 - `variables`: An object of variables.
 - `operationName`: The operation name for multi-document query.
 - `context`: The context object to be used in resolvers.
-- `httpRequest`: The context of the request (only for HTTP requests, not WebSocket), an object contains:
-  - `method`: The method (`GET`, `POST`, etc.) of the request.
+- `httpMethod`: The HTTP method (`GET`, `POST`, etc.) of the request.
 
 When the execution is done, the callback function will be called with an object of:
 

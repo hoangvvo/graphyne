@@ -38,7 +38,5 @@ export type ExtendedRequest = IncomingMessage & {
 };
 
 export type HTTPQueryRequest = Partial<QueryRequest> & {
-  httpRequest: {
-    method: string;
-  };
+  httpMethod: string;
 };

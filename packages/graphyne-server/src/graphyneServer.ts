@@ -35,7 +35,7 @@ function onRequestResolve(
           queryParams: request.query || parseUrl(request, true).query || {},
           body: parsedBody,
         });
-        params.httpRequest = { method: request.method as string };
+        params.httpMethod = request.method as string;
         return onParamParsed(handlerContext, params as HTTPQueryRequest);
       });
     case handlerContext.playgroundPath:
@@ -96,7 +96,7 @@ function onContextResolved(
       context,
       variables: params.variables,
       operationName: params.operationName,
-      httpRequest: params.httpRequest,
+      httpMethod: params.httpMethod,
     },
     (result) => sendResponse(handlerContext, result)
   );
