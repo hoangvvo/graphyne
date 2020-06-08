@@ -1,17 +1,17 @@
-import { RequestListener } from 'http';
+import { RequestListener, ServerResponse } from 'http';
 import {
   GraphyneCore,
   Config,
   QueryResponse,
   renderPlayground,
   fastStringify,
-  QueryBody,
   TContext,
+  QueryRequest,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
 // @ts-ignore
 import parseUrl from '@polka/url';
-import { HandlerConfig, ExtendedRequest, HTTPQueryRequest } from './types';
+import { HandlerConfig, ExtendedRequest } from './types';
 import { ExecutionResult } from 'graphql';
 
 export class GraphyneServer extends GraphyneCore {
@@ -35,7 +35,16 @@ export class GraphyneServer extends GraphyneCore {
       function onRequestResolve(request: ExtendedRequest) {
         switch (request.path || parseUrl(request, true).pathname) {
           case path:
-            return parseNodeRequest(request, onBodyParsed);
+            return parseNodeRequest(request, (err, body) => {
+              if (err) return sendError(err);
+              const params = getGraphQLParams({
+                queryParams:
+                  request.query || parseUrl(request, true).query || {},
+                body,
+              }) as QueryRequest;
+              params.httpMethod = request.method as string;
+              return onParamParsed(params);
+            });
           case playgroundPath:
             return sendResponse({
               status: 200,
@@ -52,21 +61,7 @@ export class GraphyneServer extends GraphyneCore {
         }
       }
 
-      function onBodyParsed(
-        parseErr: any,
-        request: ExtendedRequest,
-        parsedBody?: QueryBody
-      ) {
-        if (parseErr) return sendError(parseErr);
-        const params = getGraphQLParams({
-          queryParams: request.query || parseUrl(request, true).query || {},
-          body: parsedBody,
-        });
-        params.httpRequest = { method: request.method as string };
-        return onParamParsed(params as HTTPQueryRequest);
-      }
-
-      function onParamParsed(params: HTTPQueryRequest) {
+      function onParamParsed(params: QueryRequest) {
         try {
           const contextFn = that.options.context;
           const context: TContext | Promise<TContext> =
@@ -92,7 +87,7 @@ export class GraphyneServer extends GraphyneCore {
 
       function onContextResolved(
         context: Record<string, any>,
-        params: HTTPQueryRequest
+        params: QueryRequest
       ) {
         that.runQuery(
           {
@@ -100,7 +95,7 @@ export class GraphyneServer extends GraphyneCore {
             context,
             variables: params.variables,
             operationName: params.operationName,
-            httpRequest: params.httpRequest,
+            httpMethod: params.httpMethod,
           },
           sendResponse
         );
@@ -111,7 +106,7 @@ export class GraphyneServer extends GraphyneCore {
       ) {
         if (options?.onResponse) return options.onResponse(result, ...args);
         else
-          return args[1]
+          return (args[1] as ServerResponse)
             .writeHead(result.status, result.headers)
             .end(result.body);
       }

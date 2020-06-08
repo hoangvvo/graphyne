@@ -40,7 +40,7 @@ const schema = makeExecutableSchema({
 
 function testCase(
   queryRequest: QueryBody &
-    Pick<QueryRequest, 'httpRequest'> & { context?: Record<string, any> },
+    Pick<QueryRequest, 'httpMethod'> & { context?: Record<string, any> },
   expected: Partial<QueryResponse> | { body: (b: string) => boolean },
   options?: Partial<Config>
 ) {
@@ -177,7 +177,7 @@ describe('HTTP Operations', () => {
     return testCase(
       {
         query: `mutation sayHelloWho { sayHello(who: "Jane") }`,
-        httpRequest: { method: 'GET' },
+        httpMethod: 'GET',
       },
       {
         status: 405,
@@ -190,7 +190,7 @@ describe('HTTP Operations', () => {
     return testCase(
       {
         query: `mutation sayHelloWho { sayHello(who: "Jane") }`,
-        httpRequest: { method: 'PUT' },
+        httpMethod: 'PUT',
       },
       {
         status: 405,
@@ -223,14 +223,14 @@ describe('HTTP Operations', () => {
     // FIXME: need better test
     it('with an object', () => {
       return testCase(
-        { query: 'query { helloRoot }', httpRequest: { method: 'GET' } },
+        { query: 'query { helloRoot }', httpMethod: 'GET' },
         { body: '{"data":{"helloRoot":"Luke"}}' },
         { rootValue }
       );
     });
     it('with a function', () => {
       return testCase(
-        { query: 'query { helloRoot }', httpRequest: { method: 'GET' } },
+        { query: 'query { helloRoot }', httpMethod: 'GET' },
         { body: '{"data":{"helloRoot":"Luke"}}' },
         { rootValue: () => rootValue }
       );

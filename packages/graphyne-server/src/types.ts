@@ -36,9 +36,3 @@ export type ExtendedRequest = IncomingMessage & {
   path?: string;
   query?: Record<string, string>;
 };
-
-export type HTTPQueryRequest = Partial<QueryRequest> & {
-  httpRequest: {
-    method: string;
-  };
-};

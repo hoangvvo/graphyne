@@ -218,7 +218,7 @@ app.use(
 
 #### [AWS Lambda](https://aws.amazon.com/lambda/)
 
-Lambda will not have Node.js `IncomingMessage`, but you can still transform it into a compatible `IncomingMessage` object. `graphyne-server` would need `request.path`, `request.body`, `request.headers` and `request.method`.
+Lambda will not have Node.js `IncomingMessage`, but you can still transform it into a compatible `IncomingMessage` object. `graphyne-server` would need `request.url`, `request.body`, `request.headers` and `request.method`.
 
 ```javascript
 exports.handler = graphyne.createHandler({
