@@ -327,4 +327,23 @@ describe('HTTP Operations', () => {
       }
     );
   });
+  it('allows custom formatError', () => {
+    return testCase(
+      { query: 'query { throwMe }' },
+      {
+        body: (str) => {
+          const {
+            errors: [err],
+          } = JSON.parse(str);
+          assert.deepStrictEqual(err.message, 'Internal server error');
+          return true;
+        },
+      },
+      {
+        formatError: (err) => {
+          return new Error('Internal server error');
+        },
+      }
+    );
+  });
 });
