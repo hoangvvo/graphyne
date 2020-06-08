@@ -172,24 +172,24 @@ export class GraphyneCore {
   ): void | Promise<void> {
     let compiledQuery: CompiledQuery | ExecutionResult;
 
-    function createResponse(code: number, obj: ExecutionResult) {
+    const createResponse = (code: number, obj: ExecutionResult) => {
       const o: {
         data?: ExecutionResult['data'];
         errors?: GraphQLFormattedError[];
       } = {};
       if (obj.data) o.data = obj.data;
-      if (obj.errors) o.errors = obj.errors.map(formatError);
+      if (obj.errors)
+        o.errors = obj.errors.map(this.options.formatError || formatError);
       const payload = (compiledQuery && isCompiledQuery(compiledQuery)
         ? compiledQuery.stringify
         : fastStringify)(o);
       flatstr(payload);
       cb({
-        rawBody: obj,
         body: payload,
         status: code,
         headers: { 'content-type': 'application/json' },
       });
-    }
+    };
 
     try {
       if (!query)

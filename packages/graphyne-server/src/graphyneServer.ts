@@ -101,9 +101,7 @@ export class GraphyneServer extends GraphyneCore {
         );
       }
 
-      function sendResponse(
-        result: Omit<QueryResponse, 'rawBody'> & { rawBody?: ExecutionResult }
-      ) {
+      function sendResponse(result: QueryResponse) {
         if (options?.onResponse) return options.onResponse(result, ...args);
         else
           return (args[1] as ServerResponse)

@@ -7,7 +7,7 @@ describe('core utils', () => {
   describe('parseNodeRequest', () => {
     it('parse application/json properly', async () => {
       const server = createServer((req, res) => {
-        parseNodeRequest(req, (err, req, parsedBody) => {
+        parseNodeRequest(req, (err, parsedBody) => {
           res.end(JSON.stringify(parsedBody));
         });
       });
@@ -19,7 +19,7 @@ describe('core utils', () => {
     });
     it('parse application/graphql properly', async () => {
       const server = createServer((req, res) => {
-        parseNodeRequest(req, (err, req, parsedBody) => {
+        parseNodeRequest(req, (err, parsedBody) => {
           res.end(JSON.stringify(parsedBody));
         });
       });
@@ -32,13 +32,13 @@ describe('core utils', () => {
     it('returns if req.body has been parsed', (done) => {
       const req = { body: { query: 1 } };
       // @ts-ignore
-      parseNodeRequest(req, (err, req, parsedBody) => {
+      parseNodeRequest(req, (err, parsedBody) => {
         done(assert.deepStrictEqual(parsedBody, req.body));
       });
     });
     it('errors body is malformed', async () => {
       const server = createServer((req, res) => {
-        parseNodeRequest(req, (err, req, parsedBody) => {
+        parseNodeRequest(req, (err, parsedBody) => {
           if (err) res.statusCode = err.status;
           res.end(JSON.stringify(parsedBody));
         });
@@ -52,7 +52,7 @@ describe('core utils', () => {
     describe('do not parse body', () => {
       it('with empty content type', async () => {
         const server = createServer((req, res) => {
-          parseNodeRequest(req, (err, req, parsedBody) => {
+          parseNodeRequest(req, (err, parsedBody) => {
             res.end(JSON.stringify(parsedBody));
           });
         });
@@ -64,7 +64,7 @@ describe('core utils', () => {
       });
       it('with invalid content-type', async () => {
         const server = createServer((req, res) => {
-          parseNodeRequest(req, (err, req, parsedBody) => {
+          parseNodeRequest(req, (err, parsedBody) => {
             res.end(JSON.stringify(parsedBody));
           });
         });
@@ -80,7 +80,7 @@ describe('core utils', () => {
     it('works with queryParams', () => {
       const { query, variables } = getGraphQLParams({
         queryParams: { query: 'ok', variables: `{ "ok": "no" }` },
-        body: {},
+        body: null,
       });
       assert.deepStrictEqual(query, 'ok');
       assert.deepStrictEqual(variables?.ok, 'no');
@@ -100,13 +100,6 @@ describe('core utils', () => {
       });
       assert.deepStrictEqual(query, 'ok');
       assert.deepStrictEqual(variables?.ok, 'no');
-    });
-    it('see body as query if is string', () => {
-      const { query } = getGraphQLParams({
-        queryParams: {},
-        body: `query { hello }`,
-      });
-      assert.deepStrictEqual(query, 'query { hello }');
     });
   });
 });

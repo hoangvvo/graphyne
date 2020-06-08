@@ -3,6 +3,7 @@ import {
   GraphQLSchema,
   DocumentNode,
   ExecutionResult,
+  GraphQLFormattedError,
 } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 
@@ -13,6 +14,7 @@ export interface Config {
   context?: TContext | ((...args: any[]) => TContext | Promise<TContext>);
   rootValue?: ((parsedQuery: DocumentNode) => any) | any;
   cache?: number | boolean;
+  formatError?: (error: GraphQLError) => GraphQLFormattedError;
 }
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
@@ -33,7 +35,6 @@ export interface QueryRequest extends QueryBody {
 export interface QueryResponse {
   status: number;
   body: string;
-  rawBody: ExecutionResult;
   headers: Record<string, string>;
 }
 

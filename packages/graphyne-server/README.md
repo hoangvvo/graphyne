@@ -48,6 +48,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [signature function](#framework-specific-integration). | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | cache | `GraphyneServer` creates **two** in-memory LRU cache: One for compiled queries and another for invalid queries. This value defines max items to hold in **each** cache. Pass `false` to disable cache. | `1024` |
+| formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
 
 ### `GraphyneServer#createHandler(options)`
 
@@ -109,7 +110,6 @@ This will be a function called to send back the HTTP response, where `args` are 
 - `status` (the status code that should be set)
 - `headers` (the headers that should be set)
 - `body` (the stringified response body).
-- `rawBody` (the raw execution result object which contains `data` and the **unformatted** `errors`)
 
 By default, `onResponse` assumes `response` is the second argument of the signature function and call `response.writeHead` and `response.end` accordingly.
 
@@ -124,8 +124,6 @@ graphyne.createHandler({
   }
 })
 ```
-
-In addition to acting as a compatible layer, `onResponse` can be used to format GraphQL `errors` and customize behaviors (sending a different status code, etc.). It helps by exposing `result.rawBody`, which is GraphQL execution result.
 
 `onNoMatch(result, ...args)`
 

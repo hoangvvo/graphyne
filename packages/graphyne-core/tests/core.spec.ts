@@ -51,7 +51,6 @@ function testCase(
       ...options,
       // @ts-ignore
     }).runQuery(queryRequest, (result) => {
-      delete result.rawBody;
       if (typeof expected.body === 'function') {
         return expected.body(result.body) ? resolve() : reject('no match');
       }
@@ -323,6 +322,25 @@ describe('HTTP Operations', () => {
           } = JSON.parse(str);
           assert.deepStrictEqual(err.message, 'weeeeee');
           return true;
+        },
+      }
+    );
+  });
+  it('allows custom formatError', () => {
+    return testCase(
+      { query: 'query { throwMe }' },
+      {
+        body: (str) => {
+          const {
+            errors: [err],
+          } = JSON.parse(str);
+          assert.deepStrictEqual(err.message, 'Internal server error');
+          return true;
+        },
+      },
+      {
+        formatError: (err) => {
+          return new Error('Internal server error');
         },
       }
     );
