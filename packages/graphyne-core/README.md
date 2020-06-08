@@ -11,7 +11,7 @@ Graphyne is a **lightning-fast** JavaScript GraphQL Server. Check out its [docum
 
 ## API
 
-### `new GraphyneServer(options)`
+### `new GraphyneCore(options)`
 
 Constructing a Graphyne GraphQL server. It accepts the following options:
 
@@ -21,6 +21,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [signature function](#framework-specific-integration). | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | cache | `GraphyneServer` creates **two** in-memory LRU cache: One for compiled queries and another for invalid queries. This value defines max items to hold in **each** cache. Pass `false` to disable cache. | `1024` |
+| formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
 
 ### `GraphyneServer#runQuery({ query, variables, operationName, context, httpMethod }, callback)`
 
