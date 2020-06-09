@@ -39,7 +39,29 @@ export class GraphyneServer extends GraphyneCore {
               body,
             }) as QueryRequest;
             params.httpMethod = request.method as string;
-            onParamParsed(params, args);
+            try {
+              const context: TContext | Promise<TContext> = (params.context =
+                typeof contextFn === 'function'
+                  ? contextFn(...args)
+                  : contextFn);
+              'then' in context
+                ? context.then(
+                    (resolvedCtx: TContext) => {
+                      params.context = resolvedCtx;
+                      that.runQuery(params, (result) =>
+                        sendResponse(result, args)
+                      );
+                    },
+                    (error: any) => {
+                      error.message = `Context creation failed: ${error.message}`;
+                      sendError(error, args);
+                    }
+                  )
+                : that.runQuery(params, (result) => sendResponse(result, args));
+            } catch (error) {
+              error.message = `Context creation failed: ${error.message}`;
+              sendError(error, args);
+            }
           });
           break;
         case playgroundPath:
@@ -63,32 +85,6 @@ export class GraphyneServer extends GraphyneCore {
                 args
               );
       }
-    }
-
-    function onParamParsed(params: QueryRequest, args: TArgs) {
-      try {
-        const context: TContext | Promise<TContext> = (params.context =
-          typeof contextFn === 'function' ? contextFn(...args) : contextFn);
-        'then' in context
-          ? context.then(
-              (resolvedCtx: TContext) => {
-                params.context = resolvedCtx;
-                onContextResolved(params, args);
-              },
-              (error: any) => {
-                error.message = `Context creation failed: ${error.message}`;
-                sendError(error, args);
-              }
-            )
-          : onContextResolved(params, args);
-      } catch (error) {
-        error.message = `Context creation failed: ${error.message}`;
-        sendError(error, args);
-      }
-    }
-
-    function onContextResolved(params: QueryRequest, args: TArgs) {
-      that.runQuery(params, (result) => sendResponse(result, args));
     }
 
     function sendResponse(result: QueryResponse, args: TArgs) {
