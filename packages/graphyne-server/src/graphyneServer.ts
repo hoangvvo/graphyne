@@ -24,8 +24,8 @@ export class GraphyneServer extends GraphyneCore {
       ? (typeof options.playground === 'object' && options.playground.path) ||
         '/playground'
       : null;
-
     const that = this;
+    const contextFn = this.options.context || {};
 
     type TArgs = any[];
 
@@ -65,12 +65,8 @@ export class GraphyneServer extends GraphyneCore {
 
     function onParamParsed(params: QueryRequest, args: TArgs) {
       try {
-        const contextFn = that.options.context;
         const context: TContext | Promise<TContext> =
-          typeof contextFn === 'function'
-            ? contextFn(...args)
-            : contextFn || {};
-        // FIXME: Types error
+          typeof contextFn === 'function' ? contextFn(...args) : contextFn;
         return 'then' in context
           ? context.then(
               (resolvedCtx: TContext) =>
