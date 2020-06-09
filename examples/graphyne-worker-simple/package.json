@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "parcel build -d public src/index.html",
-    "start": "sirv start public"
+    "dev": "parcel src/index.html"
   },
   "browserslist": [
     "last 1 chrome versions"
@@ -11,12 +11,11 @@
   "dependencies": {
     "graphql": "^15.0.0",
     "graphql-tools": "^4.0.7",
-    "graphyne-worker": "^0.0.1",
-    "long": "^4.0.0",
-    "sirv-cli": "^0.4.6"
+    "graphyne-worker": "^0.0.1"
   },
   "license": "ISC",
   "devDependencies": {
+    "eslint": "^7.2.0",
     "parcel-bundler": "^1.12.4"
   }
 }
