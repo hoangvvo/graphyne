@@ -1,6 +1,5 @@
-// @ts-nocheck
-const { GraphyneServer } = require('../');
-const { makeExecutableSchema } = require('graphql-tools');
+import { GraphyneServer } from '../src';
+import { makeExecutableSchema } from 'graphql-tools';
 import { strict as assert } from 'assert';
 import request from 'supertest';
 
@@ -15,7 +14,7 @@ const resolvers = {
   },
 };
 
-var schema = makeExecutableSchema({
+const schema = makeExecutableSchema({
   typeDefs,
   resolvers,
 });
@@ -102,7 +101,9 @@ describe('Integrations', () => {
         },
       })
     );
-    fastify.get('/route', async () => 'ok');
+    fastify.get('/route', (request, reply) => {
+      reply.send('ok');
+    });
     it('executes graphql', (done) => {
       fastify.inject(
         {

@@ -2,7 +2,6 @@ import {
   GraphQLError,
   GraphQLSchema,
   DocumentNode,
-  ExecutionResult,
   GraphQLFormattedError,
 } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';

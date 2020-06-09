@@ -1,16 +1,5 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { QueryResponse, QueryRequest } from 'graphyne-core';
-import { ExecutionResult } from 'graphql';
-
-export type IntegrationFunction = (
-  ...args: any[]
-) => {
-  request: IncomingMessage & {
-    path?: string;
-    query?: Record<string, string>;
-  };
-  response: ServerResponse;
-};
+import { IncomingMessage } from 'http';
+import { QueryResponse } from 'graphyne-core';
 
 export interface HandlerConfig {
   path?: string;
