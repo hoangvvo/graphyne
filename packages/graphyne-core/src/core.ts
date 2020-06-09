@@ -115,7 +115,7 @@ export class GraphyneCore {
     compiledQuery: CompiledQuery | ExecutionResult;
     operation: string;
   } {
-    let cached = this.lru !== null && this.lru.get(query);
+    const cached = this.lru !== null && this.lru.get(query);
     let document;
     if (cached) {
       return cached;

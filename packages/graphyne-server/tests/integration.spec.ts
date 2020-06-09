@@ -15,7 +15,7 @@ const resolvers = {
   },
 };
 
-var schema = makeExecutableSchema({
+const schema = makeExecutableSchema({
   typeDefs,
   resolvers,
 });
@@ -102,7 +102,9 @@ describe('Integrations', () => {
         },
       })
     );
-    fastify.get('/route', async () => 'ok');
+    fastify.get('/route', (request, reply) => {
+      reply.send('ok');
+    });
     it('executes graphql', (done) => {
       fastify.inject(
         {
