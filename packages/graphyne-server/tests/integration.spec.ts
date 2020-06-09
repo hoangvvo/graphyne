@@ -1,6 +1,5 @@
-// @ts-nocheck
-const { GraphyneServer } = require('../');
-const { makeExecutableSchema } = require('graphql-tools');
+import { GraphyneServer } from '../src';
+import { makeExecutableSchema } from 'graphql-tools';
 import { strict as assert } from 'assert';
 import request from 'supertest';
 
