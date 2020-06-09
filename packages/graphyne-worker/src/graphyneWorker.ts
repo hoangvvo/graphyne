@@ -63,7 +63,7 @@ export class GraphyneWorker extends GraphyneCore {
 
     return new Promise((resolve) => {
       const variablesParam = url.searchParams.get('variables');
-      this.runQuery(
+      this.runHttpQuery(
         {
           query: body?.query || url.searchParams.get('query') || undefined,
           context,

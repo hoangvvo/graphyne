@@ -23,7 +23,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | cache | `GraphyneServer` creates **two** in-memory LRU cache: One for compiled queries and another for invalid queries. This value defines max items to hold in **each** cache. Pass `false` to disable cache. | `1024` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
 
-### `GraphyneCore#runQuery({ query, variables, operationName, context, httpMethod }, callback)`
+### `GraphyneCore#runHttpQuery({ query, variables, operationName, context, httpMethod }, callback)`
 
 Execute the GraphQL query:
 

@@ -50,7 +50,7 @@ function testCase(
       schema,
       ...options,
       // @ts-ignore
-    }).runQuery(queryRequest, (result) => {
+    }).runHttpQuery(queryRequest, (result) => {
       if (typeof expected.body === 'function') {
         return expected.body(result.body) ? resolve() : reject('no match');
       }
@@ -204,7 +204,7 @@ describe('HTTP Operations', () => {
       { body: '{"data":{"sayHello":"Hello Jane"}}' }
     );
   });
-  it('allows runQuery with a context', () => {
+  it('allows runHttpQuery with a context', () => {
     return testCase(
       {
         query: `{ helloContext }`,

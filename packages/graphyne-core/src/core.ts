@@ -166,7 +166,7 @@ export class GraphyneCore {
     }
   }
 
-  public runQuery(
+  public runHttpQuery(
     { query, variables, operationName, context, httpMethod }: QueryRequest,
     cb: (result: QueryResponse) => void
   ): void | Promise<void> {

@@ -48,7 +48,7 @@ export class GraphyneServer extends GraphyneCore {
                 ? context.then(
                     (resolvedCtx: TContext) => {
                       params.context = resolvedCtx;
-                      that.runQuery(params, (result) =>
+                      that.runHttpQuery(params, (result) =>
                         sendResponse(result, args)
                       );
                     },
@@ -57,7 +57,9 @@ export class GraphyneServer extends GraphyneCore {
                       sendError(error, args);
                     }
                   )
-                : that.runQuery(params, (result) => sendResponse(result, args));
+                : that.runHttpQuery(params, (result) =>
+                    sendResponse(result, args)
+                  );
             } catch (error) {
               error.message = `Context creation failed: ${error.message}`;
               sendError(error, args);
