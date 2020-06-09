@@ -32,17 +32,18 @@ export class GraphyneServer extends GraphyneCore {
     function onRequestResolve(request: ExtendedRequest, args: TArgs) {
       switch (request.path || parseUrl(request, true).pathname) {
         case path:
-          return parseNodeRequest(request, (err, body) => {
+          parseNodeRequest(request, (err, body) => {
             if (err) return sendError(err, args);
             const params = getGraphQLParams({
               queryParams: request.query || parseUrl(request, true).query || {},
               body,
             }) as QueryRequest;
             params.httpMethod = request.method as string;
-            return onParamParsed(params, args);
+            onParamParsed(params, args);
           });
+          break;
         case playgroundPath:
-          return sendResponse(
+          sendResponse(
             {
               status: 200,
               body: renderPlayground({
@@ -53,8 +54,9 @@ export class GraphyneServer extends GraphyneCore {
             },
             args
           );
+          break;
         default:
-          return options.onNoMatch
+          options.onNoMatch
             ? options.onNoMatch(...args)
             : sendResponse(
                 { body: 'not found', status: 404, headers: {} },
@@ -65,51 +67,40 @@ export class GraphyneServer extends GraphyneCore {
 
     function onParamParsed(params: QueryRequest, args: TArgs) {
       try {
-        const context: TContext | Promise<TContext> =
-          typeof contextFn === 'function' ? contextFn(...args) : contextFn;
-        return 'then' in context
+        const context: TContext | Promise<TContext> = (params.context =
+          typeof contextFn === 'function' ? contextFn(...args) : contextFn);
+        'then' in context
           ? context.then(
-              (resolvedCtx: TContext) =>
-                onContextResolved(resolvedCtx, params, args),
+              (resolvedCtx: TContext) => {
+                params.context = resolvedCtx;
+                onContextResolved(params, args);
+              },
               (error: any) => {
                 error.message = `Context creation failed: ${error.message}`;
-                return sendError(error, args);
+                sendError(error, args);
               }
             )
-          : onContextResolved(context, params, args);
+          : onContextResolved(params, args);
       } catch (error) {
         error.message = `Context creation failed: ${error.message}`;
-        return sendError(error, args);
+        sendError(error, args);
       }
     }
 
-    function onContextResolved(
-      context: Record<string, any>,
-      params: QueryRequest,
-      args: TArgs
-    ) {
-      that.runQuery(
-        {
-          query: params.query,
-          context,
-          variables: params.variables,
-          operationName: params.operationName,
-          httpMethod: params.httpMethod,
-        },
-        (result) => sendResponse(result, args)
-      );
+    function onContextResolved(params: QueryRequest, args: TArgs) {
+      that.runQuery(params, (result) => sendResponse(result, args));
     }
 
     function sendResponse(result: QueryResponse, args: TArgs) {
-      if (options.onResponse) return options.onResponse(result, ...args);
-      else
-        return (args[1] as ServerResponse)
-          .writeHead(result.status, result.headers)
-          .end(result.body);
+      options.onResponse
+        ? options.onResponse(result, ...args)
+        : (args[1] as ServerResponse)
+            .writeHead(result.status, result.headers)
+            .end(result.body);
     }
 
     function sendError(error: any, args: TArgs) {
-      return sendResponse(
+      sendResponse(
         {
           status: error.status || 500,
           body: fastStringify({ errors: [error] }),
