@@ -25,7 +25,11 @@ export class GraphyneServer extends GraphyneCore {
         '/playground'
       : null;
     const that = this;
-    const contextFn = this.options.context || {};
+    const contextFn = (typeof this.options.context === 'function'
+      ? this.options.context
+      : () => this.options.context || {}) as (
+      ...args: TArgs
+    ) => TContext | Promise<TContext>;
 
     type TArgs = any[];
 
@@ -67,8 +71,7 @@ export class GraphyneServer extends GraphyneCore {
 
     function onParamsParsed(params: QueryRequest, args: TArgs) {
       try {
-        const context: TContext | Promise<TContext> = (params.context =
-          typeof contextFn === 'function' ? contextFn(...args) : contextFn);
+        const context = (params.context = contextFn(...args));
         'then' in context
           ? context.then(
               (resolvedCtx: TContext) => {
