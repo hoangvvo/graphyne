@@ -7,7 +7,7 @@
 
 GraphQL execution layer in the browser and at the edge. A package of [Graphyne](/).
 
-This is a **WIP**.
+[Example](/examples/graphyne-worker-simple)
 
 ## Why GraphQL in the browser
 
