@@ -1,33 +1,24 @@
-import { GraphyneWorker } from 'graphyne-worker';
-import { makeExecutableSchema } from 'graphql-tools';
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('/worker.js')
+    .then(function (registration) {
+      console.log('Registration successful, scope is:', registration.scope);
+    })
+    .catch(function (error) {
+      console.log('Service worker registration failed, error:', error);
+    });
+}
 
-const typeDefs = `
-  type Query {
-    hello: String
-  }
-`;
-const resolvers = {
-  Query: {
-    hello: (obj, variables, context) => `Hello ${context.world}!`,
-  },
+window.onload = () => {
+  document.querySelector('#query').onclick = () => {
+    fetch('/graphql?query={hello}')
+      .then((res) => res.json())
+      .then((json) => {
+        document.querySelector('#result').value = JSON.stringify(
+          json,
+          null,
+          '\t'
+        );
+      });
+  };
 };
-
-var schema = makeExecutableSchema({
-  typeDefs,
-  resolvers,
-});
-
-const graphyne = new GraphyneWorker({
-  schema,
-  context: () => ({ world: 'world' }),
-});
-
-global.addEventListener(
-  'fetch',
-  graphyne.createHandler({
-    path: '/graphql',
-    playground: {
-      path: '/playground',
-    },
-  })
-);
