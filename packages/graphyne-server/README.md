@@ -79,68 +79,53 @@ A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) 
 
 **Signature function** refers to framework-specific's handler function. For example, in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)` just like `Node HTTP Server`.
 
-### Custom integration
-
 By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa does not follow the convention. In such cases `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
 
-Let's take a look at an example with `koa`.
+See the [Integration examples](#integration-examples) section below to learn how `onRequest`, `onResponse`, and `onNoMatch` is used.
 
-`onRequest(args, done)`
+### `onRequest(args, done)`
 
-This will be a function to resolve frameworks with non-standard signature function. It accepts an array of *arguments* from a framework's [signature function](#framework-specific-integration) and a function `done` to be called with `request` (`IncomingMessage` from Node.js request listener).
+This will be a function to resolve frameworks with non-standard signature function. It will be called with `args`, an array of *arguments* from a framework's signature function, and a callback function `done` to be called with one of the two:
 
-By default, `onRequest` assumes `request` is the fist argument of the signature function. In Node.js HTTP Server the array argument is `[req, res]`, and `onRequest` would be `([req, res], done) => done(req))`.
+- `IncomingMessage` from Node.js
+- A compatible request object (See section below)
 
-In `koa`, however, the handler function has a signature of `(ctx, next)`, and thus the array argument will be `[ctx, next]` and calling `done(ctx)` by default will result in error. We fix it like so:
+By default, `onRequest` assumes `request` is the fist argument of the signature function. In Node.js HTTP Server, `args` is `[req, res]`, and `onRequest` defaults to `([req, res], done) => done(req))`.
 
-```javascript
-graphyne.createHandler({
-  onRequest: ([ctx, next], done) => {
-    // ctx is the first argument in koa's signature function
-    // req is a property of ctx in koa (ctx.request is the flavored request object)
-    done(ctx.req);
-  },
-})
-```
+#### Compatible request object
 
-`onResponse(result, ...args)`
+Sometimes, `IncomingMessage` is not available, when used in a non-Node.js environments like [AWS](https://docs.aws.amazon.com/lambda/latest/dg/lambda-services.html) or [Deno](https://deno.land/), or when the framework does not expose it.
 
-This will be a function called to send back the HTTP response, where `args` are spreaded arguments of the framework signature function and `result` is always an object of:
+In such cases, you must create an object with the following properties:
+
+- `headers`: **(Required)** A key-value object of the HTTP headers.
+- `method`: **(Required)** The HTTP method verb (`GET`, `POST`, etc).
+- `body`: The body of the request (should be an object if provided).
+
+...with the addition of:
+
+- `url`: The full url of the request (path + query strings)
+
+and/or:
+
+- `path`: The path of the request (before query strings)
+- `query`: The key-value object of the query strings
+
+### `onResponse(result, ...args)`
+
+This will be a function called to send back the HTTP response. It will be called with `args`, spreaded arguments of the framework signature function, and `result`, an object of:
 
 - `status` (the status code that should be set)
 - `headers` (the headers that should be set)
-- `body` (the stringified response body).
+- `body` (the **stringified** response body).
 
-By default, `onResponse` assumes `response` is the second argument of the signature function and call `response.writeHead` and `response.end` accordingly.
+By default, `onResponse` assumes `response` is the second argument of the signature function. In Node.js HTTP Server, `...args` is `req, res`, and `onResponse` defaults to `(result, req, res) => res.writeHead(result.status, result.headers).end(result.body)`.
 
-In `koa`, however, not only that `response` is not the second argument, it has a distinctive way to send response using `ctx.body`. We know that the arguments of `koa` is `(ctx, next)`. Thus, the arguments of `onResponse` will be `(result, ctx, next)`. We can integrate like so:
+### `onNoMatch(result, ...args)`
 
-```javascript
-graphyne.createHandler({
-  onResponse: ({ headers, body, status }, ctx, next) => {
-    ctx.status = status;
-    ctx.set(headers);
-    ctx.body = body;
-  }
-})
-```
+By default, `onNoMatch` calls `onResponse` with `result = {status: 404, body: "not found", headers: {}}`. Thus, if you configurate `onResponse` correctly. This will just work. However, sometimes you do not want `onNoMatch` to write `404` right away, such as when you used it in frameworks like Express, in which you want to call `next` instead.
 
-`onNoMatch(result, ...args)`
-
-By default, `onNoMatch` would call `onResponse` with `result = {status: 404, body: "not found", headers: {}}`.
-
-If you configurate `onResponse` correctly for `koa` earlier. This will work just fine. However, let's define this function anyway to see how it will work for other frameworks. Similarly, the arguments of `onNoMatch` will be `(ctx, next)` (like `onResponse` without the `result` argument) so we can integrate like so:
-
-```javascript
-graphyne.createHandler({
-  onNoMatch: (ctx, next) => {
-    ctx.status = 404;
-    ctx.body = 'not found';
-  }
-})
-```
-
-### Examples
+### Integration examples
 
 #### [Express](https://github.com/expressjs/express)
 
@@ -210,23 +195,25 @@ app.use(
       ctx.set(headers);
       ctx.body = body;
     },
+    onNoMatch: (ctx, next) => next()
   })
 );
 ```
 
 #### [AWS Lambda](https://aws.amazon.com/lambda/)
 
-Lambda will not have Node.js `IncomingMessage`, but you can still transform it into a compatible `IncomingMessage` object. `graphyne-server` would need `request.url`, `request.body`, `request.headers` and `request.method`.
+Lambda will not have Node.js `IncomingMessage`, so you need to create a compatible request object:
 
 ```javascript
 exports.handler = graphyne.createHandler({
   onRequest: ([event, context, callback], done) => {
     // Construct a IncomingMessage compatible object
     const request = {
-      url: event.path,
-      body: event.body ? JSON.parse(event.body) : null,
+      path: event.path,
+      query: event.queryStringParameters,
       headers: event.headers,
-      method: event.httpMethod
+      method: event.httpMethod,
+      body: event.body ? JSON.parse(event.body) : null,
     };
     done(request);
   },
@@ -237,12 +224,6 @@ exports.handler = graphyne.createHandler({
   },
 })
 ```
-
-#### Other frameworks
-
-As long as the framework exposes Node.js `IncomingMessage`, `graphyne-server` will work by configuring using `onRequest`, `onResponse`, and `onNoMatch`. If not, you can try to construct one by creating an object with `request.url`, `request.body`, `request.headers`, `request.method`.
-
-My plan is to provide prepared config/presets within this package (perhaps by importing from `graphyne-server/integrations`). Yet, since Node.js ecosystem has a wide range of frameworks, it will be impossible to add one for each of them. If there is any framework you fail to integrate, feel free to create an issue.
 
 ## Contributing
 
