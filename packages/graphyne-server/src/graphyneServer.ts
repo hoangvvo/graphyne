@@ -9,7 +9,6 @@ import {
   QueryRequest,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
-// @ts-ignore
 import parseUrl from '@polka/url';
 import { HandlerConfig, ExpectedRequest } from './types';
 

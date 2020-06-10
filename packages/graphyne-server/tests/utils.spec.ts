@@ -30,8 +30,7 @@ describe('core utils', () => {
         .expect('{"query":"query { helloWorld }"}');
     });
     it('returns if req.body has been parsed', (done) => {
-      const req = { body: { query: 1 } };
-      // @ts-ignore
+      const req = { body: { query: 1 }, headers: {}, method: '' };
       parseNodeRequest(req, (err, parsedBody) => {
         done(assert.deepStrictEqual(parsedBody, req.body));
       });
@@ -43,15 +42,14 @@ describe('core utils', () => {
         on: () => {
           throw new Error('Do not call me!');
         },
+        method: '',
       };
-      // @ts-ignore
       parseNodeRequest(req, (err, parsedBody) => {
         done(assert.deepStrictEqual(parsedBody, JSON.parse(req.body)));
       });
     });
     it('skip reading from req if it is not IncomingMessage', (done) => {
-      const req = { headers: { 'content-type': 'meh' } };
-      // @ts-ignore
+      const req = { headers: { 'content-type': 'meh' }, method: '' };
       parseNodeRequest(req, (err, parsedBody) => {
         done(assert.deepStrictEqual(parsedBody, null));
       });
