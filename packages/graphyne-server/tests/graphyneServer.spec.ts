@@ -68,27 +68,22 @@ describe('createHandler', () => {
         schema: schemaHello,
       });
       const handler = graphyne.createHandler({
-        onRequest: ([event], done) =>
+        onRequest: ([request], done) =>
           done({
-            path: event.path,
-            query: event.queryStringParameters,
-            headers: event.headers,
-            method: event.httpMethod,
+            url: request.url,
+            headers: request.httpHeaders,
+            method: request.httpMethod,
           }),
         onResponse: ({ status, body, headers }, event, res) =>
           res.writeHead(status, headers).end(body),
       });
       const server = createServer((req, res) => {
-        // AWS Lambda like
-        const event = {
-          path: '/graphql',
-          queryStringParameters: {
-            query: 'query { hello }',
-          },
-          headers: { 'content-type': 'application/json' },
+        const request = {
+          url: `/graphql?query={hello}`,
+          httpHeaders: {},
           httpMethod: 'GET',
         };
-        handler(event, res);
+        handler(request, res);
       });
       await request(server)
         .get('/graphql')
