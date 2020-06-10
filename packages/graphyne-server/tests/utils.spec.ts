@@ -36,6 +36,26 @@ describe('core utils', () => {
         done(assert.deepStrictEqual(parsedBody, req.body));
       });
     });
+    it('treat req.body as rawBody if it is string (and skip reading)', (done) => {
+      const req = {
+        body: '{ "query": 1 }',
+        headers: { 'content-type': 'application/json' },
+        on: () => {
+          throw new Error('Do not call me!');
+        },
+      };
+      // @ts-ignore
+      parseNodeRequest(req, (err, parsedBody) => {
+        done(assert.deepStrictEqual(parsedBody, JSON.parse(req.body)));
+      });
+    });
+    it('skip reading from req if it is not IncomingMessage', (done) => {
+      const req = { headers: { 'content-type': 'meh' } };
+      // @ts-ignore
+      parseNodeRequest(req, (err, parsedBody) => {
+        done(assert.deepStrictEqual(parsedBody, null));
+      });
+    });
     it('errors body is malformed', async () => {
       const server = createServer((req, res) => {
         parseNodeRequest(req, (err, parsedBody) => {
@@ -53,29 +73,30 @@ describe('core utils', () => {
       it('with empty content type', async () => {
         const server = createServer((req, res) => {
           parseNodeRequest(req, (err, parsedBody) => {
-            res.end(JSON.stringify(parsedBody));
+            res.end(String(parsedBody === null));
           });
         });
         await request(server)
           .post('/graphql')
           .send(`query { helloWorld }`)
           .set('content-type', '')
-          .expect('{}');
+          .expect('true');
       });
       it('with invalid content-type', async () => {
         const server = createServer((req, res) => {
           parseNodeRequest(req, (err, parsedBody) => {
-            res.end(JSON.stringify(parsedBody));
+            res.end(String(parsedBody === null));
           });
         });
         await request(server)
           .post('/graphql')
           .send(`query { helloWorld }`)
           .set('content-type', 'wat')
-          .expect('{}');
+          .expect('true');
       });
     });
   });
+
   describe('getGraphQLParams', () => {
     it('works with queryParams', () => {
       const { query, variables } = getGraphQLParams({
