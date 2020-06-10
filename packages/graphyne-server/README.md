@@ -109,7 +109,9 @@ By default, `onResponse` assumes `response` is the second argument of the signat
 
 ### `onNoMatch(result, ...args)`
 
-By default, `onNoMatch` calls `onResponse` with `result = {status: 404, body: "not found", headers: {}}`. Thus, if you configurate `onResponse` correctly. This will just work. However, sometimes you do not want `onNoMatch` to write `404` right away, such as when you used it in frameworks like Express, in which you want to call `next` instead.
+By default, `onNoMatch` calls `onResponse` with `result = {status: 404, body: "not found", headers: {}}`. Thus, if you configurate `onResponse` correctly, this will just work.
+
+However, sometimes you do not want `onNoMatch` to write `404` right away, such as when you used it as a middleware in frameworks like `Express`, in which case you want to [call `next` instead](/packages/graphyne-server/integrations.md#express).
 
 ### Integration examples
 
