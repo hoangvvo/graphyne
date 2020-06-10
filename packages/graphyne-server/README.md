@@ -61,23 +61,9 @@ Create a handler for HTTP server, `options` accepts the following:
 
 In addition, `options` also accepts `onRequest`, `onResponse`, and `onNoMatch`. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration).
 
-## Additional features
-
-### Subscriptions
-
-GraphQL subscriptions support is provided by [graphyne-ws](https://www.npmjs.com/package/graphyne-ws) package. Check out the documentation [here](/packages/graphyne-ws).
-
-### File uploads
-
-To enable file upload, use [graphql-upload](https://github.com/jaydenseric/graphql-upload) and add the `Upload` scaler. See [#10](https://github.com/hoangvvo/graphyne/issues/10).
-
-### Dataloader and N+1 Problem
-
-A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) to solve GraphQL N+1 Problem is covered in [#23](https://github.com/hoangvvo/graphyne/issues/23). Also check out an [example](/examples/with-dataloader).
-
 ## Framework-specific integration
 
-**Signature function** refers to framework-specific's handler function. For example, in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)` just like `Node HTTP Server`.
+**Signature function** refers to framework-specific's handler function. For example, in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
 
 By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa does not follow the convention. In such cases `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
 
@@ -128,6 +114,22 @@ By default, `onNoMatch` calls `onResponse` with `result = {status: 404, body: "n
 ### Integration examples
 
 See [integrations.md](integrations.md).
+
+## Additional features
+
+Since some features are not used by everyone, they are not included by default to keep the package light-weight.
+
+### Subscriptions
+
+GraphQL subscriptions support is provided by [graphyne-ws](https://www.npmjs.com/package/graphyne-ws) package. Check out the documentation [here](/packages/graphyne-ws).
+
+### File uploads
+
+To enable file upload, use [graphql-upload](https://github.com/jaydenseric/graphql-upload) and add the `Upload` scaler. See [#10](https://github.com/hoangvvo/graphyne/issues/10).
+
+### Dataloader and N+1 Problem
+
+A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) to solve GraphQL N+1 Problem is covered in [#23](https://github.com/hoangvvo/graphyne/issues/23). Also check out an [example](/examples/with-dataloader).
 
 ## Contributing
 
