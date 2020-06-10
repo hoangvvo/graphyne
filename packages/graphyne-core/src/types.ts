@@ -12,7 +12,6 @@ export interface Config {
   schema: GraphQLSchema;
   context?: TContext | ((...args: any[]) => TContext | Promise<TContext>);
   rootValue?: ((parsedQuery: DocumentNode) => any) | any;
-  cache?: number | boolean;
   formatError?: (error: GraphQLError) => GraphQLFormattedError;
 }
 

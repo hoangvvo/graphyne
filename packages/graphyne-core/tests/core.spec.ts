@@ -95,29 +95,6 @@ describe('graphyne-core', () => {
       });
     });
   });
-  describe('options.cache', () => {
-    it('throws if options.cache is not a number or boolean', () => {
-      assert.doesNotThrow(() => {
-        // TODO: Need test for actual behavior
-        new GraphyneCore({
-          // @ts-ignore
-          cache: true,
-          schema,
-        });
-        new GraphyneCore({
-          // @ts-ignore
-          cache: 12,
-          schema,
-        });
-      });
-      assert.throws(() => {
-        new GraphyneCore({
-          // @ts-ignore
-          cache: {},
-        });
-      });
-    });
-  });
 });
 
 describe('Operations', () => {});

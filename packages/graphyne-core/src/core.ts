@@ -59,17 +59,6 @@ export const fastStringify = fastJson({
   },
 });
 
-function buildCache(opts: Config) {
-  if (opts.cache) {
-    if (typeof opts.cache === 'number') return lru(opts.cache);
-    else if (typeof opts.cache === 'boolean')
-      return opts.cache ? lru(1024) : null;
-    else throw new TypeError('opts.cache must either be a number or boolean');
-  }
-  // Default
-  return lru(1024);
-}
-
 const createGraphyneError = (
   status: number,
   errors: readonly GraphQLError[]
@@ -97,8 +86,8 @@ export class GraphyneCore {
     }
     this.options = options;
     // build cache
-    this.lru = buildCache(this.options);
-    this.lruErrors = buildCache(this.options);
+    this.lru = lru(1024);
+    this.lruErrors = lru(1024);
     // construct schema and validate
     this.schema = this.options.schema;
     const schemaValidationErrors = validateSchema(this.schema);
