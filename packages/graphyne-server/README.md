@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
-Fast and low overhead GraphQL Server for any JavaScript frameworks or severless environments. A package of [Graphyne](/).
+Lightning-fast GraphQL Server for any JavaScript frameworks or severless environments. A package of [Graphyne](/).
 
 ## Install
 
