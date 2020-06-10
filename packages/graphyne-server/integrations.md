@@ -1,6 +1,6 @@
 # Integration of `graphyne-server` in frameworks and runtimes/environments
 
-This document gives the code snippets on how to integrate `graphyne-server`. If the one you use is not on the list, or you wish to learn more, refer to [Framework-specific integration](/packages/graphyne-server#framework-specific-integration).
+This document gives the code snippets on how to integrate `graphyne-server`. If the one you use is not on the list, or you wish to learn more, refer to [Framework-specific integration](/packages/graphyne-server#framework-specific-integration). Also feel free to create an issue if you need help with one.
 
 **Warning:** Do not use any `body-parser` module before graphyne's handler.
 

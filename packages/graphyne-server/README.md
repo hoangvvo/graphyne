@@ -71,13 +71,13 @@ In addition, `options` also accepts `onRequest`, `onResponse`, and `onNoMatch`. 
 
 **Signature function** refers to framework/runtimes-specific's handler function. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
 
-By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa does not follow the convention. In such cases `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
+By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa do not follow the convention. In such cases, `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
 
 See the [Integration examples](#integration-examples) section below to learn how `onRequest`, `onResponse`, and `onNoMatch` is used.
 
 ### `onRequest(args, done)`
 
-This will be a function to resolve frameworks with non-standard signature function. It will be called with `args`, an array of *arguments* from a framework's signature function, and a callback function `done` to be called with one of the two:
+This is the function to resolve frameworks with handler functions differing to `(req, res)`. It will be called with `args`, an array of *arguments* from a framework's signature function, and a callback function `done` to be called with one of the two:
 
 - `req`: `IncomingMessage` from Node.js
 - A compatible request object (See section below)
@@ -94,18 +94,18 @@ In such cases, you must create an object with the following properties:
 - `method`: **(Required)** The HTTP method verb (`GET`, `POST`, etc).
 - `body`: The body of the request (object or string).
 
-...with the addition of:
+...with the additions of:
 
-- `url`: The full url of the request (path + query strings)
+- `url`: The full url of the request (path + query strings).
 
 and/or:
 
-- `path`: The path of the request (before query strings)
-- `query`: The key-value object of the query strings
+- `path`: The path of the request (before query strings).
+- `query`: The key-value object of the query strings.
 
 ### `onResponse(result, ...args)`
 
-This will be a function called to send back the HTTP response. It will be called with `args`, spreaded arguments of the framework signature function, and `result`, an object of:
+This is the function called to send back the HTTP response. It will be called with `args`, spreaded arguments of the framework signature function, and `result`, an object of:
 
 - `status` (the status code that should be set)
 - `headers` (the headers that should be set)
