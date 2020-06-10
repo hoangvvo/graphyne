@@ -28,6 +28,9 @@ export function parseNodeRequest(
     return cb(null, req.body);
   }
 
+  // Not IncomingMessage, skip parsing
+  if (!('on' in req)) return cb(null, null);
+
   const oCtype = req.headers['content-type'];
   // Skip requests without content types.
   if (!oCtype) {
@@ -40,8 +43,6 @@ export function parseNodeRequest(
     ? oCtype.substring(0, semiIndex)
     : oCtype
   ).trim();
-
-  if (!('on' in req)) return cb(null, null);
 
   let rawBody = '';
   req.on('data', (chunk) => {
