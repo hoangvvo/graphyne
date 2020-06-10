@@ -63,7 +63,7 @@ In addition, `options` also accepts `onRequest`, `onResponse`, and `onNoMatch`. 
 
 ## Framework-specific integration
 
-**Signature function** refers to framework-specific's handler function. For example, in `Express.js`, it is `(req, res, next)`. In `Hapi`, it is `(request, h)`. In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
+**Signature function** refers to framework/runtimes-specific's handler function. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
 
 By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa does not follow the convention. In such cases `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
 
