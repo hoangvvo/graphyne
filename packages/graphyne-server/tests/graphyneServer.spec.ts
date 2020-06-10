@@ -44,23 +44,52 @@ const schemaHello = makeExecutableSchema({
 });
 
 describe('createHandler', () => {
-  it('maps request using onRequest', async () => {
-    const graphyne = new GraphyneServer({
-      schema: schemaHello,
+  describe('maps request using onRequest', () => {
+    it('with IncomingMessage', async () => {
+      const graphyne = new GraphyneServer({
+        schema: schemaHello,
+      });
+      const handler = graphyne.createHandler({
+        onRequest: ([ctx], done) => done(ctx.req),
+        onResponse: ({ status, body, headers }, ctx) =>
+          ctx.res.writeHead(status, headers).end(body),
+      });
+      const server = createServer((req, res) => {
+        const ctx = { req, res };
+        handler(ctx);
+      });
+      await request(server)
+        .get('/graphql')
+        .query({ query: 'query { hello }' })
+        .expect('{"data":{"hello":"world"}}');
     });
-    const handler = graphyne.createHandler({
-      onRequest: ([ctx], done) => done(ctx.req),
-      onResponse: ({ status, body, headers }, ctx) =>
-        ctx.res.writeHead(status, headers).end(body),
+    it('with constructed request object', async () => {
+      const graphyne = new GraphyneServer({
+        schema: schemaHello,
+      });
+      const handler = graphyne.createHandler({
+        onRequest: ([request], done) =>
+          done({
+            url: request.url,
+            headers: request.httpHeaders,
+            method: request.httpMethod,
+          }),
+        onResponse: ({ status, body, headers }, event, res) =>
+          res.writeHead(status, headers).end(body),
+      });
+      const server = createServer((req, res) => {
+        const request = {
+          url: `/graphql?query={hello}`,
+          httpHeaders: {},
+          httpMethod: 'GET',
+        };
+        handler(request, res);
+      });
+      await request(server)
+        .get('/graphql')
+        .query({ query: 'query { hello }' })
+        .expect('{"data":{"hello":"world"}}');
     });
-    const server = createServer((req, res) => {
-      const ctx = { req, res };
-      handler(ctx);
-    });
-    await request(server)
-      .get('/graphql')
-      .query({ query: 'query { hello }' })
-      .expect('{"data":{"hello":"world"}}');
   });
   describe('renders GraphiQL', () => {
     const graphyne = new GraphyneServer({

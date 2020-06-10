@@ -2,6 +2,7 @@ import { GraphyneServer } from '../src';
 import { makeExecutableSchema } from 'graphql-tools';
 import { strict as assert } from 'assert';
 import request from 'supertest';
+import { createServer } from 'http';
 
 const typeDefs = `
   type Query {
@@ -173,6 +174,52 @@ describe('Integrations', () => {
     });
     it('works with other routes', () => {
       return testSupertest(server).fourOhFour();
+    });
+  });
+  describe('aws lambda', () => {
+    const handler = graphyne.createHandler({
+      playground: true,
+      onRequest: ([event, context, callback], done) => {
+        const request = {
+          path: event.path,
+          query: event.queryStringParameters,
+          headers: event.headers,
+          method: event.httpMethod,
+          body: event.body ? JSON.parse(event.body) : null,
+        };
+        done(request);
+      },
+      onResponse: ({ status, body, headers }, event, context, callback) => {
+        callback(null, {
+          body,
+          headers,
+          statusCode: status,
+        });
+      },
+    });
+    const server = createServer((req, res) => {
+      // We mock AWS Lambda-like environment
+      const idx = req.url.indexOf('?');
+      const pathname = idx !== -1 ? req.url.substring(0, idx) : req.url;
+      const event = {
+        path: pathname,
+        // We force the followings
+        queryStringParameters: {
+          query: 'query { hello }',
+        },
+        headers: {},
+        httpMethod: 'GET',
+      };
+      function callback(err, { body, headers, statusCode }) {
+        res.writeHead(statusCode, headers).end(body);
+      }
+      handler(event, {}, callback);
+    });
+    it('executes graphql', () => {
+      return testSupertest(server).graphql();
+    });
+    it('renders playground', () => {
+      return testSupertest(server).playground();
     });
   });
 });

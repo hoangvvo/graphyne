@@ -9,9 +9,8 @@ import {
   QueryRequest,
 } from 'graphyne-core';
 import { parseNodeRequest, getGraphQLParams } from './utils';
-// @ts-ignore
 import parseUrl from '@polka/url';
-import { HandlerConfig, ExtendedRequest } from './types';
+import { HandlerConfig, ExpectedRequest } from './types';
 
 export class GraphyneServer extends GraphyneCore {
   constructor(options: Config) {
@@ -33,7 +32,7 @@ export class GraphyneServer extends GraphyneCore {
 
     type TArgs = any[];
 
-    function onRequestResolve(request: ExtendedRequest, args: TArgs) {
+    function onRequestResolve(request: ExpectedRequest, args: TArgs) {
       switch (request.path || parseUrl(request, true).pathname) {
         case path:
           parseNodeRequest(request, (err, body) => {
