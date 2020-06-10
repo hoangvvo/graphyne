@@ -1,5 +1,6 @@
 import { IncomingMessage } from 'http';
 import { QueryBody, QueryRequest } from 'graphyne-core';
+import { ExpectedRequest } from './types';
 
 type GraphQLParams = Partial<QueryRequest>;
 type GraphQLParamsInput = {
@@ -19,9 +20,7 @@ export const getGraphQLParams = ({
 });
 
 export function parseNodeRequest(
-  req: IncomingMessage & {
-    body?: any;
-  },
+  req: ExpectedRequest,
   cb: (err: any, body: QueryBody | null) => void
 ): void {
   // If body has been parsed as a keyed object, use it.
@@ -41,6 +40,8 @@ export function parseNodeRequest(
     ? oCtype.substring(0, semiIndex)
     : oCtype
   ).trim();
+
+  if (!('on' in req)) return cb(null, null);
 
   let rawBody = '';
   req.on('data', (chunk) => {
