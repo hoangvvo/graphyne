@@ -73,7 +73,7 @@ See the [Integration examples](#integration-examples) section below to learn how
 
 This will be a function to resolve frameworks with non-standard signature function. It will be called with `args`, an array of *arguments* from a framework's signature function, and a callback function `done` to be called with one of the two:
 
-- `IncomingMessage` from Node.js
+- `req`: `IncomingMessage` from Node.js
 - A compatible request object (See section below)
 
 By default, `onRequest` assumes `request` is the fist argument of the signature function. In Node.js HTTP Server, `args` is `[req, res]`, and `onRequest` defaults to `([req, res], done) => done(req))`.
