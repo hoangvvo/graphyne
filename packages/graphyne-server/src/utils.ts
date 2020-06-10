@@ -69,9 +69,7 @@ export function parseNodeRequest(
   // skip if it is no IncomingMessage
   if (!('on' in req)) return cb(null, null);
 
-  req.on('data', (chunk) => {
-    rawBody += chunk;
-  });
+  req.on('data', (chunk) => (rawBody += chunk));
   req.on('error', (err) => cb(err, null));
   req.on('end', () => parseAndCb(rawBody, oCtype, cb));
 }
