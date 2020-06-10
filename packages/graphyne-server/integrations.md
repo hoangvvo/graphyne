@@ -2,6 +2,8 @@
 
 This document gives the code snippets on how to integrate `graphyne-server`. If the one you use is not on the list, or you wish to learn more, refer to [Framework-specific integration](/packages/graphyne-server#framework-specific-integration).
 
+**Warning:** Do not use any `body-parser` module before graphyne's handler.
+
 Check out [examples](/examples) for integrations with many others.
 
 ## Node.js frameworks
@@ -94,7 +96,7 @@ exports.handler = graphyne.createHandler({
       query: event.queryStringParameters,
       headers: event.headers,
       method: event.httpMethod,
-      body: event.body ? JSON.parse(event.body) : null,
+      body: event.body,
     };
     done(request);
   },
@@ -104,4 +106,39 @@ exports.handler = graphyne.createHandler({
     });
   },
 })
+```
+
+### [Deno](https://deno.land/)
+
+In `Deno`, `req.body` is of type [Reader](https://deno.land/typedoc/interfaces/deno.reader.html) and must be converted to string using `Deno.readAll` and `TextDecoder` API.
+
+```javascript
+const decoder = new TextDecoder();
+
+const gqlHandle = graphyne.createHandler({
+  onRequest: async ([req], done) => {
+    const request = {
+      url: req.url,
+      headers: req.headers,
+      method: req.method,
+      body: decoder.decode(await Deno.readAll(req.body)),
+    };
+    done(request);
+  },
+  onResponse: ({ headers, body, status }, req) => {
+    req.respond({ body, headers, status });
+  },
+})
+
+// Usage
+
+import { listenAndServe, server } from "https://deno.land/std/http/server.ts";
+
+// Either
+listenAndServe({ port: 8000 }, gqlHandle);
+// OR
+const server = serve({ port: 8000 });
+for await (const req of server) {
+  gqlHandle(req);
+}
 ```

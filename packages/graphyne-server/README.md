@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
-Fast and low overhead GraphQL Server for any Node.js frameworks or severless environments. A package of [Graphyne](/).
+Fast and low overhead GraphQL Server for any JavaScript frameworks or severless environments. A package of [Graphyne](/).
 
 ## Install
 
@@ -15,6 +15,12 @@ Install `Graphyne Server` and `graphql` dependencies using:
 npm i graphyne-server graphql
 // or
 yarn add graphyne-server graphql
+```
+
+If you use `deno`, pull this package from [Pika](https://www.pika.dev/npm/graphyne-server).
+
+```javascript
+import { GraphyneServer } from 'https://cdn.pika.dev/graphyne-server';
 ```
 
 ## Usage (with bare Node HTTP Server)
@@ -86,7 +92,7 @@ In such cases, you must create an object with the following properties:
 
 - `headers`: **(Required)** A key-value object of the HTTP headers.
 - `method`: **(Required)** The HTTP method verb (`GET`, `POST`, etc).
-- `body`: The body of the request (should be an object if provided).
+- `body`: The body of the request (object or string).
 
 ...with the addition of:
 
