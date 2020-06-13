@@ -6,6 +6,7 @@ import { makeExecutableSchema } from 'graphql-tools';
 import { PubSub } from 'graphql-subscriptions';
 import { createServer } from 'http';
 import request from 'supertest';
+import { GraphQLError } from 'graphql';
 
 const pubsub = new PubSub();
 
@@ -53,10 +54,10 @@ const schema = makeExecutableSchema({
 });
 
 // @ts-ignore
-async function startServer(options = {}) {
+async function startServer(options = {}, graphyneOpts = {}) {
   // @ts-ignore
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
-  const graphyne = new GraphyneServer({ schema });
+  const graphyne = new GraphyneServer({ schema, ...graphyneOpts });
   const server = createServer(graphyne.createHandler());
   startSubscriptionServer({
     server,
@@ -163,6 +164,29 @@ describe('graphyne-ws', () => {
           assert.deepStrictEqual(
             chunk,
             `{"type":"error","payload":{"errors":[{"message":"Malformed message"}]}}`
+          )
+        );
+      });
+    });
+  });
+  it('format errors using formatError', (done) => {
+    startServer(
+      {},
+      {
+        formatError: (err) => {
+          return new GraphQLError('Internal server error');
+        },
+      }
+    ).then(({ server, client, ws }) => {
+      client.write(`{"type":"connection_init","payload":`);
+      client.on('data', (chunk) => {
+        client.end();
+        server.close();
+        // Override default error which is "Malformed message"
+        done(
+          assert.deepStrictEqual(
+            chunk,
+            `{"type":"error","payload":{"errors":[{"message":"Internal server error"}]}}`
           )
         );
       });
