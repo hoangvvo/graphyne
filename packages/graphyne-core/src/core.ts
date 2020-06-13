@@ -155,9 +155,11 @@ export class GraphyneCore {
     { query, variables, operationName, context, httpMethod }: QueryRequest,
     cb: (result: QueryResponse) => void
   ): void | Promise<void> {
-    let compiledQuery: CompiledQuery | undefined;
-
-    const createResponse = (code: number, obj: ExecutionResult) => {
+    const createResponse = (
+      code: number,
+      obj: ExecutionResult,
+      stringify = fastStringify
+    ) => {
       const o: {
         data?: ExecutionResult['data'];
         errors?: GraphQLFormattedError[];
@@ -165,9 +167,7 @@ export class GraphyneCore {
       if (obj.data) o.data = obj.data;
       if (obj.errors)
         o.errors = obj.errors.map(this.options.formatError || formatError);
-      const payload = (compiledQuery && isCompiledQuery(compiledQuery)
-        ? compiledQuery.stringify
-        : fastStringify)(o);
+      const payload = stringify(o);
       flatstr(payload);
       cb({
         body: payload,
@@ -182,50 +182,42 @@ export class GraphyneCore {
       });
     }
 
-    try {
-      // Get graphql-jit compiled query and parsed document
-      const {
-        document,
-        operation,
-        compiledQuery: compiled,
-      } = this.getCompiledQuery(query, operationName);
+    const { document, operation, compiledQuery } = this.getCompiledQuery(
+      query,
+      operationName
+    );
 
-      if (!isCompiledQuery(compiled)) {
-        // Syntax errors or validation errors
-        return createResponse(400, compiled);
-      }
-
-      compiledQuery = compiled;
-
-      if (httpMethod !== 'POST' && httpMethod !== 'GET')
-        return createResponse(405, {
-          errors: [
-            new GraphQLError(`GraphQL only supports GET and POST requests.`),
-          ],
-        });
-      if (httpMethod === 'GET' && operation !== 'query')
-        return createResponse(405, {
-          errors: [
-            new GraphQLError(
-              `Operation ${operation} cannot be performed via a GET request`
-            ),
-          ],
-        });
-
-      const result = compiledQuery.query(
-        typeof this.options.rootValue === 'function'
-          ? this.options.rootValue(document)
-          : this.options.rootValue || {},
-        context,
-        variables
-      );
-      return 'then' in result
-        ? result.then((finished) => createResponse(200, finished))
-        : createResponse(200, result);
-    } catch (err) {
-      return createResponse(err.status ?? 500, {
-        errors: err.errors,
-      });
+    if (!isCompiledQuery(compiledQuery)) {
+      // Syntax errors or validation errors
+      return createResponse(400, compiledQuery);
     }
+
+    if (httpMethod !== 'POST' && httpMethod !== 'GET')
+      return createResponse(405, {
+        errors: [
+          new GraphQLError(`GraphQL only supports GET and POST requests.`),
+        ],
+      });
+    if (httpMethod === 'GET' && operation !== 'query')
+      return createResponse(405, {
+        errors: [
+          new GraphQLError(
+            `Operation ${operation} cannot be performed via a GET request`
+          ),
+        ],
+      });
+
+    const result = compiledQuery.query(
+      typeof this.options.rootValue === 'function'
+        ? this.options.rootValue(document)
+        : this.options.rootValue || {},
+      context,
+      variables
+    );
+    return 'then' in result
+      ? result.then((finished) =>
+          createResponse(200, finished, compiledQuery.stringify)
+        )
+      : createResponse(200, result, compiledQuery.stringify);
   }
 }
