@@ -6,8 +6,9 @@ import {
   renderPlayground,
   TContext,
   QueryRequest,
+  getGraphQLParams,
 } from 'graphyne-core';
-import { parseNodeRequest, getGraphQLParams } from './utils';
+import { parseNodeRequest } from './utils';
 import parseUrl from '@polka/url';
 import { HandlerConfig, ExpectedRequest } from './types';
 

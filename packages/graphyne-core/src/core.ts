@@ -43,7 +43,7 @@ export class GraphyneCore {
 
   public getCompiledQuery(
     query: string,
-    operationName?: string
+    operationName?: string | null
   ): {
     document?: DocumentNode;
     compiledQuery: CompiledQuery | ExecutionResult;
@@ -88,9 +88,14 @@ export class GraphyneCore {
           },
         };
 
-      const compiledQuery = compileQuery(this.schema, document, operationName, {
-        customJSONSerializer: true,
-      });
+      const compiledQuery = compileQuery(
+        this.schema,
+        document,
+        operationName || undefined,
+        {
+          customJSONSerializer: true,
+        }
+      );
 
       // Cache the compiled query
       if (this.lru && !operationName && isCompiledQuery(compiledQuery)) {

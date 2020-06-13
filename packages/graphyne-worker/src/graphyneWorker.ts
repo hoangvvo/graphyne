@@ -3,6 +3,9 @@ import {
   Config,
   QueryBody,
   renderPlayground,
+  parseBodyByContentType,
+  getGraphQLParams,
+  QueryRequest,
 } from 'graphyne-core';
 
 interface HandlerConfig {
@@ -23,7 +26,7 @@ export class GraphyneWorker extends GraphyneCore {
     request: Request,
     url = new URL(request.url)
   ): Promise<Response> {
-    let context: any;
+    let context: Record<string, any>;
     try {
       const contextFn = this.options.context || {};
       context =
@@ -38,50 +41,40 @@ export class GraphyneWorker extends GraphyneCore {
         }
       );
     }
-    let body: QueryBody | undefined;
+    let body: QueryBody | null = null;
 
     if (request.method === 'POST') {
       const oCtype = request.headers.get('content-type');
       if (oCtype) {
-        const semiIndex = oCtype.indexOf(';');
-        switch (semiIndex !== -1 ? oCtype.substring(0, semiIndex) : oCtype) {
-          case 'application/graphql':
-            body = { query: await request.text() };
-            break;
-          case 'application/json':
-            try {
-              body = await request.json();
-            } catch (err) {
-              err.status = 400;
-              return new Response(
-                JSON.stringify({ errors: [this.formatErrorFn(err)] }),
-                {
-                  status: 400,
-                  headers: { 'content-type': 'application/json' },
-                }
-              );
+        try {
+          body = parseBodyByContentType(await request.text(), oCtype);
+        } catch (err) {
+          err.status = 400;
+          return new Response(
+            JSON.stringify({ errors: [this.formatErrorFn(err)] }),
+            {
+              status: 400,
+              headers: { 'content-type': 'application/json' },
             }
-            break;
+          );
         }
       }
     }
 
+    const params = getGraphQLParams({
+      queryParams: {
+        query: url.searchParams.get('query'),
+        variables: url.searchParams.get('variables'),
+        operationName: url.searchParams.get('operationName'),
+      },
+      body,
+    });
+    params.httpMethod = request.method;
+    params.context = context;
+
     return new Promise((resolve) => {
-      const variablesParam = url.searchParams.get('variables');
-      this.runHttpQuery(
-        {
-          query: body?.query || url.searchParams.get('query') || undefined,
-          context,
-          variables:
-            body?.variables || (variablesParam && JSON.parse(variablesParam)),
-          operationName:
-            body?.operationName ||
-            url.searchParams.get('operationName') ||
-            undefined,
-          httpMethod: request.method,
-        },
-        ({ status, body, headers }) =>
-          resolve(new Response(body, { status, headers }))
+      this.runHttpQuery(params as QueryRequest, ({ status, body, headers }) =>
+        resolve(new Response(body, { status, headers }))
       );
     });
   }
