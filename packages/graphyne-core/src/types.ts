@@ -15,14 +15,10 @@ export interface Config {
   formatError?: (error: GraphQLError) => GraphQLFormattedError;
 }
 
-export type HTTPHeaders = Record<string, string | string[] | undefined>;
-
-export type VariableValues = { [name: string]: any };
-
 export interface QueryBody {
-  query?: string;
-  variables?: VariableValues;
-  operationName?: string;
+  query?: string | null;
+  variables?: Record<string, any> | null;
+  operationName?: string | null;
 }
 
 export interface QueryRequest extends QueryBody {

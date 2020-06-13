@@ -1,5 +1,3 @@
-export * from './messageTypes';
-
 export {
   GraphyneWebSocketConnection,
   GraphyneWebSocketServer,

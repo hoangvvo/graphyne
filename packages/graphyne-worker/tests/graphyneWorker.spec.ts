@@ -101,27 +101,6 @@ describe('Event handler', () => {
     );
   });
 
-  it('works with both queryParams and body', async () => {
-    await testRequest(
-      '/graphql?query=query helloWho($who: String!){helloWho(who: $who)}',
-      {
-        body: `{"variables":{"who":"Jane"}}`,
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-      },
-      { status: 200, body: `{"data":{"helloWho":"Jane"}}` }
-    );
-    await testRequest(
-      '/graphql?variables={"who":"Jane"}',
-      {
-        body: `{"query":"query helloWho($who: String!){helloWho(who: $who)}"}`,
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-      },
-      { status: 200, body: `{"data":{"helloWho":"Jane"}}` }
-    );
-  });
-
   describe('do not parse body', () => {
     it('with empty content-type', async () => {
       await testRequest(
@@ -132,24 +111,6 @@ describe('Event handler', () => {
             variables: { who: 'John' },
           }),
           method: 'POST',
-        },
-        {
-          status: 400,
-          body: `{"errors":[{"message":"Must provide query string."}]}`,
-        }
-      );
-    });
-
-    it('with invalid content-type', async () => {
-      await testRequest(
-        '/graphql',
-        {
-          body: JSON.stringify({
-            query: `query helloWho($who: String!) { helloWho(who: $who) }`,
-            variables: { who: 'John' },
-          }),
-          method: 'POST',
-          headers: { 'content-type': 'wat' },
         },
         {
           status: 400,
