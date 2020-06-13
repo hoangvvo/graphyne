@@ -71,11 +71,9 @@ export class GraphyneWebSocketConnection {
     try {
       data = JSON.parse(message);
     } catch (err) {
-      return this.sendError(
-        GQL_ERROR,
-        null,
-        new GraphQLError('Malformed message')
-      );
+      return this.sendMessage(GQL_ERROR, null, {
+        errors: [new GraphQLError('Malformed message')],
+      });
     }
     switch (data.type) {
       case GQL_CONNECTION_INIT:
@@ -112,7 +110,9 @@ export class GraphyneWebSocketConnection {
         throw new GraphQLError('Prohibited connection!');
       this.sendMessage(GQL_CONNECTION_ACK);
     } catch (err) {
-      this.sendError(GQL_CONNECTION_ERROR, data.id, err);
+      this.sendMessage(GQL_CONNECTION_ERROR, data.id, {
+        errors: [err],
+      });
       this.handleConnectionClose();
     }
   }
@@ -124,11 +124,9 @@ export class GraphyneWebSocketConnection {
     const { query, variables, operationName } = payload || {};
 
     if (!query) {
-      return this.sendError(
-        GQL_ERROR,
-        id,
-        new GraphQLError('Must provide query string.')
-      );
+      return this.sendMessage(GQL_ERROR, id, {
+        errors: [new GraphQLError('Must provide query string.')],
+      });
     }
 
     const {
@@ -144,11 +142,9 @@ export class GraphyneWebSocketConnection {
     }
 
     if (operation !== 'subscription') {
-      return this.sendError(
-        GQL_ERROR,
-        id,
-        new GraphQLError('Not a subscription operation')
-      );
+      return this.sendMessage(GQL_ERROR, id, {
+        errors: [new GraphQLError('Not a subscription operation')],
+      });
     }
 
     const context = (await this.contextPromise) || {};
@@ -179,7 +175,9 @@ export class GraphyneWebSocketConnection {
         this.sendMessage(GQL_COMPLETE, id);
       },
       (err) => {
-        this.sendError(GQL_ERROR, id, err);
+        this.sendMessage(GQL_ERROR, id, {
+          errors: [err],
+        });
       }
     );
   }
@@ -192,21 +190,13 @@ export class GraphyneWebSocketConnection {
     this.operations.delete(opId);
   }
 
-  handleConnectionClose(error?: any) {
-    if (error) this.sendError(GQL_CONNECTION_ERROR, null, error);
-
+  handleConnectionClose() {
     setTimeout(() => {
       // Unsubscribe from the whole socket
       Object.keys(this.operations).forEach((opId) => this.handleGQLStop(opId));
       // Close connection after sending error message
       this.socket.close(1011);
     }, 10);
-  }
-
-  sendError(type: string, id?: string | null, err?: any) {
-    this.sendMessage(type, id, {
-      errors: [err],
-    });
   }
 
   sendMessage(type: string, id?: string | null, payload?: ExecutionResult) {
