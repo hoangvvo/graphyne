@@ -59,16 +59,8 @@ export const fastStringify = fastJson({
   },
 });
 
-const createGraphyneError = (
-  status: number,
-  errors: readonly GraphQLError[]
-) => ({ status, errors });
-
 export class GraphyneCore {
-  private lru: Lru<
-    Pick<QueryCache, 'document' | 'operation' | 'compiledQuery'>
-  > | null;
-  private lruErrors: Lru<Pick<QueryCache, 'document' | 'errors'>> | null;
+  private lru: Lru<QueryCache> | null;
   public schema: GraphQLSchema;
   protected options: Config;
   public subscriptionPath: string = '/';
@@ -87,7 +79,6 @@ export class GraphyneCore {
     this.options = options;
     // build cache
     this.lru = lru(1024);
-    this.lruErrors = lru(1024);
     // construct schema and validate
     this.schema = this.options.schema;
     const schemaValidationErrors = validateSchema(this.schema);
@@ -100,43 +91,48 @@ export class GraphyneCore {
     query: string,
     operationName?: string
   ): {
-    document: DocumentNode;
+    document?: DocumentNode;
     compiledQuery: CompiledQuery | ExecutionResult;
-    operation: string;
+    operation?: string;
   } {
     const cached = this.lru !== null && this.lru.get(query);
-    let document;
+
     if (cached) {
       return cached;
     } else {
-      const errCached = this.lruErrors !== null && this.lruErrors.get(query);
-      if (errCached) throw createGraphyneError(400, errCached.errors);
-
+      let document;
       try {
         document = parse(query);
       } catch (syntaxErr) {
-        throw createGraphyneError(400, [syntaxErr]);
+        return {
+          compiledQuery: {
+            errors: [syntaxErr],
+          },
+        };
       }
 
       const validationErrors = validate(this.schema, document);
       if (validationErrors.length > 0) {
-        if (this.lruErrors) {
-          // cache the error here
-          this.lruErrors.set(query, {
-            document,
+        return {
+          document,
+          compiledQuery: {
             errors: validationErrors,
-          });
-        }
-        throw createGraphyneError(400, validationErrors);
+          },
+        };
       }
 
       const operation = getOperationAST(document, operationName)?.operation;
       if (!operation)
-        throw createGraphyneError(400, [
-          new GraphQLError(
-            'Must provide operation name if query contains multiple operations.'
-          ),
-        ]);
+        return {
+          document,
+          compiledQuery: {
+            errors: [
+              new GraphQLError(
+                'Must provide operation name if query contains multiple operations.'
+              ),
+            ],
+          },
+        };
 
       const compiledQuery = compileQuery(this.schema, document, operationName, {
         customJSONSerializer: true,
@@ -159,9 +155,11 @@ export class GraphyneCore {
     { query, variables, operationName, context, httpMethod }: QueryRequest,
     cb: (result: QueryResponse) => void
   ): void | Promise<void> {
-    let compiledQuery: CompiledQuery | ExecutionResult;
-
-    const createResponse = (code: number, obj: ExecutionResult) => {
+    const createResponse = (
+      code: number,
+      obj: ExecutionResult,
+      stringify = fastStringify
+    ) => {
       const o: {
         data?: ExecutionResult['data'];
         errors?: GraphQLFormattedError[];
@@ -169,9 +167,7 @@ export class GraphyneCore {
       if (obj.data) o.data = obj.data;
       if (obj.errors)
         o.errors = obj.errors.map(this.options.formatError || formatError);
-      const payload = (compiledQuery && isCompiledQuery(compiledQuery)
-        ? compiledQuery.stringify
-        : fastStringify)(o);
+      const payload = stringify(o);
       flatstr(payload);
       cb({
         body: payload,
@@ -180,48 +176,48 @@ export class GraphyneCore {
       });
     };
 
-    try {
-      if (!query)
-        throw createGraphyneError(400, [
-          new GraphQLError('Must provide query string.'),
-        ]);
-
-      // Get graphql-jit compiled query and parsed document
-      const {
-        document,
-        operation,
-        compiledQuery: compiled,
-      } = this.getCompiledQuery(query, operationName);
-      compiledQuery = compiled;
-      // httpMethod is not available in ws
-      if (httpMethod && httpMethod !== 'POST' && httpMethod !== 'GET')
-        return createResponse(405, {
-          errors: [
-            new GraphQLError(`GraphQL only supports GET and POST requests.`),
-          ],
-        });
-      if (httpMethod === 'GET' && operation !== 'query')
-        return createResponse(405, {
-          errors: [
-            new GraphQLError(
-              `Operation ${operation} cannot be performed via a GET request`
-            ),
-          ],
-        });
-      const result = (compiledQuery as CompiledQuery).query(
-        typeof this.options.rootValue === 'function'
-          ? this.options.rootValue(document)
-          : this.options.rootValue || {},
-        context,
-        variables
-      );
-      return 'then' in result
-        ? result.then((finished) => createResponse(200, finished))
-        : createResponse(200, result);
-    } catch (err) {
-      return createResponse(err.status ?? 500, {
-        errors: err.errors,
+    if (!query) {
+      return createResponse(400, {
+        errors: [new GraphQLError('Must provide query string.')],
       });
     }
+
+    const { document, operation, compiledQuery } = this.getCompiledQuery(
+      query,
+      operationName
+    );
+
+    if (!isCompiledQuery(compiledQuery)) {
+      // Syntax errors or validation errors
+      return createResponse(400, compiledQuery);
+    }
+
+    if (httpMethod !== 'POST' && httpMethod !== 'GET')
+      return createResponse(405, {
+        errors: [
+          new GraphQLError(`GraphQL only supports GET and POST requests.`),
+        ],
+      });
+    if (httpMethod === 'GET' && operation !== 'query')
+      return createResponse(405, {
+        errors: [
+          new GraphQLError(
+            `Operation ${operation} cannot be performed via a GET request`
+          ),
+        ],
+      });
+
+    const result = compiledQuery.query(
+      typeof this.options.rootValue === 'function'
+        ? this.options.rootValue(document)
+        : this.options.rootValue || {},
+      context,
+      variables
+    );
+    return 'then' in result
+      ? result.then((finished) =>
+          createResponse(200, finished, compiledQuery.stringify)
+        )
+      : createResponse(200, result, compiledQuery.stringify);
   }
 }
