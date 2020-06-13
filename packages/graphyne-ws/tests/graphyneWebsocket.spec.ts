@@ -192,7 +192,7 @@ describe('graphyne-ws', () => {
         resolve(
           assert.deepStrictEqual(
             chunk,
-            `{"type":"data","id":1,"payload":{"errors":[{"message":"Must provide query string."}]}}`
+            `{"type":"error","id":1,"payload":{"errors":[{"message":"Must provide query string."}]}}`
           )
         );
       });
@@ -228,7 +228,7 @@ describe('graphyne-ws', () => {
         resolve(
           assert.deepStrictEqual(
             chunk,
-            `{"type":"data","id":1,"payload":{"errors":[{"message":"Not a subscription operation"}]}}`
+            `{"type":"error","id":1,"payload":{"errors":[{"message":"Not a subscription operation"}]}}`
           )
         );
       });

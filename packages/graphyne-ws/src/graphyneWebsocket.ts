@@ -1,4 +1,9 @@
-import { GraphQLError, ExecutionResult, subscribe } from 'graphql';
+import {
+  GraphQLError,
+  ExecutionResult,
+  subscribe,
+  DocumentNode,
+} from 'graphql';
 import { QueryBody, GraphyneCore } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
@@ -116,64 +121,67 @@ export class GraphyneWebSocketConnection {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_start
     const id = data.id as string;
     const payload = data.payload;
-    try {
-      const { query, variables, operationName } = payload || {};
-      if (!query) throw new GraphQLError('Must provide query string.');
+    const { query, variables, operationName } = payload || {};
 
-      const {
-        document,
-        operation,
-        compiledQuery,
-      } = this.graphyne.getCompiledQuery(query);
-
-      if (!document) throw compiledQuery as ExecutionResult;
-
-      if (operation !== 'subscription')
-        throw new GraphQLError('Not a subscription operation');
-
-      const context = (await this.contextPromise) || {};
-
-      const executionResult = await subscribe({
-        schema: this.graphyne.schema,
-        document,
-        contextValue: Object.assign(
-          Object.create(Object.getPrototypeOf(context)),
-          context
-        ),
-        variableValues: variables,
-        operationName,
-      });
-
-      const executionIterable = isAsyncIterable(executionResult)
-        ? executionResult
-        : createAsyncIterator([executionResult]);
-
-      if (this.operations.get(id)) {
-        // unsubscribe from existing subscription first
-        this.handleGQLStop(id);
-      }
-
-      this.operations.set(id, executionIterable);
-
-      await forAwaitEach(
-        executionIterable as any,
-        (result: ExecutionResult) => {
-          this.sendMessage(GQL_DATA, id, result);
-        }
-      ).then(
-        () => {
-          // Subscription is finished
-          this.sendMessage(GQL_COMPLETE, id);
-        },
-        (err) => {
-          this.sendError(GQL_ERROR, id, err);
-        }
+    if (!query) {
+      return this.sendError(
+        GQL_ERROR,
+        id,
+        new GraphQLError('Must provide query string.')
       );
-    } catch (err) {
-      // Unsubscribe from this operation due to errors
-      this.sendError(GQL_DATA, id, err);
-      this.handleGQLStop(id);
     }
+
+    const {
+      document,
+      operation,
+      compiledQuery,
+    } = this.graphyne.getCompiledQuery(query);
+
+    if ('errors' in compiledQuery) {
+      this.sendMessage(GQL_ERROR, id, compiledQuery);
+      this.handleGQLStop(id);
+      return;
+    }
+
+    if (operation !== 'subscription') {
+      return this.sendError(
+        GQL_ERROR,
+        id,
+        new GraphQLError('Not a subscription operation')
+      );
+    }
+
+    const context = (await this.contextPromise) || {};
+
+    // FIXME: This may error on server error
+    const executionResult = await subscribe({
+      schema: this.graphyne.schema,
+      document: document as DocumentNode,
+      contextValue: Object.assign(
+        Object.create(Object.getPrototypeOf(context)),
+        context
+      ),
+      variableValues: variables,
+      operationName,
+    });
+
+    const executionIterable = isAsyncIterable(executionResult)
+      ? executionResult
+      : createAsyncIterator([executionResult]);
+
+    this.operations.set(id, executionIterable);
+
+    await forAwaitEach(executionIterable as any, (result: ExecutionResult) => {
+      this.sendMessage(GQL_DATA, id, result);
+    }).then(
+      () => {
+        // Subscription is finished
+        this.sendMessage(GQL_COMPLETE, id);
+      },
+      (err) => {
+        this.sendError(GQL_ERROR, id, err);
+      }
+    );
   }
 
   handleGQLStop(opId: string) {
@@ -195,9 +203,9 @@ export class GraphyneWebSocketConnection {
     }, 10);
   }
 
-  sendError(type: string, id?: string | null, err?: any | any[]) {
+  sendError(type: string, id?: string | null, err?: any) {
     this.sendMessage(type, id, {
-      errors: err.errors ? err.errors : Array.isArray(err) ? err : [err],
+      errors: [err],
     });
   }
 
