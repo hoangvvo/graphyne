@@ -120,7 +120,13 @@ export class GraphyneWebSocketConnection {
       const { query, variables, operationName } = payload || {};
       if (!query) throw new GraphQLError('Must provide query string.');
 
-      const { document, operation } = this.graphyne.getCompiledQuery(query);
+      const {
+        document,
+        operation,
+        compiledQuery,
+      } = this.graphyne.getCompiledQuery(query);
+
+      if (!document) throw compiledQuery as ExecutionResult;
 
       if (operation !== 'subscription')
         throw new GraphQLError('Not a subscription operation');
