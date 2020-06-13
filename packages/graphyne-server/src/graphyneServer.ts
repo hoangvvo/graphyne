@@ -4,7 +4,6 @@ import {
   Config,
   QueryResponse,
   renderPlayground,
-  fastStringify,
   TContext,
   QueryRequest,
 } from 'graphyne-core';
@@ -103,7 +102,7 @@ export class GraphyneServer extends GraphyneCore {
       sendResponse(
         {
           status: error.status || 500,
-          body: fastStringify({ errors: [error] }),
+          body: JSON.stringify({ errors: [that.formatErrorFn(error)] }),
           headers: { 'content-type': 'application/json' },
         },
         args

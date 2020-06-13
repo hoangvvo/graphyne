@@ -12,58 +12,18 @@ import {
 } from 'graphql';
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
 import lru, { Lru } from 'tiny-lru';
-import fastJson from 'fast-json-stringify';
 import { Config, QueryCache, QueryRequest, QueryResponse } from './types';
 // @ts-ignore
 import flatstr from 'flatstr';
-
-// Default stringify fallback if no graphql-jit compiled query available.
-export const fastStringify = fastJson({
-  type: 'object',
-  properties: {
-    data: {
-      type: 'object',
-      additionalProperties: true,
-    },
-    errors: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['message'],
-        properties: {
-          message: { type: 'string' },
-          locations: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                line: { type: 'integer' },
-                column: { type: 'integer' },
-              },
-            },
-          },
-          path: {
-            type: 'array',
-            items: { type: 'string' },
-          },
-          extensions: {
-            type: 'object',
-            properties: {
-              code: { type: 'string' },
-              timestamp: { type: 'string' },
-            },
-          },
-        },
-      },
-    },
-  },
-});
 
 export class GraphyneCore {
   private lru: Lru<QueryCache> | null;
   public schema: GraphQLSchema;
   protected options: Config;
   public subscriptionPath: string = '/';
+
+  protected formatErrorFn: (error: GraphQLError) => GraphQLFormattedError;
+
   constructor(options: Config) {
     // validate options
     if (!options) {
@@ -77,6 +37,7 @@ export class GraphyneCore {
       throw new TypeError('options.context must be an object or function');
     }
     this.options = options;
+    this.formatErrorFn = options.formatError || formatError;
     // build cache
     this.lru = lru(1024);
     // construct schema and validate
@@ -158,15 +119,14 @@ export class GraphyneCore {
     const createResponse = (
       code: number,
       obj: ExecutionResult,
-      stringify = fastStringify
+      stringify = JSON.stringify
     ) => {
       const o: {
         data?: ExecutionResult['data'];
         errors?: GraphQLFormattedError[];
       } = {};
       if (obj.data) o.data = obj.data;
-      if (obj.errors)
-        o.errors = obj.errors.map(this.options.formatError || formatError);
+      if (obj.errors) o.errors = obj.errors.map(this.formatErrorFn);
       const payload = stringify(o);
       flatstr(payload);
       cb({

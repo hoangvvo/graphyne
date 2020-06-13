@@ -1,7 +1,6 @@
 import {
   GraphyneCore,
   Config,
-  fastStringify,
   QueryBody,
   renderPlayground,
 } from 'graphyne-core';
@@ -31,10 +30,13 @@ export class GraphyneWorker extends GraphyneCore {
         typeof contextFn === 'function' ? await contextFn(request) : contextFn;
     } catch (err) {
       err.message = `Context creation failed: ${err.message}`;
-      return new Response(fastStringify({ errors: [err] }), {
-        status: err.status || 500,
-        headers: { 'content-type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ errors: [this.formatErrorFn(err)] }),
+        {
+          status: err.status || 500,
+          headers: { 'content-type': 'application/json' },
+        }
+      );
     }
     let body: QueryBody | undefined;
 
@@ -51,10 +53,13 @@ export class GraphyneWorker extends GraphyneCore {
               body = await request.json();
             } catch (err) {
               err.status = 400;
-              return new Response(fastStringify({ errors: [err] }), {
-                status: 400,
-                headers: { 'content-type': 'application/json' },
-              });
+              return new Response(
+                JSON.stringify({ errors: [this.formatErrorFn(err)] }),
+                {
+                  status: 400,
+                  headers: { 'content-type': 'application/json' },
+                }
+              );
             }
             break;
         }
