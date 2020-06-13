@@ -22,7 +22,7 @@ export class GraphyneCore {
   protected options: Config;
   public subscriptionPath: string = '/';
 
-  protected formatErrorFn: (error: GraphQLError) => GraphQLFormattedError;
+  formatErrorFn: (error: GraphQLError) => GraphQLFormattedError;
 
   constructor(options: Config) {
     // validate options

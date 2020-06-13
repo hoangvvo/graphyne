@@ -3,6 +3,7 @@ import {
   ExecutionResult,
   subscribe,
   DocumentNode,
+  GraphQLFormattedError,
 } from 'graphql';
 import { QueryBody, GraphyneCore } from 'graphyne-core';
 import * as WebSocket from 'ws';
@@ -80,6 +81,7 @@ export class GraphyneWebSocketConnection {
         this.handleConnectionInit(data);
         break;
       case GQL_START:
+        // @ts-ignore
         this.handleGQLStart(data);
         break;
       case GQL_STOP:
@@ -117,14 +119,13 @@ export class GraphyneWebSocketConnection {
     }
   }
 
-  async handleGQLStart(data: OperationMessage) {
+  async handleGQLStart(data: OperationMessage & { id: string }) {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_start
-    const id = data.id as string;
     const payload = data.payload;
     const { query, variables, operationName } = payload || {};
 
     if (!query) {
-      return this.sendMessage(GQL_ERROR, id, {
+      return this.sendMessage(GQL_ERROR, data.id, {
         errors: [new GraphQLError('Must provide query string.')],
       });
     }
@@ -136,13 +137,13 @@ export class GraphyneWebSocketConnection {
     } = this.graphyne.getCompiledQuery(query);
 
     if ('errors' in compiledQuery) {
-      this.sendMessage(GQL_ERROR, id, compiledQuery);
-      this.handleGQLStop(id);
+      this.sendMessage(GQL_ERROR, data.id, compiledQuery);
+      this.handleGQLStop(data.id);
       return;
     }
 
     if (operation !== 'subscription') {
-      return this.sendMessage(GQL_ERROR, id, {
+      return this.sendMessage(GQL_ERROR, data.id, {
         errors: [new GraphQLError('Not a subscription operation')],
       });
     }
@@ -165,17 +166,17 @@ export class GraphyneWebSocketConnection {
       ? executionResult
       : createAsyncIterator([executionResult]);
 
-    this.operations.set(id, executionIterable);
+    this.operations.set(data.id, executionIterable);
 
     await forAwaitEach(executionIterable as any, (result: ExecutionResult) => {
-      this.sendMessage(GQL_DATA, id, result);
+      this.sendMessage(GQL_DATA, data.id, result);
     }).then(
       () => {
         // Subscription is finished
-        this.sendMessage(GQL_COMPLETE, id);
+        this.sendMessage(GQL_COMPLETE, data.id);
       },
       (err) => {
-        this.sendMessage(GQL_ERROR, id, {
+        this.sendMessage(GQL_ERROR, data.id, {
           errors: [err],
         });
       }
@@ -199,7 +200,18 @@ export class GraphyneWebSocketConnection {
     }, 10);
   }
 
-  sendMessage(type: string, id?: string | null, payload?: ExecutionResult) {
+  sendMessage(type: string, id?: string | null, result?: ExecutionResult) {
+    const payload: {
+      data?: ExecutionResult['data'];
+      errors?: GraphQLFormattedError[];
+    } | null = result
+      ? {
+          ...(result.data && { data: result.data }),
+          ...(result.errors && {
+            errors: result.errors.map(this.graphyne.formatErrorFn),
+          }),
+        }
+      : null;
     this.socket.send(
       JSON.stringify({ type, ...(id && { id }), ...(payload && { payload }) })
     );
