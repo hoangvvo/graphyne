@@ -1,34 +1,10 @@
-import { parseNodeRequest, getGraphQLParams } from '../src/utils';
+import { parseNodeRequest } from '../src/utils';
 import { strict as assert } from 'assert';
 import { createServer } from 'http';
 import request from 'supertest';
 
 describe('core utils', () => {
   describe('parseNodeRequest', () => {
-    it('parse application/json properly', async () => {
-      const server = createServer((req, res) => {
-        parseNodeRequest(req, (err, parsedBody) => {
-          res.end(JSON.stringify(parsedBody));
-        });
-      });
-      await request(server)
-        .post('/graphql')
-        .send(JSON.stringify({ query: 'query { helloWorld }' }))
-        .set('content-type', 'application/json ')
-        .expect(JSON.stringify({ query: 'query { helloWorld }' }));
-    });
-    it('parse application/graphql properly', async () => {
-      const server = createServer((req, res) => {
-        parseNodeRequest(req, (err, parsedBody) => {
-          res.end(JSON.stringify(parsedBody));
-        });
-      });
-      await request(server)
-        .post('/graphql')
-        .send(`query { helloWorld }`)
-        .set('content-type', 'application/graphql ')
-        .expect('{"query":"query { helloWorld }"}');
-    });
     it('returns if req.body has been parsed', (done) => {
       const req = { body: { query: 1 }, headers: {}, method: '' };
       parseNodeRequest(req, (err, parsedBody) => {
@@ -54,17 +30,32 @@ describe('core utils', () => {
         done(assert.deepStrictEqual(parsedBody, null));
       });
     });
-    it('errors body is malformed', async () => {
-      const server = createServer((req, res) => {
-        parseNodeRequest(req, (err, parsedBody) => {
-          if (err) res.statusCode = err.status;
-          res.end(JSON.stringify(parsedBody));
-        });
-      });
-      await request(server)
+    describe('errors body is malformed', async () => {
+      await request(
+        createServer((req, res) => {
+          parseNodeRequest(req, (err, parsedBody) => {
+            if (err) res.statusCode = err.status;
+            res.end(JSON.stringify(parsedBody));
+          });
+        })
+      )
         .post('/graphql')
-        .send(`query { helloWorld`)
-        .set('content-type', 'application/json; t')
+        .send(`{"query":"{ helloWorld }`)
+        .set('content-type', 'application/json')
+        .expect(400);
+
+      await request(
+        createServer((req, res) => {
+          (req as any).body = `{"query":"{ helloWorld }`;
+          parseNodeRequest(req, (err, parsedBody) => {
+            if (err) res.statusCode = err.status;
+            res.end(JSON.stringify(parsedBody));
+          });
+        })
+      )
+        .post('/graphql')
+        .send()
+        .set('content-type', 'application/json')
         .expect(400);
     });
     describe('do not parse body', () => {
@@ -80,45 +71,6 @@ describe('core utils', () => {
           .set('content-type', '')
           .expect('true');
       });
-      it('with invalid content-type', async () => {
-        const server = createServer((req, res) => {
-          parseNodeRequest(req, (err, parsedBody) => {
-            res.end(String(parsedBody === null));
-          });
-        });
-        await request(server)
-          .post('/graphql')
-          .send(`query { helloWorld }`)
-          .set('content-type', 'wat')
-          .expect('true');
-      });
-    });
-  });
-
-  describe('getGraphQLParams', () => {
-    it('works with queryParams', () => {
-      const { query, variables } = getGraphQLParams({
-        queryParams: { query: 'ok', variables: `{ "ok": "no" }` },
-        body: null,
-      });
-      assert.deepStrictEqual(query, 'ok');
-      assert.deepStrictEqual(variables?.ok, 'no');
-    });
-    it('works with body', () => {
-      const { query, variables } = getGraphQLParams({
-        queryParams: {},
-        body: { query: 'ok', variables: { ok: 'no' } },
-      });
-      assert.deepStrictEqual(query, 'ok');
-      assert.deepStrictEqual(variables?.ok, 'no');
-    });
-    it('works retrieving from both queryParams and body', () => {
-      const { query, variables } = getGraphQLParams({
-        queryParams: { query: 'ok' },
-        body: { variables: { ok: 'no' } },
-      });
-      assert.deepStrictEqual(query, 'ok');
-      assert.deepStrictEqual(variables?.ok, 'no');
     });
   });
 });
