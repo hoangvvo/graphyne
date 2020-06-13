@@ -25,15 +25,17 @@ const schema = makeExecutableSchema({
 async function testRequest(
   input: string,
   init: fetch.RequestInit,
-  expected: Partial<QueryResponse>,
-  graphyneOpts = {}
+  expected: Partial<QueryResponse> | null,
+  graphyneOpts = {},
+  handlerOpts = {}
 ) {
   const handle = new GraphyneWorker({
     schema,
     ...graphyneOpts,
-  }).createHandler();
+  }).createHandler(handlerOpts);
   return new Promise((resolve, reject) => {
     function respondWith(responsePromise: Promise<Response>) {
+      if (!expected) throw new Error('Should not call me');
       responsePromise
         .then(async (response) => {
           if (expected.body)
@@ -55,7 +57,7 @@ async function testRequest(
   });
 }
 
-beforeEach(() => {
+before(() => {
   // @ts-ignore
   global.Request = fetch.Request;
   // @ts-ignore
@@ -104,6 +106,15 @@ describe('Event handler', () => {
       '/graphql?query=query helloWho($who: String!){helloWho(who: $who)}',
       {
         body: `{"variables":{"who":"Jane"}}`,
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+      },
+      { status: 200, body: `{"data":{"helloWho":"Jane"}}` }
+    );
+    await testRequest(
+      '/graphql?variables={"who":"Jane"}',
+      {
+        body: `{"query":"query helloWho($who: String!){helloWho(who: $who)}"}`,
         method: 'POST',
         headers: { 'content-type': 'application/json' },
       },
@@ -185,6 +196,30 @@ describe('Event handler', () => {
         },
       }
     );
+  });
+
+  describe('response with GraphQL', () => {
+    it('default to /graphql path', async () => {
+      await testRequest(
+        '/graphql?query={ hello }',
+        {},
+        { status: 200, body: `{"data":{"hello":"world"}}` }
+      );
+    });
+    it('on custom path', async () => {
+      await testRequest(
+        '/api?query={ hello }',
+        {},
+        { status: 200, body: `{"data":{"hello":"world"}}` },
+        {},
+        { path: '/api' }
+      );
+    });
+    it('pass through if not GraphQL path', (done) => {
+      testRequest('/myApi', {}, null);
+      // responseWith will not call
+      setTimeout(done, 30);
+    });
   });
 
   describe('renders GraphiQL', () => {

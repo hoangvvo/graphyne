@@ -29,13 +29,6 @@ export class GraphyneCore {
     if (!options) {
       throw new TypeError('Graphyne server must be initialized with options');
     }
-    if (
-      options.context &&
-      typeof options.context !== 'function' &&
-      typeof options.context !== 'object'
-    ) {
-      throw new TypeError('options.context must be an object or function');
-    }
     this.options = options;
     this.formatErrorFn = options.formatError || formatError;
     // build cache
