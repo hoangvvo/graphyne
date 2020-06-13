@@ -39,12 +39,15 @@ const schema = makeExecutableSchema({
 });
 
 function testCase(
-  queryRequest: QueryBody &
-    Pick<QueryRequest, 'httpMethod'> & { context?: Record<string, any> },
+  queryRequest: QueryBody & {
+    context?: Record<string, any>;
+    httpMethod?: string;
+  },
   expected: Partial<QueryResponse> | { body: (b: string) => boolean },
   options?: Partial<Config>
 ) {
   if (!queryRequest.context) queryRequest.context = {};
+  if (!queryRequest.httpMethod) queryRequest.httpMethod = 'POST';
   return new Promise((resolve, reject) => {
     new GraphyneCore({
       schema,
