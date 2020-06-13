@@ -17,11 +17,14 @@ export function parseNodeRequest(
   if (!oCtype) return cb(null, null);
 
   // parse immediately if req.body is string
-  try {
-    if (rawBody) return cb(null, parseBodyByContentType(rawBody, oCtype));
-  } catch (err) {
-    err.status = 400;
-    cb(err, null);
+  if (rawBody) {
+    try {
+      cb(null, parseBodyByContentType(rawBody, oCtype));
+    } catch (err) {
+      err.status = 400;
+      cb(err, null);
+    }
+    return;
   }
   // skip if it is no IncomingMessage
   if (!('on' in req)) return cb(null, null);
