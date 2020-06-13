@@ -15,13 +15,9 @@ export interface Config {
   formatError?: (error: GraphQLError) => GraphQLFormattedError;
 }
 
-export type HTTPHeaders = Record<string, string | string[] | undefined>;
-
-export type VariableValues = { [name: string]: any };
-
 export interface QueryBody {
   query?: string | null;
-  variables?: VariableValues | null;
+  variables?: Record<string, any> | null;
   operationName?: string | null;
 }
 
