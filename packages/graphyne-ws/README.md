@@ -31,9 +31,7 @@ const { startSubscriptionServer } = require('graphyne-ws');
 // Create a GraphyneServer instance
 const graphyne = new GraphyneServer(options);
 
-const server = http.createServer(
-  graphyne.createHandler()
-);
+const server = http.createServer(graphyne.createHandler());
 
 // Hook it with graphyne-ws
 const wss = startSubscriptionServer({
@@ -58,12 +56,11 @@ To learn how to create a subscription as well as using different pubsub implemen
 Create an instance of `GraphyneWebSocketServer` **and** listen to incoming connections automatically. The accepted options are the same as [`ws` options](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#new-websocketserveroptions-callback), with the additions of:
 
 - `graphyne`: (required) The instance of Graphyne Server to hook into.
+- `server`: (required) The Node.js HTTP/S server to listen to. No server mode is not suppported. (This is part of [`ws` options](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#new-websocketserveroptions-callback))
 - `context`: An object or function called to creates a context shared across resolvers per connection. The function receives an object with the following:
   - `connectionParams`: Object that is sent from the client. See an example in [`apollo-link-ws`](https://www.apollographql.com/docs/react/data/subscriptions/#authentication-over-websocket)
   - `socket`: The [WebSocket connection](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#event-connection).
   - `request`: The incoming request.
-
-A Node HTTP Server instance should be supplied to `options.server`.
 
 ### `new GraphyneWebSocketServer(options)`
 
@@ -84,7 +81,7 @@ const wss = startSubscriptionServer({
   server: server,
   graphyne: graphyne,
   // other options
-})
+});
 ```
 
 ### [Micro](https://github.com/zeit/micro)

@@ -28,30 +28,41 @@ yarn add graphyne-worker graphql
 
 ## Usage (in browser w/ bundler)
 
-Create `worker.js`.
+Create a service worker that listens to `fetch` in `worker.js`.
 
 ```javascript
-const { GraphyneWorker } = require('graphyne-worker');
+const { GraphyneWorker } = require("graphyne-worker");
 
-const graphyne = new GraphyneServer(options);
+const graphyne = new GraphyneWorker(options);
 
-addEventListener('fetch', graphyne.createHandler());
+addEventListener("fetch", graphyne.createHandler());
 
 // OR: instead of using createHandler, you can call GraphyneWorker#handleRequest manually.
 
-addEventListener('fetch', (event) => {
+addEventListener("fetch", (event) => {
   const url = new URL();
-  if (url.pathname === '/graphql')
-    event.respondWith(graphyne.handleRequest(event.request))
+  if (url.pathname === "/graphql")
+    event.respondWith(graphyne.handleRequest(event.request));
   // if requesting something else, let the browser handles it
 });
 ```
 
-Use it to create a worker.
+Register that worker using `navigator.serviceWorker`.
 
 ```javascript
-const graphyneWorker = new Worker('worker.js');
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('/worker.js')
+    .then(function (registration) {
+      console.log('Registration successful, scope is:', registration.scope);
+    })
+    .catch(function (error) {
+      console.log('Service worker registration failed, error:', error);
+    });
+}
 ```
+
+Fetch requests to `/graphql` will now be intercepted by the registered worker.
 
 See [Using Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers) for more info.
 

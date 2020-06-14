@@ -20,20 +20,18 @@ yarn add graphyne-server graphql
 If you use `deno`, pull this package from [Pika](https://www.pika.dev/npm/graphyne-server).
 
 ```javascript
-import { GraphyneServer } from 'https://cdn.pika.dev/graphyne-server';
+import { GraphyneServer } from "https://cdn.pika.dev/graphyne-server";
 ```
 
 ## Usage (with bare Node HTTP Server)
 
 ```javascript
-const http = require('http');
-const { GraphyneServer } = require('graphyne-server');
+const http = require("http");
+const { GraphyneServer } = require("graphyne-server");
 
 const graphyne = new GraphyneServer(options);
 
-const server = http.createServer(
-  graphyne.createHandler()
-);
+const server = http.createServer(graphyne.createHandler());
 
 server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);

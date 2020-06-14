@@ -17,8 +17,8 @@ const graphyne = new GraphyneServer({
   onNoMatch: (req, res, next) => {
     // Continue to next handler in middleware chain
     next();
-  }
-})
+  },
+});
 
 app.use(graphyne.createHandler());
 ```
@@ -42,7 +42,7 @@ const graphyne = new GraphyneServer({
   onNoMatch: async (req, res) => {
     send(res, 404, 'not found');
   },
-})
+});
 
 module.exports = graphyne.createHandler();
 ```
@@ -84,7 +84,9 @@ const graphyne = new GraphyneServer({
   },
   onResponse: ({ headers, body, status }, event, context, callback) => {
     callback(null, {
-      body, headers, statusCode: status
+      body,
+      headers,
+      statusCode: status,
     });
   },
 });
