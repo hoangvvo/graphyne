@@ -76,7 +76,7 @@ export class GraphyneWorker extends GraphyneCore {
       );
     }
 
-    const path = this.options.path || '/graphql';
+    const path = '/graphql';
 
     return (event) => {
       const url = new URL(event.request.url);
