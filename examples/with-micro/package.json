@@ -8,7 +8,7 @@
   "dependencies": {
     "graphql": "^15.1.0",
     "graphql-tools": "^6.0.9",
-    "graphyne-server": "^0.10.0",
+    "graphyne-server": "^0.11.0",
     "micro": "^9.3.4"
   },
   "license": "ISC"
