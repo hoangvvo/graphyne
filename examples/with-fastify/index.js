@@ -28,6 +28,7 @@ const graphyne = new GraphyneServer({
     reply.headers(headers);
     reply.send(body);
   },
+  // You should not define path here
 });
 
 fastify.decorateRequest('method', {

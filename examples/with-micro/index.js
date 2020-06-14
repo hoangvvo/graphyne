@@ -21,18 +21,7 @@ var schema = makeExecutableSchema({
 const graphyne = new GraphyneServer({
   schema,
   context: (req, res) => ({ world: 'world' }),
-  onResponse: async ({ headers, body, status }, req, res) => {
-    for (const key in headers) res.setHeader(key, headers[key]);
-    send(res, status, body);
-  },
+  path: '/graphql',
 });
-
-/**
- * This still works without onResponse:
-  const graphyne = new GraphyneServer({
-    schema,
-    context: (req, res) => ({ world: 'world' }),
-  });
- */
 
 module.exports = graphyne.createHandler();

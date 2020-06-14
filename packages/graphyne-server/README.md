@@ -53,7 +53,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | context | An object or function called to creates a context shared across resolvers per request. The function signature is the same to the framework's [handler function](#framework-specific-integration). | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
-| path | Specify a path for the GraphQL endpoint, and `graphyne-server` will response with `404` elsewhere. By default, it runs on every path. | `undefined` (run on all paths) |
+| path | Specify a path for the GraphQL endpoint, and `graphyne-server` will response with `404` elsewhere. You **should not** set this when using with frameworks with built-in routers (such as `express`, `fastify`, etc.). | `undefined` (run on all paths) |
 | onRequest | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `([req, res], done) => done(req)` |
 | onResponse | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `(result, req, res) => res.writeHead(result.status, result.headers).end(result.body)` |
 

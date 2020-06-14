@@ -20,7 +20,7 @@ var schema = makeExecutableSchema({
 
 const graphyne = new GraphyneServer({
   schema,
-  context: (req, res) => ({ world: 'world' }),
+  context: (req, res, next) => ({ world: 'world' }),
 });
 
 const app = express();

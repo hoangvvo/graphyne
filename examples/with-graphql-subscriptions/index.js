@@ -64,6 +64,7 @@ var schema = makeExecutableSchema({
 
 const graphyne = new GraphyneServer({
   schema,
+  path: '/graphql',
 });
 
 const server = http.createServer(graphyne.createHandler());
