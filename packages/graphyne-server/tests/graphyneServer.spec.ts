@@ -1,17 +1,18 @@
 import { makeExecutableSchema } from 'graphql-tools';
 import request from 'supertest';
 import { strict as assert } from 'assert';
+import sinon from 'sinon';
 import { Config } from '../../graphyne-core/src';
-import { startSubscriptionServer } from '../../graphyne-ws/src';
 import { createServer } from 'http';
 import { GraphyneServer } from '../src';
+import { HandlerConfig } from '../src/types';
 
 function createGQLServer({
   schema: schemaOpt,
   typeDefs,
   resolvers,
   ...options
-}: Partial<Config> & {
+}: Partial<Config & HandlerConfig> & {
   typeDefs?: string;
   resolvers?: any;
 }) {
@@ -162,6 +163,32 @@ describe('HTTP handler', () => {
         .query({ query: 'query { helloMe }' })
         .expect('{"data":{"helloMe":"hoang"}}');
     });
+  });
+  it('warns if method is not detected', async () => {
+    // Mock console.warn
+    const log = sinon.spy(console, 'warn');
+
+    const server = createGQLServer({
+      schema,
+      context: { me: 'hoang' },
+      onRequest: ([req], cb) => {
+        delete req.method;
+        cb(req);
+      },
+    });
+
+    await request(server)
+      .get('/graphql')
+      .query({ query: 'query { helloMe }' })
+      .expect('{"data":{"helloMe":"hoang"}}');
+
+    if (
+      !log.calledOnceWith(
+        `graphyne-server cannot detect the HTTP method. This will lead to mutation being allowed to execute on GET request while it shouldn't be.`
+      )
+    ) {
+      throw new Error('Console.warn was not called');
+    }
   });
 });
 

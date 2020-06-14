@@ -21,14 +21,11 @@ const schema = makeExecutableSchema({
 });
 
 function testSupertest(app) {
-  return {
-    graphql: () =>
-      request(app)
-        .post('/graphql')
-        .set('content-type', 'application/json')
-        .send({ query: '{hello}' })
-        .expect(`{"data":{"hello":"Hello world!"}}`),
-  };
+  return request(app)
+    .post('/graphql')
+    .set('content-type', 'application/json')
+    .send({ query: '{hello}' })
+    .expect(`{"data":{"hello":"Hello world!"}}`);
 }
 
 describe('Integrations', () => {
@@ -40,7 +37,7 @@ describe('Integrations', () => {
     });
     app.all('/graphql', graphyne.createHandler());
     it('executes graphql', () => {
-      return testSupertest(app).graphql();
+      return testSupertest(app);
     });
   });
   describe('micro', () => {
@@ -55,13 +52,18 @@ describe('Integrations', () => {
     });
     const server = micro(graphyne.createHandler());
     it('executes graphql', () => {
-      return testSupertest(server).graphql();
+      return testSupertest(server);
     });
   });
   describe('fastify', () => {
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
+      onResponse: ({ status, body, headers }, request, reply) => {
+        reply.code(status);
+        reply.headers(headers);
+        reply.send(body);
+      },
     });
     const fastify = require('fastify')();
     fastify.post('/graphql', graphyne.createHandler());
@@ -117,7 +119,7 @@ describe('Integrations', () => {
       handler(event, {}, callback);
     });
     it('executes graphql', () => {
-      return testSupertest(server).graphql();
+      return testSupertest(server);
     });
   });
 });
