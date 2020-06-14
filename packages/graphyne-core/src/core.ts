@@ -20,7 +20,6 @@ export class GraphyneCore {
   private lru: Lru<QueryCache>;
   public schema: GraphQLSchema;
   protected options: Config;
-  public subscriptionPath: string = '/';
 
   formatErrorFn: (error: GraphQLError) => GraphQLFormattedError;
 
@@ -125,10 +124,8 @@ export class GraphyneCore {
       } = {};
       if (obj.data) o.data = obj.data;
       if (obj.errors) o.errors = obj.errors.map(this.formatErrorFn);
-      const payload = stringify(o);
-      flatstr(payload);
       cb({
-        body: payload,
+        body: flatstr(stringify(o)),
         status: code,
         headers: { 'content-type': 'application/json' },
       });

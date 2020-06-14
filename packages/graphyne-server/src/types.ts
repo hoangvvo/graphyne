@@ -2,7 +2,6 @@ import { IncomingMessage, IncomingHttpHeaders } from 'http';
 import { QueryResponse } from 'graphyne-core';
 
 export interface HandlerConfig {
-  onNoMatch?: (...args: any[]) => void;
   onResponse?: (
     { status, body, headers }: QueryResponse,
     ...args: any[]
@@ -11,9 +10,9 @@ export interface HandlerConfig {
 }
 
 export type ExpectedRequest = {
-  path?: string;
   query?: Record<string, string>;
   body?: any;
+  path?: string;
 } & (
   | IncomingMessage
   | {

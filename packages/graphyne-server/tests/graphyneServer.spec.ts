@@ -2,16 +2,16 @@ import { makeExecutableSchema } from 'graphql-tools';
 import request from 'supertest';
 import { strict as assert } from 'assert';
 import { Config } from '../../graphyne-core/src';
-import { startSubscriptionServer } from '../../graphyne-ws/src';
 import { createServer } from 'http';
 import { GraphyneServer } from '../src';
+import { HandlerConfig } from '../src/types';
 
 function createGQLServer({
   schema: schemaOpt,
   typeDefs,
   resolvers,
   ...options
-}: Partial<Config> & {
+}: Partial<Config & HandlerConfig> & {
   typeDefs?: string;
   resolvers?: any;
 }) {
@@ -89,45 +89,6 @@ describe('createHandler', () => {
         .expect('{"data":{"hello":"world"}}');
     });
   });
-  describe('renders GraphiQL', () => {
-    it('when graphiql is true', async () => {
-      const graphyne = new GraphyneServer({
-        schema,
-        playground: true,
-      });
-      const server = createServer(graphyne.createHandler());
-      const { text } = await request(server).get('/playground');
-      assert(text.includes('GraphQL Playground'));
-    });
-    it('when graphiql.path is set', async () => {
-      const graphyne = new GraphyneServer({
-        schema,
-        playground: { path: '/___graphql' },
-      });
-      const server = createServer(graphyne.createHandler());
-      const { text } = await request(server).get('/___graphql');
-      assert(text.includes('GraphQL Playground'));
-    });
-    it('with correct graphql endpoint and subscription endpoint', async () => {
-      const graphyne = new GraphyneServer({
-        schema,
-        playground: true,
-        path: '/thegraphqlendpoint',
-      });
-      const server = createServer(graphyne.createHandler());
-      startSubscriptionServer({
-        server,
-        graphyne,
-        path: '/thesubscriptionendpoint',
-      });
-      const { text } = await request(server).get('/playground');
-      assert(
-        text.includes(
-          `"endpoint":"/thegraphqlendpoint","subscriptionEndpoint":"/thesubscriptionendpoint"`
-        )
-      );
-    });
-  });
   it('allow custom onResponse', async () => {
     const graphyne = new GraphyneServer({
       schema,
@@ -142,31 +103,6 @@ describe('createHandler', () => {
       .query({ query: 'query { hello }' })
       .expect('test', 'ok')
       .expect('{"data":{"hello":"world"}}');
-  });
-  describe('when path is not match ', () => {
-    it('by default calling `onResponse', async () => {
-      const graphyne = new GraphyneServer({
-        schema,
-        onResponse: (result, req, res) => {
-          res.setHeader('test', 'ok');
-          res.writeHead(result.status, result.headers).end(result.body);
-        },
-      });
-      const server = createServer(graphyne.createHandler());
-      await request(server)
-        .get('/api')
-        .expect('not found')
-        .expect(404)
-        .expect('test', 'ok');
-    });
-    it('renders custom behavior in onNoMatch', async () => {
-      const graphyne = new GraphyneServer({
-        schema,
-        onNoMatch: (req, res) => res.end('found'),
-      });
-      const server = createServer(graphyne.createHandler());
-      await request(server).get('/api').expect('found');
-    });
   });
   it('returns 400 on body parsing error', async () => {
     const graphyne = new GraphyneServer({
@@ -225,6 +161,25 @@ describe('HTTP handler', () => {
         .get('/graphql')
         .query({ query: 'query { helloMe }' })
         .expect('{"data":{"helloMe":"hoang"}}');
+    });
+  });
+  describe('explicitly run on specific path if options.path is set', () => {
+    const graphyne = new GraphyneServer({
+      schema,
+      path: '/api',
+    });
+    it('by checking against req.url', async () => {
+      const server = createServer(graphyne.createHandler());
+      await request(server).get('/api?query={hello}').expect(200);
+      await request(server).get('/graphql?query={hello}').expect(404);
+    });
+    it('by checking against req.path when available', async () => {
+      const server = createServer((req, res) => {
+        (req as any).path = req.url.substring(0, req.url.indexOf('?'));
+        graphyne.createHandler()(req, res);
+      });
+      await request(server).get('/api?query={hello}').expect(200);
+      await request(server).get('/graphql?query={hello}').expect(404);
     });
   });
 });

@@ -14,11 +14,6 @@ export interface Config {
   rootValue?: ((parsedQuery: DocumentNode) => any) | any;
   formatError?: (error: GraphQLError) => GraphQLFormattedError;
   path?: string;
-  playground?:
-    | boolean
-    | {
-        path: string;
-      };
 }
 
 export interface QueryBody {

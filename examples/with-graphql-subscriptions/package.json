@@ -8,7 +8,7 @@
     "graphql": "^15.1.0",
     "graphql-subscriptions": "^1.1.0",
     "graphql-tools": "^6.0.9",
-    "graphyne-server": "^0.10.0",
+    "graphyne-server": "^0.11.0",
     "graphyne-ws": "^0.1.13"
   },
   "license": "ISC"

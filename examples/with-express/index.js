@@ -20,17 +20,12 @@ var schema = makeExecutableSchema({
 
 const graphyne = new GraphyneServer({
   schema,
-  context: (req, res) => ({ world: 'world' }),
-  path: '/graphql',
-  playground: {
-    path: '/playground',
-  },
-  onNoMatch: (req, res, next) => next(),
+  context: (req, res, next) => ({ world: 'world' }),
 });
 
 const app = express();
 
-app.use(graphyne.createHandler());
+app.post('/graphql', graphyne.createHandler());
 
 app.listen(4000);
 console.log('Running a GraphQL API server at http://localhost:4000/graphql');

@@ -350,7 +350,6 @@ describe('graphyne-ws', () => {
             });
         }
         if (data.type === 'data') {
-          console.log('data');
           // We have unsubscribed, there should not be data
           if (timer) clearTimeout(timer);
           reject();

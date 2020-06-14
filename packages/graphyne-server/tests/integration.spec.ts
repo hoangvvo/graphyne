@@ -21,127 +21,69 @@ const schema = makeExecutableSchema({
 });
 
 function testSupertest(app) {
-  return {
-    graphql: () =>
-      request(app)
-        .post('/graphql')
-        .set('content-type', 'application/json')
-        .send({ query: '{hello}' })
-        .expect(`{"data":{"hello":"Hello world!"}}`),
-    playground: () =>
-      request(app)
-        .post('/playground')
-        .then((res) => assert(res.text.includes('GraphQL Playground'))),
-    route: () => request(app).get('/route').expect('ok'),
-    fourOhFour: () => request(app).get('/404').expect(404).expect('not found'),
-  };
+  return request(app)
+    .post('/graphql')
+    .set('content-type', 'application/json')
+    .send({ query: '{hello}' })
+    .expect(`{"data":{"hello":"Hello world!"}}`);
 }
 
 describe('Integrations', () => {
-  describe('express', () => {
+  it('express', () => {
     const app = require('express')();
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
-      playground: true,
-      onNoMatch: (req, res, next) => {
-        next();
-      },
     });
-    app
-      .use(graphyne.createHandler())
-      .get('/route', (req, res) => res.send('ok'));
-    it('executes graphql', () => {
-      return testSupertest(app).graphql();
-    });
-    it('renders playground', () => {
-      return testSupertest(app).playground();
-    });
-    it('works with other routes', () => {
-      return testSupertest(app).route();
-    });
+    app.all('/graphql', graphyne.createHandler());
+    return testSupertest(app);
   });
-  describe('micro', () => {
+  it('micro', () => {
     const micro = require('micro');
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
-      playground: true,
       onResponse: ({ headers, body, status }, req, res) => {
         for (const key in headers) res.setHeader(key, headers[key]);
         micro.send(res, status, body);
       },
-      onNoMatch: (req, res) => {
-        micro.send(res, 404, 'not found');
-      },
     });
     const server = micro(graphyne.createHandler());
-    it('executes graphql', () => {
-      return testSupertest(server).graphql();
-    });
-    it('renders playground', () => {
-      return testSupertest(server).playground();
-    });
-    it('works with onNoMatch', () => {
-      return testSupertest(server).fourOhFour();
-    });
+    return testSupertest(server);
   });
-  describe('fastify', () => {
+  it('fastify', (done) => {
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
-      playground: true,
-      onNoMatch: (req, res, next) => {
-        next();
+      onResponse: ({ status, body, headers }, request, reply) => {
+        reply.code(status).headers(headers).send(body);
       },
     });
     const fastify = require('fastify')();
-    fastify.use(graphyne.createHandler());
-    fastify.get('/route', (request, reply) => {
-      reply.send('ok');
+    fastify.decorateRequest('method', {
+      getter() {
+        return this.raw.method;
+      },
     });
-    it('executes graphql', (done) => {
-      fastify.inject(
-        {
-          url: '/graphql',
-          payload: { query: '{hello}' },
-          method: 'POST',
-        },
-        (err, res) => {
-          assert.strictEqual(res.payload, `{"data":{"hello":"Hello world!"}}`);
-          done();
-        }
-      );
-    });
-    it('renders playground', (done) => {
-      fastify
-        .inject()
-        .get('/playground')
-        .end((err, res) => {
-          assert(res.payload.includes('GraphQL Playground'));
-          done();
-        });
-    });
-    it('works with other routes', (done) => {
-      fastify
-        .inject({
-          payload: { query: '{hello}' },
-        })
-        .get('/route')
-        .end((err, res) => {
-          assert.strictEqual(res.payload, 'ok');
-          done();
-        });
-    });
+    fastify.post('/graphql', graphyne.createHandler());
+    fastify.inject(
+      {
+        url: '/graphql',
+        payload: { query: '{hello}' },
+        method: 'POST',
+      },
+      (err, res) => {
+        assert.strictEqual(res.payload, `{"data":{"hello":"Hello world!"}}`);
+        done();
+      }
+    );
   });
-  describe('aws lambda', () => {
+  it('aws lambda', () => {
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
-      playground: true,
       onRequest: ([event, context, callback], done) => {
         const request = {
-          path: event.path,
           query: event.queryStringParameters,
           headers: event.headers,
           method: event.httpMethod,
@@ -160,10 +102,7 @@ describe('Integrations', () => {
     const handler = graphyne.createHandler();
     const server = createServer((req, res) => {
       // We mock AWS Lambda-like environment
-      const idx = req.url.indexOf('?');
-      const pathname = idx !== -1 ? req.url.substring(0, idx) : req.url;
       const event = {
-        path: pathname,
         // We force the followings
         queryStringParameters: {
           query: 'query { hello }',
@@ -176,11 +115,6 @@ describe('Integrations', () => {
       }
       handler(event, {}, callback);
     });
-    it('executes graphql', () => {
-      return testSupertest(server).graphql();
-    });
-    it('renders playground', () => {
-      return testSupertest(server).playground();
-    });
+    return testSupertest(server);
   });
 });

@@ -20,11 +20,8 @@ var schema = makeExecutableSchema({
 
 const graphyne = new GraphyneServer({
   schema,
-  context: () => ({ world: 'world' }),
+  context: (req, res) => ({ world: 'world' }),
   path: '/graphql',
-  playground: {
-    path: '/playground',
-  },
 });
 
 const server = http.createServer(graphyne.createHandler());

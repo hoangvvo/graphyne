@@ -37,7 +37,7 @@ const server = http.createServer(graphyne.createHandler());
 const wss = startSubscriptionServer({
   graphyne: graphyne, // Require an instance of Graphyne Server
   server: server, // Require an instance of HTTP Server
-  path: '/graphql',
+  path: '/graphql', // The ws path to listen to
 });
 
 server.listen(3000, () => {
@@ -69,7 +69,7 @@ Create an instance of `GraphyneWebSocketServer` **and** listen to incoming conne
 The HTTP Server instance is returned after `app.listen` is called.
 
 ```javascript
-app.use(graphyne.createHandler());
+app.post('/graphql', graphyne.createHandler());
 
 const server = app.listen(PORT);
 

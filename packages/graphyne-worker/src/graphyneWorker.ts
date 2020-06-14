@@ -2,7 +2,6 @@ import {
   GraphyneCore,
   Config,
   QueryBody,
-  renderPlayground,
   parseBodyByContentType,
   getGraphQLParams,
   QueryRequest,
@@ -77,31 +76,10 @@ export class GraphyneWorker extends GraphyneCore {
       );
     }
 
-    const path = this.options.path || '/graphql';
-    const playgroundPath = this.options?.playground
-      ? (typeof this.options.playground === 'object' &&
-          this.options.playground.path) ||
-        '/playground'
-      : null;
-
     return (event) => {
       const url = new URL(event.request.url);
-      switch (url.pathname) {
-        case path:
-          return event.respondWith(this.handleRequest(event.request, url));
-        case playgroundPath:
-          return event.respondWith(
-            Promise.resolve(
-              new Response(
-                renderPlayground({
-                  endpoint: path,
-                  subscriptionEndpoint: this.subscriptionPath,
-                }),
-                { headers: { 'content-type': 'text/html; charset=utf-8' } }
-              )
-            )
-          );
-      }
+      if (url.pathname === (this.options.path || '/graphql'))
+        return event.respondWith(this.handleRequest(event.request, url));
     };
   }
 }
