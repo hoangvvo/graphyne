@@ -35,7 +35,7 @@ const { GraphyneWorker } = require('graphyne-worker');
 
 const graphyne = new GraphyneServer(options);
 
-addEventListener('fetch', graphyne.createHandler(options));
+addEventListener('fetch', graphyne.createHandler());
 
 // OR: instead of using createHandler, you can call GraphyneWorker#handleRequest manually.
 
@@ -66,18 +66,15 @@ Constructing a Graphyne GraphQL worker. It accepts the following options:
 | options | description | default |
 |---------|-------------|---------|
 | schema | A `GraphQLSchema` instance. It can be created using `makeExecutableSchema` from [graphql-tools](https://github.com/apollographql/graphql-tools). | (required) |
-| context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [signature function](#framework-specific-integration). | `{}` |
+| context | An object or function called to creates a context shared across resolvers per request. The function accepts [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) as the only argument. | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
-
-### `GraphyneWorker#createHandler(options)`
-
-Create a handler for [fetchEvents](https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent), `options` accepts the following:
-
-| options | description | default |
-|---------|-------------|---------|
 | path | Specify a path for the GraphQL endpoint. | `/graphql` |
 | playground | Pass in `true` to present [Playground](https://github.com/prisma-labs/graphql-playground) when being loaded from a browser. Alternatively, you can also pass in an object with `path` that specify a custom path to present `Playground` | `false`, `{ path: '/playground' }` if `true` |
+
+### `GraphyneWorker#createHandler()`
+
+Create a handler for [fetchEvents](https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent).
 
 ### `GraphyneWorker#handleRequest(request)`
 

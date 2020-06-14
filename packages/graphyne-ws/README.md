@@ -76,9 +76,7 @@ Create a server instance of `GraphyneWebSocketServer` just like in `startSubscri
 The HTTP Server instance is returned after `app.listen` is called.
 
 ```javascript
-app.use(
-  graphyne.createHandler({ /* ... */ })
-);
+app.use(graphyne.createHandler());
 
 const server = app.listen(PORT);
 
@@ -94,9 +92,7 @@ const wss = startSubscriptionServer({
 You need to [use Micro programmatically](https://www.npmjs.com/package/micro#programmatic-use) for WebSocket support. `micro()` returns the HTTP Server instance.
 
 ```javascript
-const server = micro(
-  graphyne.createHandler({ /* ... */ })
-);
+const server = micro(graphyne.createHandler());
 
 const wss = startSubscriptionServer({
   server: server,

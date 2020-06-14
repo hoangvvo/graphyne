@@ -54,23 +54,23 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [signature function](#framework-specific-integration). | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
-
-### `GraphyneServer#createHandler(options)`
-
-Create a handler for HTTP server, `options` accepts the following:
-
-| options | description | default |
-|---------|-------------|---------|
 | path | Specify a path for the GraphQL endpoint. | `/graphql` |
 | playground | Pass in `true` to present [Playground](https://github.com/prisma-labs/graphql-playground) when being loaded from a browser. Alternatively, you can also pass in an object with `path` that specify a custom path to present `Playground` | `false`, `{ path: '/playground' }` if `true` |
+| onRequest | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `([req, res], done) => done(req)` |
+| onResponse | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `(result, req, res) => res.writeHead(result.status, result.headers).end(result.body)` |
+| onNoMatch | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `onResponse({status: 404, body: "not found", headers: {}})`
 
-In addition, `options` also accepts `onRequest`, `onResponse`, and `onNoMatch`. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration).
+### `GraphyneServer#createHandler()`
+
+Create a handler for HTTP server.
+
+You must define `onRequest`, `onResponse`, and `onNoMatch` earlier for this to work with frameworks other than Node.js `http`. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration).
 
 ## Framework-specific integration
 
 **Signature function** refers to framework/runtimes-specific's handler function. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
 
-By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa do not follow the convention. In such cases, `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `GraphyneServer#createHandler`.
+By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa do not follow the convention. In such cases, `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `new GraphyneServer`.
 
 See the [Integration examples](#integration-examples) section below to learn how `onRequest`, `onResponse`, and `onNoMatch` is used.
 
