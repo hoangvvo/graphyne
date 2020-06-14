@@ -38,16 +38,16 @@ export class GraphyneServer extends GraphyneCore {
     type TArgs = any[];
 
     function onRequestResolve(request: ExpectedRequest, args: TArgs) {
-      if (that.options.path) {
+      if (
+        that.options.path &&
+        (request.path || parseUrl(request, true).pathname) !== that.options.path
+      ) {
         // Explicitly run on a specific path
-        if (
-          (request.path || parseUrl(request, true).pathname) !==
-          that.options.path
-        )
-          return sendResponse(
-            { status: 404, body: 'not found', headers: {} },
-            args
-          );
+
+        return sendResponse(
+          { status: 404, body: 'not found', headers: {} },
+          args
+        );
       }
       parseNodeRequest(request, (err, body) => {
         if (err) return sendError(err, args);
