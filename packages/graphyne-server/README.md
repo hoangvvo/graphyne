@@ -65,7 +65,7 @@ You must define `onRequest` and `onResponse` earlier for this to work with frame
 
 ## Framework-specific integration
 
-**Handler function** refers to framework/runtimes-specific handler of incoming request. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
+**Handler function** refers to framework/runtimes-specific handler of incoming request. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Fastify`, it is [`(request, reply)`](https://www.fastify.io/docs/latest/Routes/). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
 
 By default, `graphyne-server` expects the `Node HTTP Server` listener/handler function of `(req, res)`. However, as seen above, frameworks/runtimes like Hapi or AWS Lambda do not follow the convention. In such cases, `onRequest` and `onResponse` must be defined when calling `new GraphyneServer`.
 
