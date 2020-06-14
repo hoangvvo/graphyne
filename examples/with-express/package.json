@@ -6,9 +6,9 @@
   },
   "dependencies": {
     "express": "^4.17.1",
-    "graphql": "^15.0.0",
-    "graphql-tools": "^4.0.7",
-    "graphyne-server": "^0.5.0"
+    "graphql": "^15.1.0",
+    "graphql-tools": "^6.0.9",
+    "graphyne-server": "^0.10.0"
   },
   "license": "ISC"
 }
