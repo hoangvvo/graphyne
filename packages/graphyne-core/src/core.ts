@@ -149,26 +149,20 @@ export class GraphyneCore {
       return createResponse(400, compiledQuery);
     }
 
-    if (httpMethod) {
-      if (httpMethod !== 'POST' && httpMethod !== 'GET')
-        return createResponse(405, {
-          errors: [
-            new GraphQLError(`GraphQL only supports GET and POST requests.`),
-          ],
-        });
-      if (httpMethod === 'GET' && operation !== 'query')
-        return createResponse(405, {
-          errors: [
-            new GraphQLError(
-              `Operation ${operation} cannot be performed via a GET request`
-            ),
-          ],
-        });
-    } else {
-      console.warn(
-        `graphyne-server cannot detect the HTTP method. This will lead to mutation being allowed to execute on GET request while it shouldn't be.`
-      );
-    }
+    if (httpMethod !== 'POST' && httpMethod !== 'GET')
+      return createResponse(405, {
+        errors: [
+          new GraphQLError(`GraphQL only supports GET and POST requests.`),
+        ],
+      });
+    if (httpMethod === 'GET' && operation !== 'query')
+      return createResponse(405, {
+        errors: [
+          new GraphQLError(
+            `Operation ${operation} cannot be performed via a GET request`
+          ),
+        ],
+      });
 
     const result = compiledQuery.query(
       typeof this.options.rootValue === 'function'

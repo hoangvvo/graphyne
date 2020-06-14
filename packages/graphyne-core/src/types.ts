@@ -24,7 +24,7 @@ export interface QueryBody {
 
 export interface QueryRequest extends QueryBody {
   context: Record<string, any>;
-  httpMethod?: string;
+  httpMethod: string;
 }
 
 export interface QueryResponse {
