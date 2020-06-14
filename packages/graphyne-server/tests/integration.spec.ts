@@ -20,11 +20,6 @@ const schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new GraphyneServer({
-  schema,
-  context: () => ({ world: 'world' }),
-});
-
 function testSupertest(app) {
   return {
     graphql: () =>
@@ -45,15 +40,16 @@ function testSupertest(app) {
 describe('Integrations', () => {
   describe('express', () => {
     const app = require('express')();
+    const graphyne = new GraphyneServer({
+      schema,
+      context: () => ({ world: 'world' }),
+      playground: true,
+      onNoMatch: (req, res, next) => {
+        next();
+      },
+    });
     app
-      .use(
-        graphyne.createHandler({
-          playground: true,
-          onNoMatch: (req, res, next) => {
-            next();
-          },
-        })
-      )
+      .use(graphyne.createHandler())
       .get('/route', (req, res) => res.send('ok'));
     it('executes graphql', () => {
       return testSupertest(app).graphql();
@@ -67,21 +63,19 @@ describe('Integrations', () => {
   });
   describe('micro', () => {
     const micro = require('micro');
-    const server = micro(
-      graphyne.createHandler({
-        path: '/graphql',
-        playground: {
-          path: '/playground',
-        },
-        onResponse: ({ headers, body, status }, req, res) => {
-          for (const key in headers) res.setHeader(key, headers[key]);
-          micro.send(res, status, body);
-        },
-        onNoMatch: (req, res) => {
-          micro.send(res, 404, 'not found');
-        },
-      })
-    );
+    const graphyne = new GraphyneServer({
+      schema,
+      context: () => ({ world: 'world' }),
+      playground: true,
+      onResponse: ({ headers, body, status }, req, res) => {
+        for (const key in headers) res.setHeader(key, headers[key]);
+        micro.send(res, status, body);
+      },
+      onNoMatch: (req, res) => {
+        micro.send(res, 404, 'not found');
+      },
+    });
+    const server = micro(graphyne.createHandler());
     it('executes graphql', () => {
       return testSupertest(server).graphql();
     });
@@ -93,15 +87,16 @@ describe('Integrations', () => {
     });
   });
   describe('fastify', () => {
+    const graphyne = new GraphyneServer({
+      schema,
+      context: () => ({ world: 'world' }),
+      playground: true,
+      onNoMatch: (req, res, next) => {
+        next();
+      },
+    });
     const fastify = require('fastify')();
-    fastify.use(
-      graphyne.createHandler({
-        playground: true,
-        onNoMatch: (req, res, next) => {
-          next();
-        },
-      })
-    );
+    fastify.use(graphyne.createHandler());
     fastify.get('/route', (request, reply) => {
       reply.send('ok');
     });
@@ -139,45 +134,10 @@ describe('Integrations', () => {
         });
     });
   });
-  describe('koa', () => {
-    const Koa = require('koa');
-    const app = new Koa();
-    app.use(
-      graphyne.createHandler({
-        playground: true,
-        onRequest: ([ctx], done) => {
-          done(ctx.req);
-        },
-        onResponse: ({ headers, body, status }, ctx) => {
-          ctx.status = status;
-          ctx.set(headers);
-          ctx.body = body;
-        },
-        onNoMatch: (ctx) => {
-          ctx.status = 404;
-          ctx.body = 'not found';
-        },
-      })
-    );
-    let server;
-    beforeEach(() => {
-      server = app.listen();
-    });
-    afterEach(() => {
-      server.close();
-    });
-    xit('executes graphql', () => {
-      return testSupertest(server).graphql();
-    });
-    it('renders playground', () => {
-      return testSupertest(server).playground();
-    });
-    it('works with other routes', () => {
-      return testSupertest(server).fourOhFour();
-    });
-  });
   describe('aws lambda', () => {
-    const handler = graphyne.createHandler({
+    const graphyne = new GraphyneServer({
+      schema,
+      context: () => ({ world: 'world' }),
       playground: true,
       onRequest: ([event, context, callback], done) => {
         const request = {
@@ -197,6 +157,7 @@ describe('Integrations', () => {
         });
       },
     });
+    const handler = graphyne.createHandler();
     const server = createServer((req, res) => {
       // We mock AWS Lambda-like environment
       const idx = req.url.indexOf('?');

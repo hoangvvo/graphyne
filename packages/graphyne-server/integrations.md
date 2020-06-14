@@ -13,26 +13,26 @@ Check out [examples](/examples) for integrations with many others.
 [Example](/examples/with-express)
 
 ```javascript
-app.use(
-  graphyne.createHandler({
-    onNoMatch: (req, res, next) => {
-      // Continue to next handler in middleware chain
-      next();
-    }
-  })
-);
+const graphyne = new GraphyneServer({
+  onNoMatch: (req, res, next) => {
+    // Continue to next handler in middleware chain
+    next();
+  },
+});
+
+app.use(graphyne.createHandler());
 ```
 
 ### [Micro](https://github.com/zeit/micro)
 
 [Example](/examples/with-micro)
 
-*This is not actually required since `micro` function signature is the same as `Node HTTP Server`. `module.exports = graphyne.createHandler()` would work.*
+*`onResponse` and `onNoMatch` are not actually required since `micro` handler function is the same as `Node HTTP Server`.*
 
 ```javascript
 const { send } = require('micro');
 
-module.exports = graphyne.createHandler({
+const graphyne = new GraphyneServer({
   onResponse: async ({ headers, body, status }, req, res) => {
     for (const key in headers) {
       res.setHeader(key, headers[key]);
@@ -43,6 +43,8 @@ module.exports = graphyne.createHandler({
     send(res, 404, 'not found');
   },
 });
+
+module.exports = graphyne.createHandler();
 ```
 
 ### [Fastify](https://github.com/fastify/fastify)
@@ -52,33 +54,13 @@ module.exports = graphyne.createHandler({
 [Example](/examples/with-fastify)
 
 ```javascript
-fastify.use(
-  graphyne.createHandler({
-    onNoMatch: (req, res, next) => {
-      next();
-    }
-  })
-);
-```
+const graphyne = new GraphyneServer({
+  onNoMatch: (req, res, next) => {
+    next();
+  }
+})
 
-### [Koa](https://github.com/koajs/koa)
-
-[Example](/examples/with-koa)
-
-```javascript
-app.use(
-  graphyne.createHandler({
-    onRequest: ([ctx, next], done) => {
-      done(ctx.req);
-    },
-    onResponse: ({ headers, body, status }, ctx) => {
-      ctx.status = status;
-      ctx.set(headers);
-      ctx.body = body;
-    },
-    onNoMatch: (ctx, next) => next()
-  })
-);
+fastify.use(graphyne.createHandler());
 ```
 
 ## Runtimes/Environments
@@ -88,7 +70,7 @@ app.use(
 Lambda will not have Node.js `IncomingMessage`, so you need to create a compatible request object:
 
 ```javascript
-exports.handler = graphyne.createHandler({
+const graphyne = new GraphyneServer({
   onRequest: ([event, context, callback], done) => {
     // Construct a IncomingMessage compatible object
     const request = {
@@ -102,10 +84,14 @@ exports.handler = graphyne.createHandler({
   },
   onResponse: ({ headers, body, status }, event, context, callback) => {
     callback(null, {
-      body, headers, statusCode: status
+      body,
+      headers,
+      statusCode: status,
     });
   },
-})
+});
+
+exports.handler = graphyne.createHandler();
 ```
 
 ### [Deno](https://deno.land/)
@@ -115,7 +101,7 @@ In `Deno`, `req.body` is of type [Reader](https://deno.land/typedoc/interfaces/d
 ```javascript
 const decoder = new TextDecoder();
 
-const gqlHandle = graphyne.createHandler({
+const graphyne = new GraphyneServer({
   onRequest: async ([req], done) => {
     const request = {
       url: req.url,
@@ -128,7 +114,9 @@ const gqlHandle = graphyne.createHandler({
   onResponse: ({ headers, body, status }, req) => {
     req.respond({ body, headers, status });
   },
-})
+});
+
+const gqlHandle = graphyne.createHandler();
 
 // Usage
 

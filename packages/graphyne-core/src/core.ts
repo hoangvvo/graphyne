@@ -17,7 +17,7 @@ import { Config, QueryCache, QueryRequest, QueryResponse } from './types';
 import flatstr from 'flatstr';
 
 export class GraphyneCore {
-  private lru: Lru<QueryCache> | null;
+  private lru: Lru<QueryCache>;
   public schema: GraphQLSchema;
   protected options: Config;
   public subscriptionPath: string = '/';
@@ -49,7 +49,7 @@ export class GraphyneCore {
     compiledQuery: CompiledQuery | ExecutionResult;
     operation?: string;
   } {
-    const cached = this.lru !== null && this.lru.get(query);
+    const cached = this.lru.get(query);
 
     if (cached) {
       return cached;

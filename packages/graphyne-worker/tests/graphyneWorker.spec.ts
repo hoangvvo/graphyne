@@ -26,13 +26,12 @@ async function testRequest(
   input: string,
   init: fetch.RequestInit,
   expected: Partial<QueryResponse> | null,
-  graphyneOpts = {},
-  handlerOpts = {}
+  graphyneOpts = {}
 ) {
   const handle = new GraphyneWorker({
     schema,
     ...graphyneOpts,
-  }).createHandler(handlerOpts);
+  }).createHandler();
   return new Promise((resolve, reject) => {
     function respondWith(responsePromise: Promise<Response>) {
       if (!expected) throw new Error('Should not call me');
@@ -172,7 +171,6 @@ describe('Event handler', () => {
         '/api?query={ hello }',
         {},
         { status: 200, body: `{"data":{"hello":"world"}}` },
-        {},
         { path: '/api' }
       );
     });
@@ -184,8 +182,8 @@ describe('Event handler', () => {
   });
 
   describe('renders GraphiQL', () => {
-    const graphyne = new GraphyneWorker({ schema });
     it('not by default', (done) => {
+      const graphyne = new GraphyneWorker({ schema });
       const fetchEvent = {
         respondWith: (promise: Promise<Response>) => {
           throw new Error('Should not call this');
@@ -196,6 +194,7 @@ describe('Event handler', () => {
       done();
     });
     it('when graphiql is true', (done) => {
+      const graphyne = new GraphyneWorker({ schema, playground: true });
       const fetchEvent = {
         respondWith: (promise: Promise<Response>) => {
           promise
@@ -205,9 +204,13 @@ describe('Event handler', () => {
         },
         request: new fetch.Request('http://localhost:0/playground'),
       };
-      graphyne.createHandler({ playground: true })(fetchEvent);
+      graphyne.createHandler()(fetchEvent);
     });
     it('when graphiql.path is set', (done) => {
+      const graphyne = new GraphyneWorker({
+        schema,
+        playground: { path: '/___graphql' },
+      });
       const fetchEvent = {
         respondWith: (promise: Promise<Response>) => {
           promise
@@ -217,9 +220,7 @@ describe('Event handler', () => {
         },
         request: new fetch.Request('http://localhost:0/___graphql'),
       };
-      graphyne.createHandler({ playground: { path: '/___graphql' } })(
-        fetchEvent
-      );
+      graphyne.createHandler()(fetchEvent);
     });
   });
 });
@@ -231,4 +232,8 @@ describe('handleRequest', () => {
     );
     assert.strictEqual(await response.text(), `{"data":{"hello":"world"}}`);
   });
+});
+
+describe('deprecated createHandler(options)', () => {
+  assert.throws(() => new GraphyneWorker({ schema }).createHandler({}));
 });

@@ -37,13 +37,7 @@
           padding: 1rem;
         "
       >
-      global.addEventListener(
-        "fetch",
-        graphyne.createHandler({
-          path: "/graphql",
-          playground: { path: "/playground" },
-        })
-      );      
+      global.addEventListener("fetch", graphyne.createHandler());      
       </code>
     </div>
     <p>

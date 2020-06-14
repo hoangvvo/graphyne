@@ -2,12 +2,6 @@ import { IncomingMessage, IncomingHttpHeaders } from 'http';
 import { QueryResponse } from 'graphyne-core';
 
 export interface HandlerConfig {
-  path?: string;
-  playground?:
-    | boolean
-    | {
-        path: string;
-      };
   onNoMatch?: (...args: any[]) => void;
   onResponse?: (
     { status, body, headers }: QueryResponse,

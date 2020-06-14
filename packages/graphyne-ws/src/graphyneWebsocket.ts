@@ -50,7 +50,7 @@ type ContextFn =
   | Record<string, any>
   | ((initContext: InitContext) => Record<string, any>);
 
-export class GraphyneWebSocketConnection {
+class GraphyneWebSocketConnection {
   private graphyne: GraphyneCore;
   public socket: WebSocket;
   private request: IncomingMessage;
@@ -218,7 +218,7 @@ export class GraphyneWebSocketConnection {
   }
 }
 
-export class GraphyneWebSocketServer extends WebSocket.Server {
+class GraphyneWebSocketServer extends WebSocket.Server {
   public graphyne: GraphyneCore;
   public contextFn?: ContextFn;
   constructor(options: GraphyneWSOptions) {

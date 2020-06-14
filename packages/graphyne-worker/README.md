@@ -28,30 +28,41 @@ yarn add graphyne-worker graphql
 
 ## Usage (in browser w/ bundler)
 
-Create `worker.js`.
+Create a service worker that listens to `fetch` in `worker.js`.
 
 ```javascript
-const { GraphyneWorker } = require('graphyne-worker');
+const { GraphyneWorker } = require("graphyne-worker");
 
-const graphyne = new GraphyneServer(options);
+const graphyne = new GraphyneWorker(options);
 
-addEventListener('fetch', graphyne.createHandler(options));
+addEventListener("fetch", graphyne.createHandler());
 
 // OR: instead of using createHandler, you can call GraphyneWorker#handleRequest manually.
 
-addEventListener('fetch', (event) => {
+addEventListener("fetch", (event) => {
   const url = new URL();
-  if (url.pathname === '/graphql')
-    event.respondWith(graphyne.handleRequest(event.request))
+  if (url.pathname === "/graphql")
+    event.respondWith(graphyne.handleRequest(event.request));
   // if requesting something else, let the browser handles it
 });
 ```
 
-Use it to create a worker.
+Register that worker using `navigator.serviceWorker`.
 
 ```javascript
-const graphyneWorker = new Worker('worker.js');
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('/worker.js')
+    .then(function (registration) {
+      console.log('Registration successful, scope is:', registration.scope);
+    })
+    .catch(function (error) {
+      console.log('Service worker registration failed, error:', error);
+    });
+}
 ```
+
+Fetch requests to `/graphql` will now be intercepted by the registered worker.
 
 See [Using Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers) for more info.
 
@@ -66,18 +77,15 @@ Constructing a Graphyne GraphQL worker. It accepts the following options:
 | options | description | default |
 |---------|-------------|---------|
 | schema | A `GraphQLSchema` instance. It can be created using `makeExecutableSchema` from [graphql-tools](https://github.com/apollographql/graphql-tools). | (required) |
-| context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [signature function](#framework-specific-integration). | `{}` |
+| context | An object or function called to creates a context shared across resolvers per request. The function accepts [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) as the only argument. | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
-
-### `GraphyneWorker#createHandler(options)`
-
-Create a handler for [fetchEvents](https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent), `options` accepts the following:
-
-| options | description | default |
-|---------|-------------|---------|
 | path | Specify a path for the GraphQL endpoint. | `/graphql` |
 | playground | Pass in `true` to present [Playground](https://github.com/prisma-labs/graphql-playground) when being loaded from a browser. Alternatively, you can also pass in an object with `path` that specify a custom path to present `Playground` | `false`, `{ path: '/playground' }` if `true` |
+
+### `GraphyneWorker#createHandler()`
+
+Create a handler for [fetchEvents](https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent).
 
 ### `GraphyneWorker#handleRequest(request)`
 
