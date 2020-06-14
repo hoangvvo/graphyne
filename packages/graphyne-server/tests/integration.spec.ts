@@ -64,6 +64,11 @@ describe('Integrations', () => {
       },
     });
     const fastify = require('fastify')();
+    fastify.decorateRequest('method', {
+      getter() {
+        return this.raw.method;
+      },
+    });
     fastify.post('/graphql', graphyne.createHandler());
     it('executes graphql', (done) => {
       fastify.inject(
