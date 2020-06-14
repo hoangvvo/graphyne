@@ -48,12 +48,11 @@ describe('createHandler', () => {
     it('with IncomingMessage', async () => {
       const graphyne = new GraphyneServer({
         schema: schemaHello,
-      });
-      const handler = graphyne.createHandler({
         onRequest: ([ctx], done) => done(ctx.req),
         onResponse: ({ status, body, headers }, ctx) =>
           ctx.res.writeHead(status, headers).end(body),
       });
+      const handler = graphyne.createHandler();
       const server = createServer((req, res) => {
         const ctx = { req, res };
         handler(ctx);
@@ -66,8 +65,6 @@ describe('createHandler', () => {
     it('with constructed request object', async () => {
       const graphyne = new GraphyneServer({
         schema: schemaHello,
-      });
-      const handler = graphyne.createHandler({
         onRequest: ([request], done) =>
           done({
             url: request.url,
@@ -77,6 +74,7 @@ describe('createHandler', () => {
         onResponse: ({ status, body, headers }, event, res) =>
           res.writeHead(status, headers).end(body),
       });
+      const handler = graphyne.createHandler();
       const server = createServer((req, res) => {
         const request = {
           url: `/graphql?query={hello}`,
@@ -92,34 +90,31 @@ describe('createHandler', () => {
     });
   });
   describe('renders GraphiQL', () => {
-    const graphyne = new GraphyneServer({
-      schema: schemaHello,
-    });
     it('when graphiql is true', async () => {
-      const server = createServer(
-        graphyne.createHandler({
-          playground: true,
-        })
-      );
+      const graphyne = new GraphyneServer({
+        schema: schemaHello,
+        playground: true,
+      });
+      const server = createServer(graphyne.createHandler());
       const { text } = await request(server).get('/playground');
       assert(text.includes('GraphQL Playground'));
     });
     it('when graphiql.path is set', async () => {
-      const server = createServer(
-        graphyne.createHandler({
-          playground: { path: '/___graphql' },
-        })
-      );
+      const graphyne = new GraphyneServer({
+        schema: schemaHello,
+        playground: { path: '/___graphql' },
+      });
+      const server = createServer(graphyne.createHandler());
       const { text } = await request(server).get('/___graphql');
       assert(text.includes('GraphQL Playground'));
     });
     it('with correct graphql endpoint and subscription endpoint', async () => {
-      const server = createServer(
-        graphyne.createHandler({
-          playground: true,
-          path: '/thegraphqlendpoint',
-        })
-      );
+      const graphyne = new GraphyneServer({
+        schema: schemaHello,
+        playground: true,
+        path: '/thegraphqlendpoint',
+      });
+      const server = createServer(graphyne.createHandler());
       startSubscriptionServer({
         server,
         graphyne,
@@ -136,15 +131,12 @@ describe('createHandler', () => {
   it('allow custom onResponse', async () => {
     const graphyne = new GraphyneServer({
       schema: schemaHello,
+      onResponse: (result, req, res) => {
+        res.setHeader('test', 'ok');
+        res.end(result.body);
+      },
     });
-    const server = createServer(
-      graphyne.createHandler({
-        onResponse: (result, req, res) => {
-          res.setHeader('test', 'ok');
-          res.end(result.body);
-        },
-      })
-    );
+    const server = createServer(graphyne.createHandler());
     await request(server)
       .get('/graphql')
       .query({ query: 'query { hello }' })
@@ -152,18 +144,15 @@ describe('createHandler', () => {
       .expect('{"data":{"hello":"world"}}');
   });
   describe('when path is not match ', () => {
-    const graphyne = new GraphyneServer({
-      schema: schemaHello,
-    });
     it('by default calling `onResponse', async () => {
-      const server = createServer(
-        graphyne.createHandler({
-          onResponse: (result, req, res) => {
-            res.setHeader('test', 'ok');
-            res.writeHead(result.status, result.headers).end(result.body);
-          },
-        })
-      );
+      const graphyne = new GraphyneServer({
+        schema: schemaHello,
+        onResponse: (result, req, res) => {
+          res.setHeader('test', 'ok');
+          res.writeHead(result.status, result.headers).end(result.body);
+        },
+      });
+      const server = createServer(graphyne.createHandler());
       await request(server)
         .get('/api')
         .expect('not found')
@@ -171,11 +160,11 @@ describe('createHandler', () => {
         .expect('test', 'ok');
     });
     it('renders custom behavior in onNoMatch', async () => {
-      const server = createServer(
-        graphyne.createHandler({
-          onNoMatch: (req, res) => res.end('found'),
-        })
-      );
+      const graphyne = new GraphyneServer({
+        schema: schemaHello,
+        onNoMatch: (req, res) => res.end('found'),
+      });
+      const server = createServer(graphyne.createHandler());
       await request(server).get('/api').expect('found');
     });
   });
