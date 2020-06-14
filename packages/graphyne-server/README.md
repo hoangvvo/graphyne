@@ -40,7 +40,7 @@ server.listen(3000, () => {
 });
 ```
 
-If you do not use Node HTTP Server (which is likely), see [framework-specific integration](#framework-specific-integration).
+If you do not use Node HTTP Server (which is likely), you must define `options.onRequest`, `options.onResponse`, and `options.onNoMatch`. See [framework-specific integration](#framework-specific-integration).
 
 ## API
 
@@ -51,7 +51,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | options | description | default |
 |---------|-------------|---------|
 | schema | A `GraphQLSchema` instance. It can be created using `makeExecutableSchema` from [graphql-tools](https://github.com/apollographql/graphql-tools). | (required) |
-| context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [handler function](#framework-specific-integration). | `{}` |
+| context | An object or function called to creates a context shared across resolvers per request. The function signature is the same to the framework's [handler function](#framework-specific-integration). | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
 | path | Specify a path for the GraphQL endpoint. | `/graphql` |
