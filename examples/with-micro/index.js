@@ -21,9 +21,6 @@ var schema = makeExecutableSchema({
 const graphyne = new GraphyneServer({
   schema,
   context: (req, res) => ({ world: 'world' }),
-});
-
-module.exports = graphyne.createHandler({
   path: '/graphql',
   playground: {
     path: '/playground',
@@ -38,11 +35,15 @@ module.exports = graphyne.createHandler({
 });
 
 /**
- * This still works:
- * module.exports = graphyne.createHandler({
+ * This still works without onResponse and onNoMatch:
+  const graphyne = new GraphyneServer({
+    schema,
+    context: (req, res) => ({ world: 'world' }),
     path: '/graphql',
     playground: {
       path: '/playground',
     },
-  }
+  });
  */
+
+module.exports = graphyne.createHandler();

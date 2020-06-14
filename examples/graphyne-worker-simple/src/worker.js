@@ -20,14 +20,10 @@ var schema = makeExecutableSchema({
 const graphyne = new GraphyneWorker({
   schema,
   context: () => ({ world: 'world' }),
+  path: '/graphql',
+  playground: {
+    path: '/playground',
+  },
 });
 
-global.addEventListener(
-  'fetch',
-  graphyne.createHandler({
-    path: '/graphql',
-    playground: {
-      path: '/playground',
-    },
-  })
-);
+global.addEventListener('fetch', graphyne.createHandler());
