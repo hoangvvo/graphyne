@@ -34,7 +34,7 @@ fastify.decorateRequest('method', {
   },
 });
 
-fastify.get('/graphql', graphyne.createHandler());
+fastify.post('/graphql', graphyne.createHandler());
 
 fastify.listen(3000, (err, address) => {
   if (err) throw err;

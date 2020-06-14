@@ -37,18 +37,18 @@ module.exports = graphyne.createHandler();
 [Example](/examples/with-fastify)
 
 ```javascript
+const graphyne = new GraphyneServer({
+  onResponse: ({ status, body, headers }, request, reply) => {
+    reply.code(status).headers(headers).send(body);
+  },
+})
+
 // Because fastify does not expose HTTP method via `request.method` by default, we need to attach it there since `graphyne-server` needs it.
 fastify.decorateRequest('method', {
   getter() {
     return this.raw.method;
   },
 });
-
-const graphyne = new GraphyneServer({
-  onResponse: ({ status, body, headers }, request, reply) => {
-    reply.code(status).headers(headers).send(body);
-  },
-})
 
 fastify.post('/graphql', graphyne.createHandler());
 ```
