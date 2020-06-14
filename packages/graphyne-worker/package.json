@@ -26,5 +26,8 @@
   "license": "MIT",
   "dependencies": {
     "graphyne-core": "^0.9.1"
+  },
+  "peerDependencies": {
+    "graphql": "^14.0.0 || ^15.0.0"
   }
 }
