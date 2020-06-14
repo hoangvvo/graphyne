@@ -125,6 +125,10 @@ GraphQL subscriptions support is provided by [graphyne-ws](https://www.npmjs.com
 
 To enable file upload, use [graphql-upload](https://github.com/jaydenseric/graphql-upload) and add the `Upload` scaler. See [#10](https://github.com/hoangvvo/graphyne/issues/10).
 
+### GraphQL Playground
+
+You can use the packages from [graphql-playground](https://github.com/prisma-labs/graphql-playground).
+
 ### Dataloader and N+1 Problem
 
 A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) to solve GraphQL N+1 Problem is covered in [#23](https://github.com/hoangvvo/graphyne/issues/23). Also check out an [example](/examples/with-dataloader).
