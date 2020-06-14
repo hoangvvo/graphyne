@@ -62,10 +62,6 @@ Create an instance of `GraphyneWebSocketServer` **and** listen to incoming conne
   - `socket`: The [WebSocket connection](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#event-connection).
   - `request`: The incoming request.
 
-### `new GraphyneWebSocketServer(options)`
-
-Create a server instance of `GraphyneWebSocketServer` just like in `startSubscriptionServer` without listening to connections. To listen to connections, hook on the `connection` event like [this](https://github.com/hoangvvo/graphyne/blob/feat/subscription/packages/graphyne-ws/src/graphyneWebsocket.ts#L232).
-
 ## Framework integration
 
 ### [Express](https://github.com/expressjs/express)
