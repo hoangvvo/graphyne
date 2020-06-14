@@ -39,7 +39,7 @@ server.listen(3000, () => {
 });
 ```
 
-If you do not use Node HTTP Server (which is likely), you must define `options.onRequest` and `options.onResponse`. See [framework-specific integration](#framework-specific-integration).
+If you do not use Node HTTP Server (which is likely), you must define `options.onRequest` and `options.onResponse`. See [framework-specific integration](#framework-specific-integration). Some frameworks are supported out of the box.
 
 ## API
 
@@ -60,8 +60,6 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 ### `GraphyneServer#createHandler()`
 
 Create a handler for HTTP server.
-
-You must define `onRequest` and `onResponse` earlier for this to work with frameworks other than Node.js `http`. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration).
 
 ## Framework-specific integration
 
