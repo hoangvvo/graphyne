@@ -48,9 +48,7 @@ fastify.decorateRequest('method', {
 
 const graphyne = new GraphyneServer({
   onResponse: ({ status, body, headers }, request, reply) => {
-    reply.code(status);
-    reply.headers(headers);
-    reply.send(body);
+    reply.code(status).headers(headers).send(body);
   },
 })
 

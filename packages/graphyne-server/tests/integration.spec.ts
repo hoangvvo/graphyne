@@ -60,9 +60,7 @@ describe('Integrations', () => {
       schema,
       context: () => ({ world: 'world' }),
       onResponse: ({ status, body, headers }, request, reply) => {
-        reply.code(status);
-        reply.headers(headers);
-        reply.send(body);
+        reply.code(status).headers(headers).send(body);
       },
     });
     const fastify = require('fastify')();
