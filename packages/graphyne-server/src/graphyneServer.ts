@@ -13,16 +13,25 @@ import parseUrl from '@polka/url';
 import { HandlerConfig, ExpectedRequest } from './types';
 
 export class GraphyneServer extends GraphyneCore {
-  constructor(options: Config) {
+  private onRequest: HandlerConfig['onRequest'];
+  private onNoMatch: HandlerConfig['onNoMatch'];
+  private onResponse: HandlerConfig['onResponse'];
+
+  constructor(options: Config & HandlerConfig) {
     super(options);
+    this.onRequest = options.onRequest;
+    this.onNoMatch = options.onNoMatch;
+    this.onResponse = options.onResponse;
   }
 
-  createHandler(options: HandlerConfig = {}): RequestListener | any {
-    const path = options.path || '/graphql';
-    const playgroundPath = options.playground
-      ? (typeof options.playground === 'object' && options.playground.path) ||
+  createHandler(): RequestListener | any {
+    const path = this.options.path || '/graphql';
+    const playgroundPath = this.options.playground
+      ? (typeof this.options.playground === 'object' &&
+          this.options.playground.path) ||
         '/playground'
       : null;
+
     const that = this;
     const contextFn = (typeof this.options.context === 'function'
       ? this.options.context
@@ -59,8 +68,8 @@ export class GraphyneServer extends GraphyneCore {
           );
           break;
         default:
-          options.onNoMatch
-            ? options.onNoMatch(...args)
+          that.onNoMatch
+            ? that.onNoMatch(...args)
             : sendResponse(
                 { body: 'not found', status: 404, headers: {} },
                 args
@@ -92,8 +101,8 @@ export class GraphyneServer extends GraphyneCore {
     }
 
     function sendResponse(result: QueryResponse, args: TArgs) {
-      options.onResponse
-        ? options.onResponse(result, ...args)
+      that.onResponse
+        ? that.onResponse(result, ...args)
         : (args[1] as ServerResponse)
             .writeHead(result.status, result.headers)
             .end(result.body);
@@ -111,8 +120,8 @@ export class GraphyneServer extends GraphyneCore {
     }
 
     return (...args: TArgs) =>
-      options.onRequest
-        ? options.onRequest(args, (req) => onRequestResolve(req, args))
+      this.onRequest
+        ? this.onRequest(args, (req) => onRequestResolve(req, args))
         : onRequestResolve(args[0], args);
   }
 }

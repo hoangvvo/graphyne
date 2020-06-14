@@ -8,15 +8,6 @@ import {
   QueryRequest,
 } from 'graphyne-core';
 
-interface HandlerConfig {
-  path?: string;
-  playground?:
-    | boolean
-    | {
-        path: string;
-      };
-}
-
 export class GraphyneWorker extends GraphyneCore {
   constructor(options: Config) {
     super(options);
@@ -79,11 +70,12 @@ export class GraphyneWorker extends GraphyneCore {
     });
   }
 
-  createHandler(options: HandlerConfig = {}): (event: FetchEvent) => void {
+  createHandler(): (event: FetchEvent) => void {
     return (event) => {
-      const path = options.path || '/graphql';
-      const playgroundPath = options?.playground
-        ? (typeof options.playground === 'object' && options.playground.path) ||
+      const path = this.options.path || '/graphql';
+      const playgroundPath = this.options?.playground
+        ? (typeof this.options.playground === 'object' &&
+            this.options.playground.path) ||
           '/playground'
         : null;
       const url = new URL(event.request.url);
