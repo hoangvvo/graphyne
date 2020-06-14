@@ -28,7 +28,7 @@ function createGQLServer({
   return createServer(graphyne.createHandler());
 }
 
-const schemaHello = makeExecutableSchema({
+const schema = makeExecutableSchema({
   typeDefs: `
     type Query {
       hello: String
@@ -47,7 +47,7 @@ describe('createHandler', () => {
   describe('maps request using onRequest', () => {
     it('with IncomingMessage', async () => {
       const graphyne = new GraphyneServer({
-        schema: schemaHello,
+        schema,
         onRequest: ([ctx], done) => done(ctx.req),
         onResponse: ({ status, body, headers }, ctx) =>
           ctx.res.writeHead(status, headers).end(body),
@@ -64,7 +64,7 @@ describe('createHandler', () => {
     });
     it('with constructed request object', async () => {
       const graphyne = new GraphyneServer({
-        schema: schemaHello,
+        schema,
         onRequest: ([request], done) =>
           done({
             url: request.url,
@@ -92,7 +92,7 @@ describe('createHandler', () => {
   describe('renders GraphiQL', () => {
     it('when graphiql is true', async () => {
       const graphyne = new GraphyneServer({
-        schema: schemaHello,
+        schema,
         playground: true,
       });
       const server = createServer(graphyne.createHandler());
@@ -101,7 +101,7 @@ describe('createHandler', () => {
     });
     it('when graphiql.path is set', async () => {
       const graphyne = new GraphyneServer({
-        schema: schemaHello,
+        schema,
         playground: { path: '/___graphql' },
       });
       const server = createServer(graphyne.createHandler());
@@ -110,7 +110,7 @@ describe('createHandler', () => {
     });
     it('with correct graphql endpoint and subscription endpoint', async () => {
       const graphyne = new GraphyneServer({
-        schema: schemaHello,
+        schema,
         playground: true,
         path: '/thegraphqlendpoint',
       });
@@ -130,7 +130,7 @@ describe('createHandler', () => {
   });
   it('allow custom onResponse', async () => {
     const graphyne = new GraphyneServer({
-      schema: schemaHello,
+      schema,
       onResponse: (result, req, res) => {
         res.setHeader('test', 'ok');
         res.end(result.body);
@@ -146,7 +146,7 @@ describe('createHandler', () => {
   describe('when path is not match ', () => {
     it('by default calling `onResponse', async () => {
       const graphyne = new GraphyneServer({
-        schema: schemaHello,
+        schema,
         onResponse: (result, req, res) => {
           res.setHeader('test', 'ok');
           res.writeHead(result.status, result.headers).end(result.body);
@@ -161,7 +161,7 @@ describe('createHandler', () => {
     });
     it('renders custom behavior in onNoMatch', async () => {
       const graphyne = new GraphyneServer({
-        schema: schemaHello,
+        schema,
         onNoMatch: (req, res) => res.end('found'),
       });
       const server = createServer(graphyne.createHandler());
@@ -170,7 +170,7 @@ describe('createHandler', () => {
   });
   it('returns 400 on body parsing error', async () => {
     const graphyne = new GraphyneServer({
-      schema: schemaHello,
+      schema,
     });
     const server = createServer(graphyne.createHandler());
     await request(server)
@@ -184,7 +184,7 @@ describe('createHandler', () => {
 describe('HTTP handler', () => {
   it('catches error thrown in context function', async () => {
     const server = createGQLServer({
-      schema: schemaHello,
+      schema,
       context: async () => {
         throw new Error('uh oh');
       },
@@ -195,7 +195,7 @@ describe('HTTP handler', () => {
       .expect('{"errors":[{"message":"Context creation failed: uh oh"}]}');
     // Non promise function
     const server2 = createGQLServer({
-      schema: schemaHello,
+      schema,
       context: () => {
         throw new Error('uh oh');
       },
@@ -208,7 +208,7 @@ describe('HTTP handler', () => {
   describe('resolves options.context that is', () => {
     it('an object', async () => {
       const server = createGQLServer({
-        schema: schemaHello,
+        schema,
         context: { me: 'hoang' },
       });
       await request(server)
@@ -218,7 +218,7 @@ describe('HTTP handler', () => {
     });
     it('a function', async () => {
       const server = createGQLServer({
-        schema: schemaHello,
+        schema,
         context: async () => ({ me: 'hoang' }),
       });
       await request(server)
@@ -227,4 +227,8 @@ describe('HTTP handler', () => {
         .expect('{"data":{"helloMe":"hoang"}}');
     });
   });
+});
+
+describe('deprecated createHandler(options)', () => {
+  assert.throws(() => new GraphyneServer({ schema }).createHandler({}));
 });

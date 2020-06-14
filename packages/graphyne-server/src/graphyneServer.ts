@@ -24,7 +24,13 @@ export class GraphyneServer extends GraphyneCore {
     this.onResponse = options.onResponse;
   }
 
-  createHandler(): RequestListener | any {
+  createHandler(depreOptions?: HandlerConfig): RequestListener | any {
+    if (depreOptions) {
+      throw new Error(
+        'Adding options to createHandler is deprecated. Please merge them into options in new GraphyneServer(options).'
+      );
+    }
+
     const path = this.options.path || '/graphql';
     const playgroundPath = this.options.playground
       ? (typeof this.options.playground === 'object' &&

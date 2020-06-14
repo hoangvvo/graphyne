@@ -233,3 +233,7 @@ describe('handleRequest', () => {
     assert.strictEqual(await response.text(), `{"data":{"hello":"world"}}`);
   });
 });
+
+describe('deprecated createHandler(options)', () => {
+  assert.throws(() => new GraphyneWorker({ schema }).createHandler({}));
+});

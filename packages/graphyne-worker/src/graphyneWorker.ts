@@ -70,14 +70,21 @@ export class GraphyneWorker extends GraphyneCore {
     });
   }
 
-  createHandler(): (event: FetchEvent) => void {
+  createHandler(depreOptions?: any): (event: FetchEvent) => void {
+    if (depreOptions) {
+      throw new Error(
+        'Adding options to createHandler is deprecated. Please merge them into options in new GraphyneWorker(options).'
+      );
+    }
+
+    const path = this.options.path || '/graphql';
+    const playgroundPath = this.options?.playground
+      ? (typeof this.options.playground === 'object' &&
+          this.options.playground.path) ||
+        '/playground'
+      : null;
+
     return (event) => {
-      const path = this.options.path || '/graphql';
-      const playgroundPath = this.options?.playground
-        ? (typeof this.options.playground === 'object' &&
-            this.options.playground.path) ||
-          '/playground'
-        : null;
       const url = new URL(event.request.url);
       switch (url.pathname) {
         case path:
