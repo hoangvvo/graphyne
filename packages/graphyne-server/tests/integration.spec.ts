@@ -29,18 +29,16 @@ function testSupertest(app) {
 }
 
 describe('Integrations', () => {
-  describe('express', () => {
+  it('express', () => {
     const app = require('express')();
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
     });
     app.all('/graphql', graphyne.createHandler());
-    it('executes graphql', () => {
-      return testSupertest(app);
-    });
+    return testSupertest(app);
   });
-  describe('micro', () => {
+  it('micro', () => {
     const micro = require('micro');
     const graphyne = new GraphyneServer({
       schema,
@@ -51,11 +49,9 @@ describe('Integrations', () => {
       },
     });
     const server = micro(graphyne.createHandler());
-    it('executes graphql', () => {
-      return testSupertest(server);
-    });
+    return testSupertest(server);
   });
-  describe('fastify', () => {
+  it('fastify', (done) => {
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
@@ -70,21 +66,19 @@ describe('Integrations', () => {
       },
     });
     fastify.post('/graphql', graphyne.createHandler());
-    it('executes graphql', (done) => {
-      fastify.inject(
-        {
-          url: '/graphql',
-          payload: { query: '{hello}' },
-          method: 'POST',
-        },
-        (err, res) => {
-          assert.strictEqual(res.payload, `{"data":{"hello":"Hello world!"}}`);
-          done();
-        }
-      );
-    });
+    fastify.inject(
+      {
+        url: '/graphql',
+        payload: { query: '{hello}' },
+        method: 'POST',
+      },
+      (err, res) => {
+        assert.strictEqual(res.payload, `{"data":{"hello":"Hello world!"}}`);
+        done();
+      }
+    );
   });
-  describe('aws lambda', () => {
+  it('aws lambda', () => {
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
@@ -121,8 +115,6 @@ describe('Integrations', () => {
       }
       handler(event, {}, callback);
     });
-    it('executes graphql', () => {
-      return testSupertest(server);
-    });
+    return testSupertest(server);
   });
 });
