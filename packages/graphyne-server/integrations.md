@@ -12,6 +12,8 @@ Check out [examples](/examples) for integrations with many others.
 
 [Example](/examples/with-express)
 
+*Work out of the box!*
+
 ```javascript
 const graphyne = new GraphyneServer();
 
@@ -22,33 +24,37 @@ app.all('/graphql', graphyne.createHandler());
 
 [Example](/examples/with-micro)
 
-*`onResponse` is not actually required since `micro` handler function is the same as `Node HTTP Server`.*
+*Work out of the box!*
 
 ```javascript
-const { send } = require('micro');
-
-const graphyne = new GraphyneServer({
-  onResponse: async ({ headers, body, status }, req, res) => {
-    for (const key in headers) {
-      res.setHeader(key, headers[key]);
-    }
-    send(res, status, body);
-  },
-});
+const graphyne = new GraphyneServer();
 
 module.exports = graphyne.createHandler();
 ```
 
 ### [Fastify](https://github.com/fastify/fastify)
 
-**Note:** This is an unofficial integration. For a solution in the ecosystem, check out [fastify-gql](https://github.com/mcollina/fastify-gql).
+**Note:** For a more optimized solution in the ecosystem, check out [fastify-gql](https://github.com/mcollina/fastify-gql).
 
 [Example](/examples/with-fastify)
 
 ```javascript
-const graphyne = new GraphyneServer()
+// Because fastify does not expose HTTP method via `request.method` by default, we need to attach it there since `graphyne-server` needs it.
+fastify.decorateRequest('method', {
+  getter() {
+    return this.raw.method;
+  },
+});
 
-fastify.use(graphyne.createHandler());
+const graphyne = new GraphyneServer({
+  onResponse: ({ status, body, headers }, request, reply) => {
+    reply.code(status);
+    reply.headers(headers);
+    reply.send(body);
+  },
+})
+
+fastify.post('/graphql', graphyne.createHandler());
 ```
 
 ## Runtimes/Environments

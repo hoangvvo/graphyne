@@ -25,7 +25,7 @@ const graphyne = new GraphyneServer({
 
 const app = express();
 
-app.use(graphyne.createHandler());
+app.post('/graphql', graphyne.createHandler());
 
 app.listen(4000);
 console.log('Running a GraphQL API server at http://localhost:4000/graphql');

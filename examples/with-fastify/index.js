@@ -22,10 +22,21 @@ var schema = makeExecutableSchema({
 
 const graphyne = new GraphyneServer({
   schema,
-  context: (req, res) => ({ world: 'world' }),
+  context: (request, reply) => ({ world: 'world' }),
+  onResponse: ({ status, body, headers }, request, reply) => {
+    reply.code(status);
+    reply.headers(headers);
+    reply.send(body);
+  },
 });
 
-fastify.use(graphyne.createHandler());
+fastify.decorateRequest('method', {
+  getter() {
+    return this.raw.method;
+  },
+});
+
+fastify.get('/graphql', graphyne.createHandler());
 
 fastify.listen(3000, (err, address) => {
   if (err) throw err;

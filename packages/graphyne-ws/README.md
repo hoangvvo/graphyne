@@ -69,7 +69,7 @@ Create an instance of `GraphyneWebSocketServer` **and** listen to incoming conne
 The HTTP Server instance is returned after `app.listen` is called.
 
 ```javascript
-app.use(graphyne.createHandler());
+app.post('/graphql', graphyne.createHandler());
 
 const server = app.listen(PORT);
 
