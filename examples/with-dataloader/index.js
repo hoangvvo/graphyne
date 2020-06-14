@@ -47,10 +47,6 @@ const graphyne = new GraphyneServer({
     // other contexts
     loaders: createLoaders(),
   }),
-  path: '/graphql',
-  playground: {
-    path: '/playground',
-  },
 });
 
 const server = http.createServer(graphyne.createHandler());

@@ -13,12 +13,6 @@ export interface Config {
   context?: TContext | ((...args: any[]) => TContext | Promise<TContext>);
   rootValue?: ((parsedQuery: DocumentNode) => any) | any;
   formatError?: (error: GraphQLError) => GraphQLFormattedError;
-  path?: string;
-  playground?:
-    | boolean
-    | {
-        path: string;
-      };
 }
 
 export interface QueryBody {

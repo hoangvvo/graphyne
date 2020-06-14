@@ -180,49 +180,6 @@ describe('Event handler', () => {
       setTimeout(done, 30);
     });
   });
-
-  describe('renders GraphiQL', () => {
-    it('not by default', (done) => {
-      const graphyne = new GraphyneWorker({ schema });
-      const fetchEvent = {
-        respondWith: (promise: Promise<Response>) => {
-          throw new Error('Should not call this');
-        },
-        request: new fetch.Request('http://localhost:0/playground'),
-      };
-      graphyne.createHandler()(fetchEvent);
-      done();
-    });
-    it('when graphiql is true', (done) => {
-      const graphyne = new GraphyneWorker({ schema, playground: true });
-      const fetchEvent = {
-        respondWith: (promise: Promise<Response>) => {
-          promise
-            .then((response) => response.text())
-            .then((text) => assert(text.includes('GraphQL Playground')))
-            .then(done);
-        },
-        request: new fetch.Request('http://localhost:0/playground'),
-      };
-      graphyne.createHandler()(fetchEvent);
-    });
-    it('when graphiql.path is set', (done) => {
-      const graphyne = new GraphyneWorker({
-        schema,
-        playground: { path: '/___graphql' },
-      });
-      const fetchEvent = {
-        respondWith: (promise: Promise<Response>) => {
-          promise
-            .then((response) => response.text())
-            .then((text) => assert(text.includes('GraphQL Playground')))
-            .then(done);
-        },
-        request: new fetch.Request('http://localhost:0/___graphql'),
-      };
-      graphyne.createHandler()(fetchEvent);
-    });
-  });
 });
 
 describe('handleRequest', () => {

@@ -3,7 +3,6 @@ import {
   GraphyneCore,
   Config,
   QueryResponse,
-  renderPlayground,
   TContext,
   QueryRequest,
   getGraphQLParams,
@@ -14,13 +13,11 @@ import { HandlerConfig, ExpectedRequest } from './types';
 
 export class GraphyneServer extends GraphyneCore {
   private onRequest: HandlerConfig['onRequest'];
-  private onNoMatch: HandlerConfig['onNoMatch'];
   private onResponse: HandlerConfig['onResponse'];
 
   constructor(options: Config & HandlerConfig) {
     super(options);
     this.onRequest = options.onRequest;
-    this.onNoMatch = options.onNoMatch;
     this.onResponse = options.onResponse;
   }
 
@@ -30,13 +27,6 @@ export class GraphyneServer extends GraphyneCore {
         'Adding options to createHandler is deprecated. Please merge them into options in new GraphyneServer(options).'
       );
     }
-
-    const path = this.options.path || '/graphql';
-    const playgroundPath = this.options.playground
-      ? (typeof this.options.playground === 'object' &&
-          this.options.playground.path) ||
-        '/playground'
-      : null;
 
     const that = this;
     const contextFn = (typeof this.options.context === 'function'
@@ -48,39 +38,15 @@ export class GraphyneServer extends GraphyneCore {
     type TArgs = any[];
 
     function onRequestResolve(request: ExpectedRequest, args: TArgs) {
-      switch (request.path || parseUrl(request, true).pathname) {
-        case path:
-          parseNodeRequest(request, (err, body) => {
-            if (err) return sendError(err, args);
-            const params = getGraphQLParams({
-              queryParams: request.query || parseUrl(request, true).query || {},
-              body,
-            }) as QueryRequest;
-            params.httpMethod = request.method as string;
-            onParamsParsed(params, args);
-          });
-          break;
-        case playgroundPath:
-          sendResponse(
-            {
-              status: 200,
-              body: renderPlayground({
-                endpoint: path,
-                subscriptionEndpoint: that.subscriptionPath,
-              }),
-              headers: { 'content-type': 'text/html; charset=utf-8' },
-            },
-            args
-          );
-          break;
-        default:
-          that.onNoMatch
-            ? that.onNoMatch(...args)
-            : sendResponse(
-                { body: 'not found', status: 404, headers: {} },
-                args
-              );
-      }
+      parseNodeRequest(request, (err, body) => {
+        if (err) return sendError(err, args);
+        const params = getGraphQLParams({
+          queryParams: request.query || parseUrl(request, true).query || {},
+          body,
+        }) as QueryRequest;
+        params.httpMethod = request.method as string;
+        onParamsParsed(params, args);
+      });
     }
 
     function onParamsParsed(params: QueryRequest, args: TArgs) {

@@ -37,7 +37,7 @@ const server = http.createServer(graphyne.createHandler());
 const wss = startSubscriptionServer({
   graphyne: graphyne, // Require an instance of Graphyne Server
   server: server, // Require an instance of HTTP Server
-  path: '/graphql',
+  path: '/graphql', // The ws path to listen to
 });
 
 server.listen(3000, () => {

@@ -13,21 +13,16 @@ Check out [examples](/examples) for integrations with many others.
 [Example](/examples/with-express)
 
 ```javascript
-const graphyne = new GraphyneServer({
-  onNoMatch: (req, res, next) => {
-    // Continue to next handler in middleware chain
-    next();
-  },
-});
+const graphyne = new GraphyneServer();
 
-app.use(graphyne.createHandler());
+app.all('/graphql', graphyne.createHandler());
 ```
 
 ### [Micro](https://github.com/zeit/micro)
 
 [Example](/examples/with-micro)
 
-*`onResponse` and `onNoMatch` are not actually required since `micro` handler function is the same as `Node HTTP Server`.*
+*`onResponse` is not actually required since `micro` handler function is the same as `Node HTTP Server`.*
 
 ```javascript
 const { send } = require('micro');
@@ -38,9 +33,6 @@ const graphyne = new GraphyneServer({
       res.setHeader(key, headers[key]);
     }
     send(res, status, body);
-  },
-  onNoMatch: async (req, res) => {
-    send(res, 404, 'not found');
   },
 });
 
@@ -54,11 +46,7 @@ module.exports = graphyne.createHandler();
 [Example](/examples/with-fastify)
 
 ```javascript
-const graphyne = new GraphyneServer({
-  onNoMatch: (req, res, next) => {
-    next();
-  }
-})
+const graphyne = new GraphyneServer()
 
 fastify.use(graphyne.createHandler());
 ```
@@ -74,7 +62,6 @@ const graphyne = new GraphyneServer({
   onRequest: ([event, context, callback], done) => {
     // Construct a IncomingMessage compatible object
     const request = {
-      path: event.path,
       query: event.queryStringParameters,
       headers: event.headers,
       method: event.httpMethod,

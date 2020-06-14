@@ -21,11 +21,6 @@ var schema = makeExecutableSchema({
 const graphyne = new GraphyneServer({
   schema,
   context: (req, res) => ({ world: 'world' }),
-  path: '/graphql',
-  playground: {
-    path: '/playground',
-  },
-  onNoMatch: (req, res, next) => next(),
 });
 
 const app = express();

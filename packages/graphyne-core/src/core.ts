@@ -20,7 +20,6 @@ export class GraphyneCore {
   private lru: Lru<QueryCache>;
   public schema: GraphQLSchema;
   protected options: Config;
-  public subscriptionPath: string = '/';
 
   formatErrorFn: (error: GraphQLError) => GraphQLFormattedError;
 
