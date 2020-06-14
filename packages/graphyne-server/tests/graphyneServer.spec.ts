@@ -164,6 +164,25 @@ describe('HTTP handler', () => {
         .expect('{"data":{"helloMe":"hoang"}}');
     });
   });
+  describe('explicitly run on specific path if options.path is set', () => {
+    const graphyne = new GraphyneServer({
+      schema,
+      path: '/api',
+    });
+    it('by checking against req.url', async () => {
+      const server = createServer(graphyne.createHandler());
+      await request(server).get('/api?query={hello}').expect(200);
+      await request(server).get('/graphql?query={hello}').expect(404);
+    });
+    it('by checking against req.path when available', async () => {
+      const server = createServer((req, res) => {
+        (req as any).path = req.url.substring(0, req.url.indexOf('?'));
+        graphyne.createHandler()(req, res);
+      });
+      await request(server).get('/api?query={hello}').expect(200);
+      await request(server).get('/graphql?query={hello}').expect(404);
+    });
+  });
   it('warns if method is not detected', async () => {
     // Mock console.warn
     const log = sinon.spy(console, 'warn');

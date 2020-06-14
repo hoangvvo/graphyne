@@ -12,6 +12,7 @@ export interface HandlerConfig {
 export type ExpectedRequest = {
   query?: Record<string, string>;
   body?: any;
+  path?: string;
 } & (
   | IncomingMessage
   | {

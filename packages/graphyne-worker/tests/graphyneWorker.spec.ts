@@ -166,6 +166,14 @@ describe('Event handler', () => {
         { status: 200, body: `{"data":{"hello":"world"}}` }
       );
     });
+    it('on custom path', async () => {
+      await testRequest(
+        '/api?query={ hello }',
+        {},
+        { status: 200, body: `{"data":{"hello":"world"}}` },
+        { path: '/api' }
+      );
+    });
     it('pass through if not GraphQL path', (done) => {
       testRequest('/myApi', {}, null);
       // responseWith will not call

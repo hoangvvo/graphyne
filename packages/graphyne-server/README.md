@@ -30,11 +30,12 @@ const http = require("http");
 const { GraphyneServer } = require("graphyne-server");
 
 const graphyne = new GraphyneServer(options);
+// Define `options.path` if you want GraphQL to run on specific path only (such as `/graphql`)
 
 const server = http.createServer(graphyne.createHandler());
 
 server.listen(3000, () => {
-  console.log(`🚀  Server ready at http://localhost:3000/graphql`);
+  console.log(`🚀  Server ready at :3000`);
 });
 ```
 
@@ -52,6 +53,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | context | An object or function called to creates a context shared across resolvers per request. The function signature is the same to the framework's [handler function](#framework-specific-integration). | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
+| path | Specify a path for the GraphQL endpoint, and `graphyne-server` will response with `404` elsewhere. By default, it runs on every path. | `undefined` (run on all paths) |
 | onRequest | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `([req, res], done) => done(req)` |
 | onResponse | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `(result, req, res) => res.writeHead(result.status, result.headers).end(result.body)` |
 
@@ -90,10 +92,11 @@ In such cases, you must create an object with the following properties:
 
 ...with the additions of:
 
-- `url`: The full url of the request (path + query strings) so `graphyne-server` can parse the `query` itself.
+- `url`: The url of the request (path + query strings) so `graphyne-server` can parse `path` and `query` itself.
 
 or supply it directly with:
 
+- `path`: The path of the request (before query strings).
 - `query`: The key-value object of the query strings.
 
 ### `onResponse(result, ...args)`

@@ -68,6 +68,7 @@ const graphyne = new GraphyneServer({
   onRequest: ([event, context, callback], done) => {
     // Construct a IncomingMessage compatible object
     const request = {
+      path: event.path,
       query: event.queryStringParameters,
       headers: event.headers,
       method: event.httpMethod,
