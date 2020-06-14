@@ -27,7 +27,7 @@ app.use(graphyne.createHandler());
 
 [Example](/examples/with-micro)
 
-*This is not actually required since `micro` function signature is the same as `Node HTTP Server`. `module.exports = graphyne.createHandler()` would work.*
+*`onResponse` and `onNoMatch` are not actually required since `micro` handler function is the same as `Node HTTP Server`.*
 
 ```javascript
 const { send } = require('micro');

@@ -51,7 +51,7 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 | options | description | default |
 |---------|-------------|---------|
 | schema | A `GraphQLSchema` instance. It can be created using `makeExecutableSchema` from [graphql-tools](https://github.com/apollographql/graphql-tools). | (required) |
-| context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [signature function](#framework-specific-integration). | `{}` |
+| context | An object or function called to creates a context shared across resolvers per request. The function accepts the framework's [handler function](#framework-specific-integration). | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
 | path | Specify a path for the GraphQL endpoint. | `/graphql` |
@@ -68,20 +68,20 @@ You must define `onRequest`, `onResponse`, and `onNoMatch` earlier for this to w
 
 ## Framework-specific integration
 
-**Signature function** refers to framework/runtimes-specific's handler function. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
+**Handler function** refers to framework/runtimes-specific handler of incoming request. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
 
-By default, `graphyne-server` expects the `Node HTTP Server` listener signature of `(req, res)`. However, as seen above, frameworks like Hapi or Koa do not follow the convention. In such cases, `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `new GraphyneServer`.
+By default, `graphyne-server` expects the `Node HTTP Server` listener/handler function of `(req, res)`. However, as seen above, frameworks/runtimes like Hapi or AWS Lambda do not follow the convention. In such cases, `onRequest`, `onResponse`, and `onNoMatch` must be defined when calling `new GraphyneServer`.
 
 See the [Integration examples](#integration-examples) section below to learn how `onRequest`, `onResponse`, and `onNoMatch` is used.
 
 ### `onRequest(args, done)`
 
-This is the function to resolve frameworks with handler functions differing to `(req, res)`. It will be called with `args`, an array of *arguments* from a framework's signature function, and a callback function `done` to be called with one of the two:
+This is the function to resolve frameworks with handler functions differing to `(req, res)`. It will be called with `args`, an array of *arguments* from a framework's handler function, and a callback function `done` to be called with one of the two:
 
 - `req`: `IncomingMessage` from Node.js
 - A compatible request object (See section below)
 
-By default, `onRequest` assumes `request` is the fist argument of the signature function. In Node.js HTTP Server, `args` is `[req, res]`, and `onRequest` defaults to `([req, res], done) => done(req))`.
+By default, `onRequest` assumes `request` is the fist argument of the handler function. In Node.js HTTP Server, `args` is `[req, res]`, and `onRequest` defaults to `([req, res], done) => done(req))`.
 
 #### Compatible request object
 
@@ -104,13 +104,13 @@ and/or:
 
 ### `onResponse(result, ...args)`
 
-This is the function called to send back the HTTP response. It will be called with `args`, spreaded arguments of the framework signature function, and `result`, an object of:
+This is the function called to send back the HTTP response. It will be called with `args`, spreaded arguments of the framework handler function, and `result`, an object of:
 
 - `status` (the status code that should be set)
 - `headers` (the headers that should be set)
 - `body` (the **stringified** response body).
 
-By default, `onResponse` assumes `response` is the second argument of the signature function. In Node.js HTTP Server, `...args` is `req, res`, and `onResponse` defaults to `(result, req, res) => res.writeHead(result.status, result.headers).end(result.body)`.
+By default, `onResponse` assumes `response` is the second argument of the handler function. In Node.js HTTP Server, `...args` is `req, res`, and `onResponse` defaults to `(result, req, res) => res.writeHead(result.status, result.headers).end(result.body)`.
 
 ### `onNoMatch(result, ...args)`
 
