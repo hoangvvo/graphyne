@@ -23,14 +23,17 @@ export function getGraphQLParams({
   queryParams,
   body,
 }: {
-  queryParams: Record<string, string | null | undefined>;
+  queryParams: Record<string, string | string[] | null | undefined>;
   body: QueryBody | null;
 }): Partial<QueryRequest> {
   return {
-    query: body?.query || queryParams.query,
+    query: (body?.query || queryParams.query) as string | undefined | null,
     variables:
       body?.variables ||
-      (queryParams.variables && JSON.parse(queryParams.variables)),
-    operationName: body?.operationName || queryParams.operationName,
+      (queryParams.variables && JSON.parse(queryParams.variables as string)),
+    operationName: (body?.operationName || queryParams.operationName) as
+      | string
+      | undefined
+      | null,
   };
 }

@@ -9,7 +9,7 @@ export interface HandlerConfig {
 }
 
 type CompatibleRequest = {
-  query?: Record<string, string>;
+  query?: Record<string, string | string[]>;
   body?: any;
   path?: string;
   url?: string;
