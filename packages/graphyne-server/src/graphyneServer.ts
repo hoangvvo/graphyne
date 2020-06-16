@@ -8,9 +8,7 @@ import {
 } from 'graphyne-core';
 import { parseNodeRequest } from './utils';
 import parseUrl from '@polka/url';
-import { HandlerConfig, ExpectedRequest } from './types';
-
-type TArgs = any[];
+import { HandlerConfig, ExpectedRequest, TArgs } from './types';
 
 export class GraphyneServer extends GraphyneCore {
   private onRequest: HandlerConfig['onRequest'];

@@ -28,3 +28,5 @@ export type ExpectedRequest =
       on(event: 'end', listener: () => void): any;
       on(event: 'error', listener: (err: Error) => void): any;
     });
+
+export type TArgs = any[];
