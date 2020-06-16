@@ -61,6 +61,22 @@ Constructing a Graphyne GraphQL server. It accepts the following options:
 
 Create a handler for HTTP server.
 
+### `GraphyneServer#graphql({ source, contextValue, variableValues, operationName })`
+
+Execute the GraphQL query by inputting:
+
+- `source` (string): The request query string to be executed.
+- `contextValue` (object): the context value that will get passed to resolve functions.
+- `variablesValues` (object): the variables object that will be used in the executor.
+- `operationName` (string): The operation to be run if `source` contains multiple operations.
+
+The function returns a never-rejected promise of the execution result, which is an object of `data` and `errors`.
+
+**Warning:**
+
+- `errors` is not formatted using `options.formatError`. (A future version may provide a flag to do so)
+- `options.context` does not run here. You need to supply the context object to `contextValue`.
+
 ## Framework-specific integration
 
 **Handler function** refers to framework/runtimes-specific handler of incoming request. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Fastify`, it is [`(request, reply)`](https://www.fastify.io/docs/latest/Routes/). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.

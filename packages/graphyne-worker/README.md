@@ -92,6 +92,22 @@ Instead of using `GraphyneWorker#createHandler`, you can handle a [Request](http
 
 Returns a promise of [`Resposne`](https://developer.mozilla.org/en-US/docs/Web/API/Response)
 
+### `GraphyneWorker#graphql({ source, contextValue, variableValues, operationName })`
+
+Execute the GraphQL query by inputting:
+
+- `source` (string): The request query string to be executed.
+- `contextValue` (object): the context value that will get passed to resolve functions.
+- `variablesValues` (object): the variables object that will be used in the executor.
+- `operationName` (string): The operation to be run if `source` contains multiple operations.
+
+The function returns a never-rejected promise of the execution result, which is an object of `data` and `errors`.
+
+**Warning:**
+
+- `errors` is not formatted using `options.formatError`. (A future version may provide a flag to do so)
+- `options.context` does not run here. You need to supply the context object to `contextValue`.
+
 ## Contributing
 
 Please see my [contributing.md](/CONTRIBUTING.md).
