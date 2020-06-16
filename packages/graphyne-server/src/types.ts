@@ -8,7 +8,7 @@ export interface HandlerConfig {
   onRequest?: (args: any[], done: (req: ExpectedRequest) => void) => void;
 }
 
-export type CompatibleRequest = {
+type CompatibleRequest = {
   query?: Record<string, string>;
   body?: any;
   path?: string;
