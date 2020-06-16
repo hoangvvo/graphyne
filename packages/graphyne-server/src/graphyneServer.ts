@@ -1,4 +1,3 @@
-import { RequestListener, ServerResponse } from 'http';
 import {
   GraphyneCore,
   Config,
@@ -11,6 +10,8 @@ import { parseNodeRequest } from './utils';
 import parseUrl from '@polka/url';
 import { HandlerConfig, ExpectedRequest } from './types';
 
+type TArgs = any[];
+
 export class GraphyneServer extends GraphyneCore {
   private onRequest: HandlerConfig['onRequest'];
   private onResponse: HandlerConfig['onResponse'];
@@ -21,7 +22,7 @@ export class GraphyneServer extends GraphyneCore {
     this.onResponse = options.onResponse;
   }
 
-  createHandler(depreOptions?: HandlerConfig): RequestListener | any {
+  createHandler(depreOptions?: HandlerConfig): (...args: TArgs) => void {
     if (depreOptions) {
       throw new Error(
         'Adding options to createHandler is deprecated. Please merge them into options in new GraphyneServer(options).'
@@ -34,8 +35,6 @@ export class GraphyneServer extends GraphyneCore {
       : () => this.options.context || {}) as (
       ...args: TArgs
     ) => TContext | Promise<TContext>;
-
-    type TArgs = any[];
 
     function onRequestResolve(request: ExpectedRequest, args: TArgs) {
       if (
@@ -86,9 +85,7 @@ export class GraphyneServer extends GraphyneCore {
     function sendResponse(result: QueryResponse, args: TArgs) {
       that.onResponse
         ? that.onResponse(result, ...args)
-        : (args[1] as ServerResponse)
-            .writeHead(result.status, result.headers)
-            .end(result.body);
+        : args[1].writeHead(result.status, result.headers).end(result.body);
     }
 
     function sendError(error: any, args: TArgs) {
