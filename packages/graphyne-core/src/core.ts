@@ -12,7 +12,13 @@ import {
 } from 'graphql';
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
 import lru, { Lru } from 'tiny-lru';
-import { Config, QueryCache, QueryRequest, QueryResponse } from './types';
+import {
+  Config,
+  QueryCache,
+  QueryRequest,
+  QueryResponse,
+  GraphQLArgs,
+} from './types';
 // @ts-ignore
 import flatstr from 'flatstr';
 
@@ -174,5 +180,26 @@ export class GraphyneCore {
           createResponse(200, finished, compiledQuery.stringify)
         )
       : createResponse(200, result, compiledQuery.stringify);
+  }
+
+  public graphql({
+    source,
+    contextValue,
+    variableValues,
+    operationName,
+  }: GraphQLArgs): Promise<ExecutionResult> | ExecutionResult {
+    const { document, compiledQuery } = this.getCompiledQuery(
+      source,
+      operationName
+    );
+    return isCompiledQuery(compiledQuery)
+      ? compiledQuery.query(
+          typeof this.options.rootValue === 'function'
+            ? this.options.rootValue(document)
+            : this.options.rootValue || {},
+          contextValue || {},
+          variableValues
+        )
+      : compiledQuery;
   }
 }

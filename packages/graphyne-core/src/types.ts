@@ -38,3 +38,10 @@ export interface QueryCache {
   document: DocumentNode;
   compiledQuery: CompiledQuery;
 }
+
+export interface GraphQLArgs {
+  source: string;
+  contextValue?: any;
+  variableValues?: Record<string, any> | null;
+  operationName?: string | null;
+}

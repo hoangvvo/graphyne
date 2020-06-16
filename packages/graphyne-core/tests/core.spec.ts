@@ -1,7 +1,13 @@
 import { makeExecutableSchema } from 'graphql-tools';
-import { GraphQLSchema } from 'graphql';
+import { GraphQLSchema, ExecutionResult, GraphQLError } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
-import { GraphyneCore, Config, QueryBody, QueryCache } from '../src';
+import {
+  GraphyneCore,
+  Config,
+  QueryBody,
+  QueryCache,
+  GraphQLArgs,
+} from '../src';
 import { Lru } from 'tiny-lru';
 
 const schema = makeExecutableSchema({
@@ -63,7 +69,7 @@ describe('graphyne-core', () => {
 });
 
 describe('HTTP Operations', () => {
-  type ExpectedBodyFn = (str: string) => boolean;
+  type ExpectedBodyFn = (str: string) => void;
 
   function testHttp(
     queryRequest: QueryBody & {
@@ -87,8 +93,7 @@ describe('HTTP Operations', () => {
       }).runHttpQuery(queryRequest, (result) => {
         if (typeof expected.body === 'function') {
           // check using custom function
-          if (!expected.body(result.body))
-            throw new Error('actual body does not match body check function');
+          expected.body(result.body);
           // already check body, no longer need
           delete expected.body;
           delete result.body;
@@ -240,7 +245,6 @@ describe('HTTP Operations', () => {
               err2.message,
               `Cannot query field "hola" on type "Query".`
             );
-            return true;
           },
         }
       );
@@ -258,7 +262,6 @@ describe('HTTP Operations', () => {
               err.message,
               `Field "hello" argument "who" of type "String!" is required, but it was not provided.`
             );
-            return true;
           },
         }
       );
@@ -279,7 +282,6 @@ describe('HTTP Operations', () => {
               err.message,
               `Variable "$who" got invalid value 12; Expected type String; String cannot represent a non string value: 12`
             );
-            return true;
           },
         }
       );
@@ -297,7 +299,6 @@ describe('HTTP Operations', () => {
               err.message,
               `Syntax Error: Expected Name, found <EOF>.`
             );
-            return true;
           },
         }
       );
@@ -312,7 +313,6 @@ describe('HTTP Operations', () => {
             errors: [err],
           } = JSON.parse(str);
           assert.deepStrictEqual(err.message, 'im thrown');
-          return true;
         },
       }
     );
@@ -326,7 +326,6 @@ describe('HTTP Operations', () => {
             errors: [err],
           } = JSON.parse(str);
           assert.deepStrictEqual(err.message, 'im thrown');
-          return true;
         },
       }
     );
@@ -343,7 +342,6 @@ describe('HTTP Operations', () => {
             assert.deepStrictEqual(err.message, 'oh no');
             // formatError will filter trivial prop
             assert.deepStrictEqual(err.systemSecret, undefined);
-            return true;
           },
         }
       );
@@ -357,7 +355,6 @@ describe('HTTP Operations', () => {
               errors: [err],
             } = JSON.parse(str);
             assert.deepStrictEqual(err.message, 'Internal server error');
-            return true;
           },
         },
         {
@@ -426,5 +423,154 @@ describe('HTTP Operations', () => {
       );
     });
     assert(lru.has('{ watt }') !== true);
+  });
+});
+
+describe('graphql()', () => {
+  type ExpectedResultFn = (res: ExecutionResult) => void;
+  async function testGQL(
+    args: GraphQLArgs,
+    expected: ExecutionResult | ExpectedResultFn,
+    options?: Partial<Config>
+  ) {
+    const result = await new GraphyneCore({
+      schema,
+      ...options,
+    }).graphql(args);
+    if (typeof expected === 'function') return expected(result);
+    return deepStrictEqual(result, expected);
+  }
+  it('allows simple execution', () => {
+    return testGQL(
+      { source: 'query { helloWorld }' },
+      { data: { helloWorld: 'world' } }
+    );
+  });
+  it('allows execution with variables', () => {
+    return testGQL(
+      {
+        source: 'query helloWho($who: String!) { hello(who: $who) }',
+        variableValues: { who: 'John' },
+      },
+      { data: { hello: 'John' } }
+    );
+  });
+  it('errors when missing operation name', () => {
+    return testGQL(
+      {
+        source: `query helloJohn { hello(who: "John") }
+        query helloJane { hello(who: "Jane") }
+        `,
+      },
+      {
+        errors: [
+          new GraphQLError(
+            'Must provide operation name if query contains multiple operations.'
+          ),
+        ],
+      }
+    );
+  });
+  it('allows request with operation name', () => {
+    return testGQL(
+      {
+        source: `query helloJohn { hello(who: "John") }
+      query helloJane { hello(who: "Jane") }
+      `,
+        operationName: 'helloJane',
+      },
+      {
+        data: { hello: 'Jane' },
+      }
+    );
+  });
+  it('allows context value', () => {
+    return testGQL(
+      {
+        source: `{ helloContext }`,
+        contextValue: {
+          robot: 'R2-D2',
+        },
+      },
+      {
+        data: {
+          helloContext: 'Hello R2-D2',
+        },
+      }
+    );
+  });
+  describe('allows options.rootValue', () => {
+    const rootValue = {
+      name: 'Luke',
+    };
+    // FIXME: need better test
+    it('as an object', () => {
+      return testGQL(
+        { source: 'query { helloRoot }' },
+        { data: { helloRoot: 'Luke' } },
+        { rootValue }
+      );
+    });
+    it('as a function', () => {
+      return testGQL(
+        { source: 'query { helloRoot }' },
+        { data: { helloRoot: 'Luke' } },
+        { rootValue: () => rootValue }
+      );
+    });
+  });
+  describe('errors on validation errors', () => {
+    it('when there are unknown fields', () => {
+      return testGQL({ source: `query { xinchao, hola, hello }` }, (res) => {
+        const { errors: [err1, err2] = [] } = res;
+        assert.deepStrictEqual(
+          err1.message,
+          `Cannot query field "xinchao" on type "Query".`
+        );
+        assert.deepStrictEqual(
+          err2.message,
+          `Cannot query field "hola" on type "Query".`
+        );
+      });
+    });
+    it('when missing required arguments', () => {
+      return testGQL({ source: `query { hello }` }, (res) => {
+        const { errors: [err] = [] } = res;
+        assert.deepStrictEqual(
+          err.message,
+          `Field "hello" argument "who" of type "String!" is required, but it was not provided.`
+        );
+      });
+    });
+    it('when arguments have incorrect types', async () => {
+      return testGQL(
+        {
+          source: 'query helloWho($who: String!) { hello(who: $who) }',
+          variableValues: { who: 12 },
+        },
+        (res) => {
+          const { errors: [err] = [] } = res;
+          assert.deepStrictEqual(
+            err.message,
+            `Variable "$who" got invalid value 12; Expected type String; String cannot represent a non string value: 12`
+          );
+        }
+      );
+    });
+    it('when query is malformed', () => {
+      return testGQL({ source: 'query { helloWorld ' }, (res) => {
+        const { errors: [err] = [] } = res;
+        assert.deepStrictEqual(
+          err.message,
+          `Syntax Error: Expected Name, found <EOF>.`
+        );
+      });
+    });
+  });
+  it('catches error in resolver function', () => {
+    return testGQL({ source: 'query { asyncThrowMe }' }, (res) => {
+      const { errors: [err] = [] } = res;
+      assert.deepStrictEqual(err.message, 'im thrown');
+    });
   });
 });
