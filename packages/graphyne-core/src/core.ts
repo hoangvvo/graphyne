@@ -182,12 +182,12 @@ export class GraphyneCore {
       : createResponse(200, result, compiledQuery.stringify);
   }
 
-  public async graphql({
+  public graphql({
     source,
     contextValue,
     variableValues,
     operationName,
-  }: GraphQLArgs): Promise<ExecutionResult> {
+  }: GraphQLArgs): Promise<ExecutionResult> | ExecutionResult {
     const { document, compiledQuery } = this.getCompiledQuery(
       source,
       operationName
