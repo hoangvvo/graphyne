@@ -63,7 +63,7 @@ Create a handler for HTTP server.
 
 ### `GraphyneServer#graphql({ source, contextValue, variableValues, operationName })`
 
-Execute the GraphQL query by inputting:
+Execute the GraphQL query with:
 
 - `source` (string): The request query string to be executed.
 - `contextValue` (object): the context value that will get passed to resolve functions.

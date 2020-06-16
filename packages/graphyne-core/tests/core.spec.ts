@@ -426,7 +426,7 @@ describe('HTTP Operations', () => {
   });
 });
 
-describe('graphql', () => {
+describe('graphql()', () => {
   type ExpectedResultFn = (res: ExecutionResult) => void;
   async function testGQL(
     args: GraphQLArgs,

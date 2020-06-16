@@ -94,7 +94,7 @@ Returns a promise of [`Resposne`](https://developer.mozilla.org/en-US/docs/Web/A
 
 ### `GraphyneWorker#graphql({ source, contextValue, variableValues, operationName })`
 
-Execute the GraphQL query by inputting:
+Execute the GraphQL query with:
 
 - `source` (string): The request query string to be executed.
 - `contextValue` (object): the context value that will get passed to resolve functions.
