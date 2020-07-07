@@ -152,32 +152,23 @@ export class GraphyneWebSocketConnection extends EventEmitter {
       });
     }
 
-    const {
-      document,
-      operation,
-      compiledQuery,
-    } = this.graphyne.getCompiledQuery(query);
-
-    if (!isCompiledQuery(compiledQuery)) {
-      this.sendMessage(GQL_ERROR, data.id, compiledQuery);
-      this.handleGQLStop(data.id);
-      return;
-    }
-
-    if (operation !== 'subscription') {
-      return this.sendMessage(GQL_ERROR, data.id, {
-        errors: [new GraphQLError('Not a subscription operation')],
-      });
-    }
-
     const context = (await this.contextPromise) || {};
 
-    const executionResult = await this.graphyne.subscribe({
-      source: query,
-      contextValue: context,
-      variableValues: variables,
-      operationName,
-    });
+    const executionResult = await this.graphyne
+      .subscribe({
+        source: query,
+        contextValue: context,
+        variableValues: variables,
+        operationName,
+      })
+      .catch((errorOrResult: Error | ExecutionResult) => {
+        if ('errors' in errorOrResult || 'data' in errorOrResult) {
+          this.sendMessage(GQL_ERROR, data.id, errorOrResult);
+        }
+        return null;
+      });
+
+    if (!executionResult) return this.handleGQLStop(data.id);
 
     const executionIterable = isAsyncIterable(executionResult)
       ? (executionResult as AsyncIterator<ExecutionResult>)

@@ -227,11 +227,13 @@ export class GraphyneCore {
     variableValues,
     operationName,
   }: GraphQLArgs): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
-    const { document, compiledQuery } = this.getCompiledQuery(
+    const { document, compiledQuery, operation } = this.getCompiledQuery(
       source,
       operationName
     );
-    if (!isCompiledQuery(compiledQuery)) return compiledQuery;
+    if (!isCompiledQuery(compiledQuery)) throw compiledQuery;
+    if (operation !== 'subscription')
+      throw { errors: [new GraphQLError('Not a subscription operation')] };
     const resultOrStream = await createSourceEventStream(
       this.schema,
       document as DocumentNode,
