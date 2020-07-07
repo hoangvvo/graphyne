@@ -17,6 +17,7 @@ const pubsub = new PubSub();
 const typeDefs = `
   type Notification {
     message: String
+    dummy: String
   }
 
   type Query {
@@ -49,6 +50,9 @@ const resolvers = {
     notificationAdded: {
       subscribe: () => pubsub.asyncIterator('NOTIFICATION_ADDED'),
     },
+  },
+  Notification: {
+    dummy: ({ message }) => message,
   },
 };
 
@@ -112,6 +116,7 @@ describe('graphyne-ws', () => {
           subscription {
             notificationAdded {
               message
+              dummy
             }
           }
         `,
@@ -142,7 +147,7 @@ describe('graphyne-ws', () => {
           resolve(
             assert.deepStrictEqual(
               chunk,
-              `{"type":"data","id":1,"payload":{"data":{"notificationAdded":{"message":"Hello World"}}}}`
+              `{"type":"data","id":1,"payload":{"data":{"notificationAdded":{"message":"Hello World","dummy":"Hello World"}}}}`
             )
           );
         }
