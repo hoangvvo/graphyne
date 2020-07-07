@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
-Lightning-fast GraphQL Server for any JavaScript frameworks or severless environments. A package of [Graphyne](/).
+Lightning-fast GraphQL Server for any JavaScript frameworks or severless environments. A package of [Graphyne](https://github.com/hoangvvo/graphyne).
 
 ## Install
 
@@ -15,12 +15,6 @@ Install `Graphyne Server` and `graphql` dependencies using:
 npm i graphyne-server graphql
 // or
 yarn add graphyne-server graphql
-```
-
-If you use `deno`, pull this package from [Pika](https://www.pika.dev/npm/graphyne-server).
-
-```javascript
-import { GraphyneServer } from "https://cdn.pika.dev/graphyne-server";
 ```
 
 ## Usage (with bare Node HTTP Server)
@@ -39,7 +33,7 @@ server.listen(3000, () => {
 });
 ```
 
-If you do not use Node HTTP Server (which is likely), you must define `options.onRequest` and `options.onResponse`. See [framework-specific integration](#framework-specific-integration). Some frameworks are supported out of the box.
+If you do not use Node HTTP Server (which is likely), you must define `options.onRequest` and `options.onResponse`. See [framework-specific integration](#framework-specific-integration). Some frameworks such as `express` and `micro` are supported out of the box.
 
 ## API
 
@@ -82,7 +76,7 @@ The function returns a never-rejected promise of the execution result, which is 
 
 By default, `graphyne-server` expects the `Node HTTP Server` listener/handler function of `(req, res)`. However, as seen above, frameworks/runtimes like Hapi or AWS Lambda do not follow the convention. In such cases, `onRequest` and `onResponse` must be defined when calling `new GraphyneServer`.
 
-See the [Integration examples](#integration-examples) section below to learn how `onRequest` and `onResponse` are used.
+See [integrations.md](./integrations.md) to learn how `onRequest` and `onResponse` are used.
 
 ### `onRequest(args, done)`
 
@@ -95,7 +89,7 @@ By default, `onRequest` assumes `request` is the fist argument of the handler fu
 
 #### Compatible request object
 
-Sometimes, `IncomingMessage` is not available, when used in a non-Node.js environments like [AWS](https://docs.aws.amazon.com/lambda/latest/dg/lambda-services.html) or [Deno](https://deno.land/), or when the framework does not expose it.
+Sometimes, `IncomingMessage` is not available, when used in a non-Node.js environments like [AWS](https://docs.aws.amazon.com/lambda/latest/dg/lambda-services.html) or when the framework does not expose it.
 
 In such cases, you must create an object with the following properties:
 
@@ -124,7 +118,7 @@ By default, `onResponse` assumes `response` is the second argument of the handle
 
 ### Integration examples
 
-See [integrations.md](integrations.md).
+See [integrations.md](./integrations.md).
 
 ## Additional features
 

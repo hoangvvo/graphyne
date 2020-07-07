@@ -7,7 +7,7 @@
 
 The core module used by other packages such as [Graphyne Server](https://www.npmjs.com/package/graphyne-server). This is not meant to be used directly but can be used to implement new module that makes use of `graphyne-core`.
 
-Graphyne is a **lightning-fast** JavaScript GraphQL Server. Check out its [documentation](/).
+Graphyne is a **lightning-fast** JavaScript GraphQL Server. Check out its [documentation](https://github.com/hoangvvo/graphyne).
 
 ## Contributing
 
