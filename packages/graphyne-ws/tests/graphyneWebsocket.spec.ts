@@ -81,18 +81,21 @@ async function startServer(
 }
 
 describe('graphyne-ws', () => {
-  describe('startSubscriptionServer', () => {
-    it('accepts onGraphyneWebSocketConnection that is called with the GraphyneWebSocketConnection instance', (done) => {
-      const onGraphyneWebSocketConnection = (connection) => {
-        if (connection instanceof GraphyneWebSocketConnection) done();
+  it('onGraphyneWebSocketConnection', () => {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      const { client, server } = await startServer({
+        onGraphyneWebSocketConnection,
+      });
+      function onGraphyneWebSocketConnection(connection) {
+        client.end();
+        server.close();
+        if (connection instanceof GraphyneWebSocketConnection) resolve();
         else
-          done(
-            new Error(
-              'onGraphyneWebSocketConnection is not called with GraphyneWebSocketConnection instance'
-            )
+          reject(
+            'onGraphyneWebSocketConnection is not called with GraphyneWebSocketConnection instance'
           );
-      };
-      startServer({ onGraphyneWebSocketConnection });
+      }
     });
   });
 
