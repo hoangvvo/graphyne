@@ -1,4 +1,8 @@
 import { startSubscriptionServer } from '../src';
+import {
+  GraphyneWSOptions,
+  GraphyneWebSocketConnection,
+} from '../src/graphyneWebsocket';
 import { GraphyneServer } from '../../graphyne-server/src';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
@@ -54,7 +58,10 @@ const schema = makeExecutableSchema({
 });
 
 // @ts-ignore
-async function startServer(options = {}, graphyneOpts = {}) {
+async function startServer(
+  options: Omit<GraphyneWSOptions, 'server' | 'graphyne'> = {},
+  graphyneOpts = {}
+) {
   // @ts-ignore
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
   const graphyne = new GraphyneServer({ schema, ...graphyneOpts });
@@ -63,7 +70,7 @@ async function startServer(options = {}, graphyneOpts = {}) {
     server,
     graphyne,
     // @ts-ignore
-    ...(options.context && { context: options.context }),
+    ...options,
   });
   const client = WebSocket.createWebSocketStream(ws, {
     encoding: 'utf8',
@@ -74,6 +81,21 @@ async function startServer(options = {}, graphyneOpts = {}) {
 }
 
 describe('graphyne-ws', () => {
+  describe('startSubscriptionServer', () => {
+    it('accepts onGraphyneWebSocketConnection that is called with the GraphyneWebSocketConnection instance', (done) => {
+      const onGraphyneWebSocketConnection = (connection) => {
+        if (connection instanceof GraphyneWebSocketConnection) done();
+        else
+          done(
+            new Error(
+              'onGraphyneWebSocketConnection is not called with GraphyneWebSocketConnection instance'
+            )
+          );
+      };
+      startServer({ onGraphyneWebSocketConnection });
+    });
+  });
+
   it('replies with connection_ack', async () => {
     const { server, client } = await startServer();
     client.write(
@@ -145,6 +167,7 @@ describe('graphyne-ws', () => {
   it('rejects socket protocol other than graphql-ws', async () => {
     // @ts-ignore
     const ws = new WebSocket('ws://localhost:4000', 'graphql-subscriptions');
+    // @ts-ignore
     const { server, client } = await startServer({ ws });
     await new Promise((resolve) =>
       ws.on('close', () => {
