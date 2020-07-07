@@ -18,6 +18,7 @@ import {
   QueryRequest,
   QueryResponse,
   GraphQLArgs,
+  FormattedExecutionResult,
 } from './types';
 // @ts-ignore
 import flatstr from 'flatstr';
@@ -27,15 +28,12 @@ export class GraphyneCore {
   public schema: GraphQLSchema;
   protected options: Config;
 
-  formatErrorFn: (error: GraphQLError) => GraphQLFormattedError;
-
   constructor(options: Config) {
     // validate options
     if (!options) {
       throw new TypeError('Graphyne server must be initialized with options');
     }
     this.options = options;
-    this.formatErrorFn = options.formatError || formatError;
     // build cache
     this.lru = lru(1024);
     // construct schema and validate
@@ -123,19 +121,12 @@ export class GraphyneCore {
       code: number,
       obj: ExecutionResult,
       stringify = JSON.stringify
-    ) => {
-      const o: {
-        data?: ExecutionResult['data'];
-        errors?: GraphQLFormattedError[];
-      } = {};
-      if (obj.data) o.data = obj.data;
-      if (obj.errors) o.errors = obj.errors.map(this.formatErrorFn);
+    ) =>
       cb({
-        body: flatstr(stringify(o)),
+        body: flatstr(stringify(this.formatExecutionResult(obj))),
         status: code,
         headers: { 'content-type': 'application/json' },
       });
-    };
 
     if (!query) {
       return createResponse(400, {
@@ -168,18 +159,41 @@ export class GraphyneCore {
         ],
       });
 
-    const result = compiledQuery.query(
-      typeof this.options.rootValue === 'function'
-        ? this.options.rootValue(document)
-        : this.options.rootValue || {},
+    this.getExecutionResult(
+      compiledQuery,
+      document,
       context,
-      variables
+      variables,
+      (result) => createResponse(200, result, compiledQuery.stringify)
     );
-    return 'then' in result
-      ? result.then((finished) =>
-          createResponse(200, finished, compiledQuery.stringify)
-        )
-      : createResponse(200, result, compiledQuery.stringify);
+  }
+
+  formatExecutionResult(result: ExecutionResult): FormattedExecutionResult {
+    const o: FormattedExecutionResult = {};
+    if (result.data) o.data = result.data;
+    if (result.errors)
+      o.errors = result.errors.map(this.options.formatError || formatError);
+    return o;
+  }
+
+  private getExecutionResult(
+    compiledQuery: CompiledQuery | ExecutionResult,
+    document: DocumentNode | undefined,
+    contextValue: Record<string, any>,
+    variableValues: Record<string, any> | null | undefined,
+    callback: (this: void, result: ExecutionResult) => void
+  ): void {
+    if (!isCompiledQuery(compiledQuery)) return callback(compiledQuery);
+    const maybePromiseResult = compiledQuery.query(
+      typeof this.options.rootValue === 'function'
+        ? this.options.rootValue(document as DocumentNode)
+        : this.options.rootValue || {},
+      contextValue,
+      variableValues
+    );
+    'then' in maybePromiseResult
+      ? maybePromiseResult.then(callback)
+      : callback(maybePromiseResult);
   }
 
   public async graphql({
@@ -187,32 +201,19 @@ export class GraphyneCore {
     contextValue,
     variableValues,
     operationName,
-  }: GraphQLArgs): Promise<{
-    data?: ExecutionResult['data'];
-    errors?: GraphQLFormattedError[];
-  }> {
+  }: GraphQLArgs): Promise<FormattedExecutionResult> {
     const { document, compiledQuery } = this.getCompiledQuery(
       source,
       operationName
     );
-
-    const obj = isCompiledQuery(compiledQuery)
-      ? await compiledQuery.query(
-          typeof this.options.rootValue === 'function'
-            ? this.options.rootValue(document)
-            : this.options.rootValue || {},
-          contextValue || {},
-          variableValues
-        )
-      : compiledQuery;
-
-    const o: {
-      data?: ExecutionResult['data'];
-      errors?: GraphQLFormattedError[];
-    } = {};
-    if (obj.data) o.data = obj.data;
-    if (obj.errors) o.errors = obj.errors.map(this.formatErrorFn);
-
-    return o;
+    return new Promise<FormattedExecutionResult>((resolve) => {
+      this.getExecutionResult(
+        compiledQuery,
+        document,
+        contextValue,
+        variableValues,
+        (result) => resolve(this.formatExecutionResult(result))
+      );
+    });
   }
 }

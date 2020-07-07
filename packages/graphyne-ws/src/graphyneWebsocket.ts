@@ -3,9 +3,12 @@ import {
   ExecutionResult,
   subscribe,
   DocumentNode,
-  GraphQLFormattedError,
 } from 'graphql';
-import { QueryBody, GraphyneCore } from 'graphyne-core';
+import {
+  QueryBody,
+  GraphyneCore,
+  FormattedExecutionResult,
+} from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -234,16 +237,8 @@ export class GraphyneWebSocketConnection extends EventEmitter {
   }
 
   sendMessage(type: string, id?: string | null, result?: ExecutionResult) {
-    const payload: {
-      data?: ExecutionResult['data'];
-      errors?: GraphQLFormattedError[];
-    } | null = result
-      ? {
-          ...(result.data && { data: result.data }),
-          ...(result.errors && {
-            errors: result.errors.map(this.graphyne.formatErrorFn),
-          }),
-        }
+    const payload: FormattedExecutionResult | null = result
+      ? this.graphyne.formatExecutionResult(result)
       : null;
     this.socket.send(
       JSON.stringify({ type, ...(id && { id }), ...(payload && { payload }) })

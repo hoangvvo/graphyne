@@ -1,10 +1,5 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import {
-  GraphQLSchema,
-  ExecutionResult,
-  GraphQLError,
-  GraphQLFormattedError,
-} from 'graphql';
+import { GraphQLSchema } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
 import {
   GraphyneCore,
@@ -12,6 +7,7 @@ import {
   QueryBody,
   QueryCache,
   GraphQLArgs,
+  FormattedExecutionResult,
 } from '../src';
 import { Lru } from 'tiny-lru';
 
@@ -66,7 +62,6 @@ describe('graphyne-core', () => {
   it('throws if schema is invalid', () => {
     assert.throws(() => {
       new GraphyneCore({
-        // @ts-expect-error
         schema: new GraphQLSchema({ directives: [null] }),
       });
     });
@@ -432,14 +427,10 @@ describe('HTTP Operations', () => {
 });
 
 describe('graphql()', () => {
-  type FormattedResult = {
-    data?: ExecutionResult['data'];
-    errors?: GraphQLFormattedError[];
-  };
-  type ExpectedResultFn = (res: FormattedResult) => void;
+  type ExpectedResultFn = (res: FormattedExecutionResult) => void;
   async function testGQL(
     args: GraphQLArgs,
-    expected: FormattedResult | ExpectedResultFn,
+    expected: FormattedExecutionResult | ExpectedResultFn,
     options?: Partial<Config>
   ) {
     const result = await new GraphyneCore({

@@ -24,7 +24,7 @@ export class GraphyneWorker extends GraphyneCore {
     } catch (err) {
       err.message = `Context creation failed: ${err.message}`;
       return new Response(
-        JSON.stringify({ errors: [this.formatErrorFn(err)] }),
+        JSON.stringify(this.formatExecutionResult({ errors: [err] })),
         {
           status: err.status || 500,
           headers: { 'content-type': 'application/json' },
@@ -41,7 +41,7 @@ export class GraphyneWorker extends GraphyneCore {
         } catch (err) {
           err.status = 400;
           return new Response(
-            JSON.stringify({ errors: [this.formatErrorFn(err)] }),
+            JSON.stringify(this.formatExecutionResult({ errors: [err] })),
             {
               status: 400,
               headers: { 'content-type': 'application/json' },

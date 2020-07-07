@@ -90,7 +90,7 @@ export class GraphyneServer extends GraphyneCore {
       sendResponse(
         {
           status: error.status || 500,
-          body: JSON.stringify({ errors: [that.formatErrorFn(error)] }),
+          body: JSON.stringify(that.formatExecutionResult({ errors: [error] })),
           headers: { 'content-type': 'application/json' },
         },
         args
