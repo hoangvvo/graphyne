@@ -62,9 +62,18 @@ export interface GraphyneWebSocketConnection {
   emit(event: 'connection_init', payload: ConnectionParams): boolean;
   on(
     event: 'subscription_start',
-    listener: (id: string, payload: QueryBody) => void
+    listener: (
+      id: string,
+      payload: QueryBody,
+      context: Record<string, any>
+    ) => void
   ): this;
-  emit(event: 'subscription_start', id: string, payload: QueryBody): boolean;
+  emit(
+    event: 'subscription_start',
+    id: string,
+    payload: QueryBody,
+    context: Record<string, any>
+  ): boolean;
   on(event: 'subscription_stop', listener: (id: string) => void): this;
   emit(event: 'subscription_stop', id: string): boolean;
   on(event: 'connection_terminate', listener: () => void): this;
@@ -152,32 +161,23 @@ export class GraphyneWebSocketConnection extends EventEmitter {
       });
     }
 
-    const {
-      document,
-      operation,
-      compiledQuery,
-    } = this.graphyne.getCompiledQuery(query);
-
-    if (!isCompiledQuery(compiledQuery)) {
-      this.sendMessage(GQL_ERROR, data.id, compiledQuery);
-      this.handleGQLStop(data.id);
-      return;
-    }
-
-    if (operation !== 'subscription') {
-      return this.sendMessage(GQL_ERROR, data.id, {
-        errors: [new GraphQLError('Not a subscription operation')],
-      });
-    }
-
     const context = (await this.contextPromise) || {};
 
-    const executionResult = await this.graphyne.subscribe({
-      source: query,
-      contextValue: context,
-      variableValues: variables,
-      operationName,
-    });
+    const executionResult = await this.graphyne
+      .subscribe({
+        source: query,
+        contextValue: context,
+        variableValues: variables,
+        operationName,
+      })
+      .catch((errorOrResult: Error | ExecutionResult) => {
+        if ('errors' in errorOrResult || 'data' in errorOrResult) {
+          this.sendMessage(GQL_ERROR, data.id, errorOrResult);
+        }
+        return null;
+      });
+
+    if (!executionResult) return this.handleGQLStop(data.id);
 
     const executionIterable = isAsyncIterable(executionResult)
       ? (executionResult as AsyncIterator<ExecutionResult>)
@@ -188,7 +188,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     this.operations.set(data.id, executionIterable);
 
     // Emit
-    this.emit('subscription_start', data.id, data.payload);
+    this.emit('subscription_start', data.id, data.payload, context);
 
     // @ts-ignore
     await forAwaitEach(executionIterable, (result: ExecutionResult) => {

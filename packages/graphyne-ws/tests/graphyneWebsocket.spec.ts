@@ -485,13 +485,15 @@ describe('graphyne-ws', () => {
         };
         const { client, server } = await startServer({
           onGraphyneWebSocketConnection,
+          context: () => ({ test: true }),
         });
         function onGraphyneWebSocketConnection(
           connection: GraphyneWebSocketConnection
         ) {
-          connection.on('subscription_start', (id, payload) => {
+          connection.on('subscription_start', (id, payload, context) => {
             try {
               assert.strictEqual(id, body.id);
+              assert.strictEqual(context.test, true);
               assert.deepStrictEqual(payload, body.payload);
               resolve();
             } catch (e) {
