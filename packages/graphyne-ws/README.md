@@ -100,30 +100,30 @@ wss.on('close', function close() {
 
 An instance of `GraphyneWebSocketConnection` extends `EventEmitter`.
 
-It emits several events **after finished proccessing (connection acknowledge/subscription started or stopped/connection terminated)** an incoming message. Below are expected events:
+It emits several events upon connection acknowledged, subscription started or stopped, and connection terminated.
 
 ```javascript
 import { startSubscriptionServer } from "graphyne-ws";
 
 startSubscriptionServer({
   onGraphyneWebSocketConnection: (connection) => {
-    // called after the connection is init and the websocket server sends GQL_CONNECTION_ACK
+    // called after the connection is initialized and acknowledged
     connection.on('connection_init', (connectionParams) => {
       // optional parameters that the client specifies in connectionParams
     });
 
-    // called after a subscription operation is started
+    // called after a subscription operation has been started
     connection.on('subscription_start', (id, payload) => {
       // id is the GraphQL operation ID
       // payload is the GQL payload with `query`, `variables`, and `operationName`.
     });
 
-    // called after the operation is stopped
+    // called after the operation has been stopped
     connection.on('subscription_stop', (id) => {
       // id is the GraphQL operation ID that was stopped
     });
 
-    // called after fulfilling client request for the connection to be terminated
+    // called after the connection is terminated
     connection.on('connection_terminate', () => {
       // This event has no argument
     });
