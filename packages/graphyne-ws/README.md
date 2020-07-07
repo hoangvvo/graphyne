@@ -61,6 +61,75 @@ Create an instance of `GraphyneWebSocketServer` **and** listen to incoming conne
   - `connectionParams`: Object that is sent from the client. See an example in [`apollo-link-ws`](https://www.apollographql.com/docs/react/data/subscriptions/#authentication-over-websocket)
   - `socket`: The [WebSocket connection](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#event-connection).
   - `request`: The incoming request.
+- `onGraphyneWebSocketConnection`: A function to called with the `GraphyneWebSocketConnection` instance whenever one is created (on every websocket connection).
+
+### `GraphyneWebSocketConnection`
+
+#### GraphyneWebSocketConnection#socket
+
+`GraphyneWebSocketConnection` exposes `socket` which is a `WebSocket`. This is helpful if you want to implement something like a "heartbeat" to detect broken connections according to [RFC 6455 Ping-Pong](https://tools.ietf.org/html/rfc6455#section-5.5):
+
+```javascript
+const HEARTBEAT_INTERVAL = 10000; // 10 sec
+
+const wss = startSubscriptionServer({
+  onGraphyneWebSocketConnection: (connection) => {
+    connection.socket.on('pong', () => {
+      socket.isAlive = true;
+    });
+  }
+})
+
+const wssPingPong = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      ws.terminate();
+      return;
+    }]
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, HEARTBEAT_INTERVAL);
+
+wss.on('close', function close() {
+  clearInterval(wssPingPong);
+});
+```
+
+#### Events
+
+An instance of `GraphyneWebSocketConnection` extends `EventEmitter`.
+
+It emits several events upon connection acknowledged, subscription started or stopped, and connection terminated.
+
+```javascript
+import { startSubscriptionServer } from "graphyne-ws";
+
+startSubscriptionServer({
+  onGraphyneWebSocketConnection: (connection) => {
+    // called after the connection is initialized and acknowledged
+    connection.on('connection_init', (connectionParams) => {
+      // optional parameters that the client specifies in connectionParams
+    });
+
+    // called after a subscription operation has been started
+    connection.on('subscription_start', (id, payload) => {
+      // id is the GraphQL operation ID
+      // payload is the GQL payload with `query`, `variables`, and `operationName`.
+    });
+
+    // called after the operation has been stopped
+    connection.on('subscription_stop', (id) => {
+      // id is the GraphQL operation ID that was stopped
+    });
+
+    // called after the connection is terminated
+    connection.on('connection_terminate', () => {
+      // This event has no argument
+    });
+  },
+});
+```
 
 ## Framework integration
 

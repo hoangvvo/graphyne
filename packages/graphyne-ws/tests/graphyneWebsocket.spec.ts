@@ -1,4 +1,8 @@
 import { startSubscriptionServer } from '../src';
+import {
+  GraphyneWSOptions,
+  GraphyneWebSocketConnection,
+} from '../src/graphyneWebsocket';
 import { GraphyneServer } from '../../graphyne-server/src';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
@@ -54,7 +58,10 @@ const schema = makeExecutableSchema({
 });
 
 // @ts-ignore
-async function startServer(options = {}, graphyneOpts = {}) {
+async function startServer(
+  options: Omit<GraphyneWSOptions, 'server' | 'graphyne'> = {},
+  graphyneOpts = {}
+) {
   // @ts-ignore
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
   const graphyne = new GraphyneServer({ schema, ...graphyneOpts });
@@ -63,7 +70,7 @@ async function startServer(options = {}, graphyneOpts = {}) {
     server,
     graphyne,
     // @ts-ignore
-    ...(options.context && { context: options.context }),
+    ...options,
   });
   const client = WebSocket.createWebSocketStream(ws, {
     encoding: 'utf8',
@@ -145,6 +152,7 @@ describe('graphyne-ws', () => {
   it('rejects socket protocol other than graphql-ws', async () => {
     // @ts-ignore
     const ws = new WebSocket('ws://localhost:4000', 'graphql-subscriptions');
+    // @ts-ignore
     const { server, client } = await startServer({ ws });
     await new Promise((resolve) =>
       ws.on('close', () => {
@@ -300,7 +308,7 @@ describe('graphyne-ws', () => {
       });
     });
   });
-  it('close connection upon GQL_STOP', async () => {
+  it('stop subscription upon GQL_STOP', async () => {
     const { server, client } = await startServer();
     client.write(
       JSON.stringify({
@@ -406,6 +414,164 @@ describe('graphyne-ws', () => {
         client.end();
         server.close();
         done();
+      });
+    });
+  });
+  describe('GraphyneWebSocketConnection', () => {
+    it('emits connection_init', () => {
+      // eslint-disable-next-line no-async-promise-executor
+      return new Promise(async (resolve, reject) => {
+        const { client, server } = await startServer({
+          onGraphyneWebSocketConnection,
+        });
+        function onGraphyneWebSocketConnection(
+          connection: GraphyneWebSocketConnection
+        ) {
+          connection.on('connection_init', (connectionParams) => {
+            try {
+              assert.deepStrictEqual(connectionParams, { test: 'ok' });
+              resolve();
+            } catch (e) {
+              reject(e);
+            } finally {
+              client.end();
+              server.close();
+            }
+          });
+        }
+        client.write(
+          JSON.stringify({
+            payload: { test: 'ok' },
+            type: 'connection_init',
+          })
+        );
+      });
+    });
+    it('emits subscription_start', () => {
+      // eslint-disable-next-line no-async-promise-executor
+      return new Promise(async (resolve, reject) => {
+        const body = {
+          id: 1,
+          type: 'start',
+          payload: {
+            query: `
+          subscription {
+            notificationAdded {
+              message
+            }
+          }
+        `,
+          },
+        };
+        const { client, server } = await startServer({
+          onGraphyneWebSocketConnection,
+        });
+        function onGraphyneWebSocketConnection(
+          connection: GraphyneWebSocketConnection
+        ) {
+          connection.on('subscription_start', (id, payload) => {
+            try {
+              assert.strictEqual(id, body.id);
+              assert.deepStrictEqual(payload, body.payload);
+              resolve();
+            } catch (e) {
+              reject(e);
+            } finally {
+              client.end();
+              server.close();
+            }
+          });
+        }
+        client.write(
+          JSON.stringify({
+            payload: { test: 'ok' },
+            type: 'connection_init',
+          })
+        );
+        client.write(JSON.stringify(body));
+      });
+    });
+    it('emits subscription_stop', () => {
+      // eslint-disable-next-line no-async-promise-executor
+      return new Promise(async (resolve, reject) => {
+        const { client, server } = await startServer({
+          onGraphyneWebSocketConnection,
+        });
+        function onGraphyneWebSocketConnection(
+          connection: GraphyneWebSocketConnection
+        ) {
+          connection.on('subscription_stop', (id) => {
+            try {
+              assert.strictEqual(id, 1);
+              resolve();
+            } catch (e) {
+              reject(e);
+            } finally {
+              client.end();
+              server.close();
+            }
+          });
+        }
+        client.write(
+          JSON.stringify({
+            type: 'connection_init',
+          })
+        );
+        client.write(
+          JSON.stringify({
+            id: 1,
+            type: 'start',
+            payload: {
+              query: `
+              subscription {
+                notificationAdded {
+                  message
+                }
+              }
+            `,
+            },
+          })
+        );
+        client.on('data', (chunk) => {
+          const data = JSON.parse(chunk);
+          if (data.type === 'connection_ack') {
+            client.write(
+              JSON.stringify({
+                id: 1,
+                type: 'stop',
+              })
+            );
+          }
+        });
+      });
+    });
+    it('emits connection_terminate', () => {
+      // eslint-disable-next-line no-async-promise-executor
+      return new Promise(async (resolve, reject) => {
+        const { client, server } = await startServer({
+          onGraphyneWebSocketConnection,
+        });
+        function onGraphyneWebSocketConnection(
+          connection: GraphyneWebSocketConnection
+        ) {
+          connection.on('connection_terminate', () => {
+            resolve();
+            client.end();
+            server.close();
+          });
+        }
+        client.write(
+          JSON.stringify({
+            type: 'connection_init',
+          })
+        );
+        client.on('data', () => {
+          client.write(
+            JSON.stringify({
+              type: 'connection_terminate',
+            })
+          );
+        });
       });
     });
   });
