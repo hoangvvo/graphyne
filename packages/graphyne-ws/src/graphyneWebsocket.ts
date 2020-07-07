@@ -43,7 +43,7 @@ interface InitContext {
   request: IncomingMessage;
 }
 
-interface GraphyneWSOptions extends WebSocket.ServerOptions {
+export interface GraphyneWSOptions extends WebSocket.ServerOptions {
   context?: ContextFn;
   graphyne: GraphyneCore;
   onGraphyneWebSocketConnection?: (
@@ -55,7 +55,7 @@ type ContextFn =
   | Record<string, any>
   | ((initContext: InitContext) => Record<string, any>);
 
-interface GraphyneWebSocketConnection {
+export interface GraphyneWebSocketConnection {
   on(
     event: typeof GQL_CONNECTION_INIT,
     listener: (connectionParams: ConnectionParams) => void
@@ -72,7 +72,7 @@ interface GraphyneWebSocketConnection {
   emit(event: typeof GQL_CONNECTION_TERMINATE): boolean;
 }
 
-class GraphyneWebSocketConnection extends EventEmitter {
+export class GraphyneWebSocketConnection extends EventEmitter {
   private graphyne: GraphyneCore;
   public socket: WebSocket;
   private request: IncomingMessage;
