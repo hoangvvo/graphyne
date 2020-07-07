@@ -1,5 +1,10 @@
 import { makeExecutableSchema } from 'graphql-tools';
-import { GraphQLSchema, ExecutionResult, GraphQLError } from 'graphql';
+import {
+  GraphQLSchema,
+  ExecutionResult,
+  GraphQLError,
+  GraphQLFormattedError,
+} from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
 import {
   GraphyneCore,
@@ -54,14 +59,13 @@ const schema = makeExecutableSchema({
 describe('graphyne-core', () => {
   it('throws if initializing instance with no option', () => {
     assert.throws(() => {
-      // @ts-ignore
+      // @ts-expect-error
       new GraphyneCore();
     });
   });
   it('throws if schema is invalid', () => {
     assert.throws(() => {
       new GraphyneCore({
-        // @ts-ignore
         schema: new GraphQLSchema({ directives: [null] }),
       });
     });
@@ -427,10 +431,14 @@ describe('HTTP Operations', () => {
 });
 
 describe('graphql()', () => {
-  type ExpectedResultFn = (res: ExecutionResult) => void;
+  type FormattedResult = {
+    data?: ExecutionResult['data'];
+    errors?: GraphQLFormattedError[];
+  };
+  type ExpectedResultFn = (res: FormattedResult) => void;
   async function testGQL(
     args: GraphQLArgs,
-    expected: ExecutionResult | ExpectedResultFn,
+    expected: FormattedResult | ExpectedResultFn,
     options?: Partial<Config>
   ) {
     const result = await new GraphyneCore({
@@ -462,12 +470,11 @@ describe('graphql()', () => {
         query helloJane { hello(who: "Jane") }
         `,
       },
-      {
-        errors: [
-          new GraphQLError(
-            'Must provide operation name if query contains multiple operations.'
-          ),
-        ],
+      (res) => {
+        assert.deepStrictEqual(
+          res.errors[0].message,
+          'Must provide operation name if query contains multiple operations.'
+        );
       }
     );
   });
@@ -571,6 +578,35 @@ describe('graphql()', () => {
     return testGQL({ source: 'query { asyncThrowMe }' }, (res) => {
       const { errors: [err] = [] } = res;
       assert.deepStrictEqual(err.message, 'im thrown');
+    });
+  });
+  describe('allows format errors', () => {
+    it('using default formatError', () => {
+      return testGQL({ source: 'query { dangerousThrow }' }, (res) => {
+        const {
+          errors: [err],
+        } = res;
+        assert.deepStrictEqual(err.message, 'oh no');
+        // formatError will filter trivial prop
+        // @ts-expect-error
+        assert.deepStrictEqual(err.systemSecret, undefined);
+      });
+    });
+    it('using custom formatError', () => {
+      return testGQL(
+        { source: 'query { dangerousThrow }' },
+        (res) => {
+          const {
+            errors: [err],
+          } = res;
+          assert.deepStrictEqual(err.message, 'Internal server error');
+        },
+        {
+          formatError: (err) => {
+            return new Error('Internal server error');
+          },
+        }
+      );
     });
   });
 });
