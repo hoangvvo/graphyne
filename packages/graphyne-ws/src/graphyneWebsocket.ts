@@ -270,8 +270,8 @@ export function startSubscriptionServer(
     socket.on('message', (message) => {
       connection.handleMessage(message.toString());
     });
-    socket.on('error', connection.handleConnectionClose.bind(connection));
-    socket.on('close', connection.handleConnectionClose.bind(connection));
+    socket.on('error', () => connection.handleConnectionClose());
+    socket.on('close', () => connection.handleConnectionClose());
   });
   return wss;
 }
