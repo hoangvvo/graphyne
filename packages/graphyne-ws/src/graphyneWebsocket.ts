@@ -9,7 +9,7 @@ import { QueryBody, GraphyneCore } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
-
+import { EventEmitter } from 'events';
 import {
   GQL_CONNECTION_INIT,
   GQL_CONNECTION_ACK,
@@ -23,9 +23,11 @@ import {
   GRAPHQL_WS,
 } from './messageTypes';
 
+type ConnectionParams = Record<string, any>;
+
 interface OperationMessage {
   id?: string;
-  payload?: QueryBody;
+  payload?: QueryBody | ConnectionParams;
   type: string;
 }
 
@@ -36,7 +38,7 @@ interface GraphyneWebSocketConnectionConstruct {
 }
 
 interface InitContext {
-  connectionParams?: Record<string, any>;
+  connectionParams: ConnectionParams;
   socket: WebSocket;
   request: IncomingMessage;
 }
@@ -44,13 +46,33 @@ interface InitContext {
 interface GraphyneWSOptions extends WebSocket.ServerOptions {
   context?: ContextFn;
   graphyne: GraphyneCore;
+  onGraphyneWebSocketConnection?: (
+    connection: GraphyneWebSocketConnection
+  ) => void;
 }
 
 type ContextFn =
   | Record<string, any>
   | ((initContext: InitContext) => Record<string, any>);
 
-class GraphyneWebSocketConnection {
+interface GraphyneWebSocketConnection {
+  on(
+    event: typeof GQL_CONNECTION_INIT,
+    listener: (connectionParams: ConnectionParams) => void
+  ): this;
+  emit(event: typeof GQL_CONNECTION_INIT, payload: ConnectionParams): boolean;
+  on(
+    event: typeof GQL_START,
+    listener: (id: string, payload: QueryBody) => void
+  ): this;
+  emit(event: typeof GQL_START, id: string, payload: QueryBody): boolean;
+  on(event: typeof GQL_STOP, listener: (id: string) => void): this;
+  emit(event: typeof GQL_STOP, id: string): boolean;
+  on(event: typeof GQL_CONNECTION_TERMINATE, listener: () => void): this;
+  emit(event: typeof GQL_CONNECTION_TERMINATE): boolean;
+}
+
+class GraphyneWebSocketConnection extends EventEmitter {
   private graphyne: GraphyneCore;
   public socket: WebSocket;
   private request: IncomingMessage;
@@ -61,6 +83,7 @@ class GraphyneWebSocketConnection {
   > = new Map();
   contextPromise?: Promise<Record<string, any>>;
   constructor(options: GraphyneWebSocketConnectionConstruct) {
+    super();
     this.socket = options.socket;
     this.wss = options.wss;
     this.graphyne = options.wss.graphyne;
@@ -99,7 +122,7 @@ class GraphyneWebSocketConnection {
     const initContext: InitContext = {
       request: this.request,
       socket: this.socket,
-      connectionParams: data.payload,
+      connectionParams: data.payload as ConnectionParams,
     };
     try {
       // resolve context
@@ -111,6 +134,8 @@ class GraphyneWebSocketConnection {
       if (!(await this.contextPromise))
         throw new GraphQLError('Prohibited connection!');
       this.sendMessage(GQL_CONNECTION_ACK);
+      // Emit
+      this.emit(GQL_CONNECTION_INIT, data.payload as ConnectionParams);
     } catch (err) {
       this.sendMessage(GQL_CONNECTION_ERROR, data.id, {
         errors: [err],
@@ -119,10 +144,11 @@ class GraphyneWebSocketConnection {
     }
   }
 
-  async handleGQLStart(data: OperationMessage & { id: string }) {
+  async handleGQLStart(
+    data: OperationMessage & { id: string; payload: QueryBody }
+  ) {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_start
-    const payload = data.payload;
-    const { query, variables, operationName } = payload || {};
+    const { query, variables, operationName } = data.payload;
 
     if (!query) {
       return this.sendMessage(GQL_ERROR, data.id, {
@@ -168,6 +194,9 @@ class GraphyneWebSocketConnection {
 
     this.operations.set(data.id, executionIterable);
 
+    // Emit
+    this.emit(GQL_START, data.id, data.payload);
+
     await forAwaitEach(executionIterable as any, (result: ExecutionResult) => {
       this.sendMessage(GQL_DATA, data.id, result);
     }).then(
@@ -188,6 +217,8 @@ class GraphyneWebSocketConnection {
     const removingOperation = this.operations.get(opId);
     if (!removingOperation) return;
     removingOperation.return?.();
+    // Emit
+    this.emit(GQL_STOP, opId);
     this.operations.delete(opId);
   }
 
@@ -197,6 +228,8 @@ class GraphyneWebSocketConnection {
       Object.keys(this.operations).forEach((opId) => this.handleGQLStop(opId));
       // Close connection after sending error message
       this.socket.close(1011);
+      // Emit
+      this.emit(GQL_CONNECTION_TERMINATE);
     }, 10);
   }
 
@@ -244,6 +277,10 @@ export function startSubscriptionServer(
       request,
       wss: wss,
     });
+
+    if (options.onGraphyneWebSocketConnection)
+      options.onGraphyneWebSocketConnection(connection);
+
     socket.on('message', (message) => {
       connection.handleMessage(message.toString());
     });
