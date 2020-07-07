@@ -1,3 +1,4 @@
+import { ExecutionResult } from 'graphql';
 import { QueryBody, QueryRequest } from '.';
 
 export function parseBodyByContentType(rawBody: string, oCtype: string) {
@@ -36,4 +37,11 @@ export function getGraphQLParams({
       | undefined
       | null,
   };
+}
+
+export function isAsyncIterable<
+  C extends AsyncIterable<any>,
+  E extends ExecutionResult
+>(maybeAsyncIterable: C | E): maybeAsyncIterable is C {
+  return Symbol.asyncIterator in maybeAsyncIterable;
 }

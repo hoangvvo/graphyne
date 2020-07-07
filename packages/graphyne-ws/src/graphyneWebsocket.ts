@@ -1,11 +1,10 @@
+import { GraphQLError, ExecutionResult } from 'graphql';
 import {
-  GraphQLError,
-  ExecutionResult,
-  subscribe,
-  DocumentNode,
-  GraphQLFormattedError,
-} from 'graphql';
-import { QueryBody, GraphyneCore } from 'graphyne-core';
+  QueryBody,
+  GraphyneCore,
+  FormattedExecutionResult,
+} from 'graphyne-core';
+import { isCompiledQuery } from 'graphql-jit';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -77,10 +76,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
   public socket: WebSocket;
   private request: IncomingMessage;
   private wss: GraphyneWebSocketServer;
-  private operations: Map<
-    string,
-    AsyncIterator<ExecutionResult, any, undefined>
-  > = new Map();
+  private operations: Map<string, AsyncIterator<ExecutionResult>> = new Map();
   contextPromise?: Promise<Record<string, any>>;
   constructor(options: GraphyneWebSocketConnectionConstruct) {
     super();
@@ -162,7 +158,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
       compiledQuery,
     } = this.graphyne.getCompiledQuery(query);
 
-    if ('errors' in compiledQuery) {
+    if (!isCompiledQuery(compiledQuery)) {
       this.sendMessage(GQL_ERROR, data.id, compiledQuery);
       this.handleGQLStop(data.id);
       return;
@@ -176,28 +172,26 @@ export class GraphyneWebSocketConnection extends EventEmitter {
 
     const context = (await this.contextPromise) || {};
 
-    // FIXME: This may error on server error
-    const executionResult = await subscribe({
-      schema: this.graphyne.schema,
-      document: document as DocumentNode,
-      contextValue: Object.assign(
-        Object.create(Object.getPrototypeOf(context)),
-        context
-      ),
+    const executionResult = await this.graphyne.subscribe({
+      source: query,
+      contextValue: context,
       variableValues: variables,
       operationName,
     });
 
     const executionIterable = isAsyncIterable(executionResult)
-      ? executionResult
-      : createAsyncIterator([executionResult]);
+      ? (executionResult as AsyncIterator<ExecutionResult>)
+      : createAsyncIterator<ExecutionResult>([
+          executionResult as ExecutionResult,
+        ]);
 
     this.operations.set(data.id, executionIterable);
 
     // Emit
     this.emit('subscription_start', data.id, data.payload);
 
-    await forAwaitEach(executionIterable as any, (result: ExecutionResult) => {
+    // @ts-ignore
+    await forAwaitEach(executionIterable, (result: ExecutionResult) => {
       this.sendMessage(GQL_DATA, data.id, result);
     }).then(
       () => {
@@ -234,16 +228,8 @@ export class GraphyneWebSocketConnection extends EventEmitter {
   }
 
   sendMessage(type: string, id?: string | null, result?: ExecutionResult) {
-    const payload: {
-      data?: ExecutionResult['data'];
-      errors?: GraphQLFormattedError[];
-    } | null = result
-      ? {
-          ...(result.data && { data: result.data }),
-          ...(result.errors && {
-            errors: result.errors.map(this.graphyne.formatErrorFn),
-          }),
-        }
+    const payload: FormattedExecutionResult | null = result
+      ? this.graphyne.formatExecutionResult(result)
       : null;
     this.socket.send(
       JSON.stringify({ type, ...(id && { id }), ...(payload && { payload }) })
@@ -284,8 +270,8 @@ export function startSubscriptionServer(
     socket.on('message', (message) => {
       connection.handleMessage(message.toString());
     });
-    socket.on('error', connection.handleConnectionClose.bind(connection));
-    socket.on('close', connection.handleConnectionClose.bind(connection));
+    socket.on('error', () => connection.handleConnectionClose());
+    socket.on('close', () => connection.handleConnectionClose());
   });
   return wss;
 }

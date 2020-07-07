@@ -45,3 +45,13 @@ export interface GraphQLArgs {
   variableValues?: Record<string, any> | null;
   operationName?: string | null;
 }
+
+// Can be replaced with `FormattedExecutionResult` from 5.3.0
+export interface FormattedExecutionResult<
+  TData = { [key: string]: any },
+  TExtensions = { [key: string]: any }
+> {
+  errors?: ReadonlyArray<GraphQLFormattedError>;
+  data?: TData | null;
+  extensions?: TExtensions;
+}
