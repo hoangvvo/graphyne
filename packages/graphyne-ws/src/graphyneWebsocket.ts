@@ -1,14 +1,17 @@
 import {
   GraphQLError,
   ExecutionResult,
-  subscribe,
+  createSourceEventStream,
   DocumentNode,
 } from 'graphql';
+// FIXME: Dangerous import
+import mapAsyncIterator from 'graphql/subscription/mapAsyncIterator';
 import {
   QueryBody,
   GraphyneCore,
   FormattedExecutionResult,
 } from 'graphyne-core';
+import { isCompiledQuery } from 'graphql-jit';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -165,7 +168,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
       compiledQuery,
     } = this.graphyne.getCompiledQuery(query);
 
-    if ('errors' in compiledQuery) {
+    if (!isCompiledQuery(compiledQuery)) {
       this.sendMessage(GQL_ERROR, data.id, compiledQuery);
       this.handleGQLStop(data.id);
       return;
@@ -179,28 +182,30 @@ export class GraphyneWebSocketConnection extends EventEmitter {
 
     const context = (await this.contextPromise) || {};
 
-    // FIXME: This may error on server error
-    const executionResult = await subscribe({
-      schema: this.graphyne.schema,
-      document: document as DocumentNode,
-      contextValue: Object.assign(
-        Object.create(Object.getPrototypeOf(context)),
-        context
-      ),
-      variableValues: variables,
-      operationName,
-    });
+    const sourceEventStream = await createSourceEventStream(
+      this.graphyne.schema,
+      document as DocumentNode,
+      // FIXME: Add rootValue
+      {},
+      context,
+      variables || undefined,
+      operationName
+      // subscribeFieldResolver
+    );
 
-    const executionIterable = isAsyncIterable(executionResult)
-      ? executionResult
-      : createAsyncIterator([executionResult]);
+    // TODO: Add rejectCallback
+    const iterable = isAsyncIterable(sourceEventStream)
+      ? mapAsyncIterator<any, ExecutionResult>(sourceEventStream, (payload) =>
+          compiledQuery.query(payload, context, variables)
+        )
+      : createAsyncIterator<ExecutionResult>([sourceEventStream]);
 
-    this.operations.set(data.id, executionIterable);
+    this.operations.set(data.id, iterable);
 
     // Emit
     this.emit('subscription_start', data.id, data.payload);
 
-    await forAwaitEach(executionIterable as any, (result: ExecutionResult) => {
+    await forAwaitEach(iterable, (result: ExecutionResult) => {
       this.sendMessage(GQL_DATA, data.id, result);
     }).then(
       () => {
