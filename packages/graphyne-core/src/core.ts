@@ -182,18 +182,22 @@ export class GraphyneCore {
       : createResponse(200, result, compiledQuery.stringify);
   }
 
-  public graphql({
+  public async graphql({
     source,
     contextValue,
     variableValues,
     operationName,
-  }: GraphQLArgs): Promise<ExecutionResult> | ExecutionResult {
+  }: GraphQLArgs): Promise<{
+    data?: ExecutionResult['data'];
+    errors?: GraphQLFormattedError[];
+  }> {
     const { document, compiledQuery } = this.getCompiledQuery(
       source,
       operationName
     );
-    return isCompiledQuery(compiledQuery)
-      ? compiledQuery.query(
+
+    const obj = isCompiledQuery(compiledQuery)
+      ? await compiledQuery.query(
           typeof this.options.rootValue === 'function'
             ? this.options.rootValue(document)
             : this.options.rootValue || {},
@@ -201,5 +205,14 @@ export class GraphyneCore {
           variableValues
         )
       : compiledQuery;
+
+    const o: {
+      data?: ExecutionResult['data'];
+      errors?: GraphQLFormattedError[];
+    } = {};
+    if (obj.data) o.data = obj.data;
+    if (obj.errors) o.errors = obj.errors.map(this.formatErrorFn);
+
+    return o;
   }
 }

@@ -74,7 +74,6 @@ The function returns a never-rejected promise of the execution result, which is 
 
 **Warning:**
 
-- `errors` is not formatted using `options.formatError`. (A future version may provide a flag to do so)
 - `options.context` does not run here. You need to supply the context object to `contextValue`.
 
 ## Framework-specific integration
