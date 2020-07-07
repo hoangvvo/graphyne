@@ -62,9 +62,18 @@ export interface GraphyneWebSocketConnection {
   emit(event: 'connection_init', payload: ConnectionParams): boolean;
   on(
     event: 'subscription_start',
-    listener: (id: string, payload: QueryBody) => void
+    listener: (
+      id: string,
+      payload: QueryBody,
+      context: Record<string, any>
+    ) => void
   ): this;
-  emit(event: 'subscription_start', id: string, payload: QueryBody): boolean;
+  emit(
+    event: 'subscription_start',
+    id: string,
+    payload: QueryBody,
+    context: Record<string, any>
+  ): boolean;
   on(event: 'subscription_stop', listener: (id: string) => void): this;
   emit(event: 'subscription_stop', id: string): boolean;
   on(event: 'connection_terminate', listener: () => void): this;
@@ -179,7 +188,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     this.operations.set(data.id, executionIterable);
 
     // Emit
-    this.emit('subscription_start', data.id, data.payload);
+    this.emit('subscription_start', data.id, data.payload, context);
 
     // @ts-ignore
     await forAwaitEach(executionIterable, (result: ExecutionResult) => {

@@ -74,8 +74,9 @@ const HEARTBEAT_INTERVAL = 10000; // 10 sec
 
 const wss = startSubscriptionServer({
   onGraphyneWebSocketConnection: (connection) => {
+    connection.socket.isAlive = true;
     connection.socket.on('pong', () => {
-      socket.isAlive = true;
+      connection.socket.isAlive = true;
     });
   }
 })
@@ -113,9 +114,10 @@ startSubscriptionServer({
     });
 
     // called after a subscription operation has been started
-    connection.on('subscription_start', (id, payload) => {
+    connection.on('subscription_start', (id, payload, context) => {
       // id is the GraphQL operation ID
       // payload is the GQL payload with `query`, `variables`, and `operationName`.
+      // context is the resolved context from options.context
     });
 
     // called after the operation has been stopped
