@@ -67,10 +67,10 @@ Create an instance of `GraphyneWebSocketServer` **and** listen to incoming conne
 
 #### GraphyneWebSocketConnection#socket
 
-`GraphyneWebSocketConnection` exposes `socket` which is a `WebSocket`. This may be helpful if you want to implement a ping-pong according to [RFC 6455](https://tools.ietf.org/html/rfc6455) to detect broken connections using "heartbeat":
+`GraphyneWebSocketConnection` exposes `socket` which is a `WebSocket`. This is helpful if you want to implement something like a "heartbeat" to detect broken connections according to [RFC 6455 Ping-Pong](https://tools.ietf.org/html/rfc6455#section-5.5):
 
 ```javascript
-const PING_PONG_INTERVAL = 10000; // 10 sec
+const HEARTBEAT_INTERVAL = 10000; // 10 sec
 
 const wss = startSubscriptionServer({
   onGraphyneWebSocketConnection: (connection) => {
@@ -89,7 +89,7 @@ const wssPingPong = setInterval(() => {
     ws.isAlive = false;
     ws.ping();
   });
-}, PING_PONG_INTERVAL);
+}, HEARTBEAT_INTERVAL);
 
 wss.on('close', function close() {
   clearInterval(wssPingPong);
@@ -100,37 +100,31 @@ wss.on('close', function close() {
 
 An instance of `GraphyneWebSocketConnection` extends `EventEmitter`.
 
-It emits **after finished proccessing (connection acknowledge/subscription started or stopped/connection terminated)** an incoming message. Below are expected events:
+It emits several events **after finished proccessing (connection acknowledge/subscription started or stopped/connection terminated)** an incoming message. Below are expected events:
 
 ```javascript
-import {
-  startSubscriptionServer,
-  GQL_CONNECTION_INIT,
-  GQL_START,
-  GQL_STOP,
-  GQL_CONNECTION_TERMINATE,
-} from "graphyne-ws";
+import { startSubscriptionServer } from "graphyne-ws";
 
 startSubscriptionServer({
   onGraphyneWebSocketConnection: (connection) => {
     // called after the connection is init and the websocket server sends GQL_CONNECTION_ACK
-    connection.on(GQL_CONNECTION_INIT, (connectionParams) => {
+    connection.on('connection_init', (connectionParams) => {
       // optional parameters that the client specifies in connectionParams
     });
 
     // called after a subscription operation is started
-    connection.on(GQL_START, (id, payload) => {
+    connection.on('subscription_start', (id, payload) => {
       // id is the GraphQL operation ID
       // payload is the GQL payload with `query`, `variables`, and `operationName`.
     });
 
     // called after the operation is stopped
-    connection.on(GQL_STOP, (id) => {
+    connection.on('subscription_stop', (id) => {
       // id is the GraphQL operation ID that was stopped
     });
 
     // called after fulfilling client request for the connection to be terminated
-    connection.on(GQL_CONNECTION_TERMINATE, () => {
+    connection.on('connection_terminate', () => {
       // This event has no argument
     });
   },

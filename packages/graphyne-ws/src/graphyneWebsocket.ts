@@ -57,19 +57,19 @@ type ContextFn =
 
 export interface GraphyneWebSocketConnection {
   on(
-    event: typeof GQL_CONNECTION_INIT,
+    event: 'connection_init',
     listener: (connectionParams: ConnectionParams) => void
   ): this;
-  emit(event: typeof GQL_CONNECTION_INIT, payload: ConnectionParams): boolean;
+  emit(event: 'connection_init', payload: ConnectionParams): boolean;
   on(
-    event: typeof GQL_START,
+    event: 'subscription_start',
     listener: (id: string, payload: QueryBody) => void
   ): this;
-  emit(event: typeof GQL_START, id: string, payload: QueryBody): boolean;
-  on(event: typeof GQL_STOP, listener: (id: string) => void): this;
-  emit(event: typeof GQL_STOP, id: string): boolean;
-  on(event: typeof GQL_CONNECTION_TERMINATE, listener: () => void): this;
-  emit(event: typeof GQL_CONNECTION_TERMINATE): boolean;
+  emit(event: 'subscription_start', id: string, payload: QueryBody): boolean;
+  on(event: 'subscription_stop', listener: (id: string) => void): this;
+  emit(event: 'subscription_stop', id: string): boolean;
+  on(event: 'connection_terminate', listener: () => void): this;
+  emit(event: 'connection_terminate'): boolean;
 }
 
 export class GraphyneWebSocketConnection extends EventEmitter {
@@ -135,7 +135,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
         throw new GraphQLError('Prohibited connection!');
       this.sendMessage(GQL_CONNECTION_ACK);
       // Emit
-      this.emit(GQL_CONNECTION_INIT, data.payload as ConnectionParams);
+      this.emit('connection_init', data.payload as ConnectionParams);
     } catch (err) {
       this.sendMessage(GQL_CONNECTION_ERROR, data.id, {
         errors: [err],
@@ -195,7 +195,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     this.operations.set(data.id, executionIterable);
 
     // Emit
-    this.emit(GQL_START, data.id, data.payload);
+    this.emit('subscription_start', data.id, data.payload);
 
     await forAwaitEach(executionIterable as any, (result: ExecutionResult) => {
       this.sendMessage(GQL_DATA, data.id, result);
@@ -218,7 +218,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     if (!removingOperation) return;
     removingOperation.return?.();
     // Emit
-    this.emit(GQL_STOP, opId);
+    this.emit('subscription_stop', opId);
     this.operations.delete(opId);
   }
 
@@ -229,7 +229,7 @@ export class GraphyneWebSocketConnection extends EventEmitter {
       // Close connection after sending error message
       this.socket.close(1011);
       // Emit
-      this.emit(GQL_CONNECTION_TERMINATE);
+      this.emit('connection_terminate');
     }, 10);
   }
 
