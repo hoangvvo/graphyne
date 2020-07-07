@@ -3,7 +3,8 @@ import {
   GraphyneWSOptions,
   GraphyneWebSocketConnection,
 } from '../src/graphyneWebsocket';
-import { GraphyneServer } from '../../graphyne-server/src';
+import { GraphyneCore } from '../../graphyne-core/src';
+import { parseNodeRequest } from '../../graphyne-server/src/utils';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
 import { makeExecutableSchema } from '@graphql-tools/schema';
@@ -68,12 +69,26 @@ async function startServer(
 ) {
   // @ts-ignore
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
-  const graphyne = new GraphyneServer({ schema, ...graphyneOpts });
-  const server = createServer(graphyne.createHandler());
+  const graphyne = new GraphyneCore({ schema, ...graphyneOpts });
+  const server = createServer((req, res) => {
+    parseNodeRequest(req, async (err, body) => {
+      graphyne.runHttpQuery(
+        {
+          query: body.query,
+          variables: body.variables,
+          operationName: body.operationName,
+          context: {},
+          httpMethod: req.method as string,
+        },
+        (result) =>
+          res.writeHead(result.status, result.headers).end(result.body)
+      );
+    });
+  });
   startSubscriptionServer({
     server,
-    graphyne,
     // @ts-ignore
+    graphyne,
     ...options,
   });
   const client = WebSocket.createWebSocketStream(ws, {

@@ -227,7 +227,7 @@ export class GraphyneCore {
     variableValues,
     operationName,
   }: GraphQLArgs): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
-    const { document, operation, compiledQuery } = this.getCompiledQuery(
+    const { document, compiledQuery } = this.getCompiledQuery(
       source,
       operationName
     );
