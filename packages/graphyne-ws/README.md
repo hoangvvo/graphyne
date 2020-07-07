@@ -61,46 +61,13 @@ Create an instance of `GraphyneWebSocketServer` **and** listen to incoming conne
   - `connectionParams`: Object that is sent from the client. See an example in [`apollo-link-ws`](https://www.apollographql.com/docs/react/data/subscriptions/#authentication-over-websocket)
   - `socket`: The [WebSocket connection](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#event-connection).
   - `request`: The incoming request.
-- `onGraphyneWebSocketConnection`: A function to call whenever a `GraphyneWebSocketConnection` is created. The only argument is the `GraphyneWebSocketConnection` instance.
+- `onGraphyneWebSocketConnection`: A function to called with the `GraphyneWebSocketConnection` instance whenever one is created (on every websocket connection).
 
 ### `GraphyneWebSocketConnection`
 
-An instance of `GraphyneWebSocketConnection` extends `EventEmitter`.
+#### GraphyneWebSocketConnection#socket
 
-**WARNING: The following events are still experimental and may be changed at any time in the future!**
-
-It emits on every message with the event being one of the [Client -> Server message types](src/messageTypes.ts) **after finished proccessing (connection acknowledge/subscription started or stopped/connection terminated)**. Below are expected events:
-
-```javascript
-import {
-  startSubscriptionServer,
-  GQL_CONNECTION_INIT,
-  GQL_START,
-  GQL_STOP,
-  GQL_CONNECTION_TERMINATE,
-} from "graphyne-ws";
-
-startSubscriptionServer({
-  onGraphyneWebSocketConnection: (connection) => {
-    // The following are emitted by GraphyneWebSocketConnection
-    connection.on(GQL_CONNECTION_INIT, (connectionParams) => {
-      // optional parameters that the client specifies in connectionParams
-    });
-    connection.on(GQL_START, (id, payload) => {
-      // id is the GraphQL operation ID
-      // payload is the GQL payload with `query`, `variables`, and `operationName`.
-    });
-    connection.on(GQL_STOP, (id) => {
-      // id is the GraphQL operation ID that was stopped
-    });
-    connection.on(GQL_CONNECTION_TERMINATE, () => {
-      // This event has no argument, signifying that the client requests the connection to be terminated
-    });
-  },
-});
-```
-
-`GraphyneWebSocketConnection` also exposes `socket` which is a `WebSocket`. This may be helpful if you want to implement a ping-pong according to [RFC 6455](https://tools.ietf.org/html/rfc6455) to detect broken connections using "heartbeat":
+`GraphyneWebSocketConnection` exposes `socket` which is a `WebSocket`. This may be helpful if you want to implement a ping-pong according to [RFC 6455](https://tools.ietf.org/html/rfc6455) to detect broken connections using "heartbeat":
 
 ```javascript
 const PING_PONG_INTERVAL = 10000; // 10 sec
@@ -126,6 +93,47 @@ const wssPingPong = setInterval(() => {
 
 wss.on('close', function close() {
   clearInterval(wssPingPong);
+});
+```
+
+#### Events
+
+An instance of `GraphyneWebSocketConnection` extends `EventEmitter`.
+
+It emits **after finished proccessing (connection acknowledge/subscription started or stopped/connection terminated)** an incoming message. Below are expected events:
+
+```javascript
+import {
+  startSubscriptionServer,
+  GQL_CONNECTION_INIT,
+  GQL_START,
+  GQL_STOP,
+  GQL_CONNECTION_TERMINATE,
+} from "graphyne-ws";
+
+startSubscriptionServer({
+  onGraphyneWebSocketConnection: (connection) => {
+    // called after the connection is init and the websocket server sends GQL_CONNECTION_ACK
+    connection.on(GQL_CONNECTION_INIT, (connectionParams) => {
+      // optional parameters that the client specifies in connectionParams
+    });
+
+    // called after a subscription operation is started
+    connection.on(GQL_START, (id, payload) => {
+      // id is the GraphQL operation ID
+      // payload is the GQL payload with `query`, `variables`, and `operationName`.
+    });
+
+    // called after the operation is stopped
+    connection.on(GQL_STOP, (id) => {
+      // id is the GraphQL operation ID that was stopped
+    });
+
+    // called after fulfilling client request for the connection to be terminated
+    connection.on(GQL_CONNECTION_TERMINATE, () => {
+      // This event has no argument
+    });
+  },
 });
 ```
 
