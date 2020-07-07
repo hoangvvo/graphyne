@@ -8,8 +8,10 @@ import {
   ExecutionResult,
   DocumentNode,
   formatError,
-  GraphQLFormattedError,
+  createSourceEventStream,
 } from 'graphql';
+// FIXME: Dangerous import
+import mapAsyncIterator from 'graphql/subscription/mapAsyncIterator';
 import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
 import lru, { Lru } from 'tiny-lru';
 import {
@@ -22,6 +24,7 @@ import {
 } from './types';
 // @ts-ignore
 import flatstr from 'flatstr';
+import { isAsyncIterable } from './utils';
 
 export class GraphyneCore {
   private lru: Lru<QueryCache>;
@@ -215,5 +218,40 @@ export class GraphyneCore {
         (result) => resolve(this.formatExecutionResult(result))
       );
     });
+  }
+
+  // Reimplements graphql/subscription/subscribe with DocumentNode replaced with Source
+  async subscribe({
+    source,
+    contextValue,
+    variableValues,
+    operationName,
+  }: GraphQLArgs): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
+    const { document, operation, compiledQuery } = this.getCompiledQuery(
+      source,
+      operationName
+    );
+    if (!isCompiledQuery(compiledQuery)) return compiledQuery;
+    const resultOrStream = await createSourceEventStream(
+      this.schema,
+      document as DocumentNode,
+      // FIXME: Add rootValue
+      {},
+      contextValue,
+      variableValues || undefined,
+      operationName
+      // subscribeFieldResolver
+    );
+    return isAsyncIterable(resultOrStream)
+      ? mapAsyncIterator<any, ExecutionResult>(
+          resultOrStream,
+          (payload) =>
+            compiledQuery.query(payload, contextValue, variableValues),
+          (error) => {
+            if (error instanceof GraphQLError) return { errors: [error] };
+            throw error;
+          }
+        )
+      : resultOrStream;
   }
 }
