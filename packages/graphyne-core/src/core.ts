@@ -231,9 +231,11 @@ export class GraphyneCore {
       source,
       operationName
     );
-    if (!isCompiledQuery(compiledQuery)) throw compiledQuery;
+    if (!isCompiledQuery(compiledQuery)) return Promise.reject(compiledQuery);
     if (operation !== 'subscription')
-      throw { errors: [new GraphQLError('Not a subscription operation')] };
+      return Promise.reject({
+        errors: [new GraphQLError('Not a subscription operation')],
+      });
     const resultOrStream = await createSourceEventStream(
       this.schema,
       document as DocumentNode,
