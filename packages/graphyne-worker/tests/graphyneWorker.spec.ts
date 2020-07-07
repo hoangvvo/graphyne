@@ -1,4 +1,4 @@
-import { makeExecutableSchema } from 'graphql-tools';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 import { strict as assert } from 'assert';
 import { QueryResponse } from '../../graphyne-core/src';
 import { GraphyneWorker } from '../src';

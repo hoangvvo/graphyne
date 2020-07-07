@@ -1,4 +1,4 @@
-import { makeExecutableSchema } from 'graphql-tools';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 import {
   GraphQLSchema,
   ExecutionResult,
@@ -66,6 +66,7 @@ describe('graphyne-core', () => {
   it('throws if schema is invalid', () => {
     assert.throws(() => {
       new GraphyneCore({
+        // @ts-expect-error
         schema: new GraphQLSchema({ directives: [null] }),
       });
     });
@@ -472,7 +473,7 @@ describe('graphql()', () => {
       },
       (res) => {
         assert.deepStrictEqual(
-          res.errors[0].message,
+          res.errors?.[0].message,
           'Must provide operation name if query contains multiple operations.'
         );
       }
@@ -583,9 +584,7 @@ describe('graphql()', () => {
   describe('allows format errors', () => {
     it('using default formatError', () => {
       return testGQL({ source: 'query { dangerousThrow }' }, (res) => {
-        const {
-          errors: [err],
-        } = res;
+        const { errors: [err] = [] } = res;
         assert.deepStrictEqual(err.message, 'oh no');
         // formatError will filter trivial prop
         // @ts-expect-error
@@ -596,9 +595,7 @@ describe('graphql()', () => {
       return testGQL(
         { source: 'query { dangerousThrow }' },
         (res) => {
-          const {
-            errors: [err],
-          } = res;
+          const { errors: [err] = [] } = res;
           assert.deepStrictEqual(err.message, 'Internal server error');
         },
         {

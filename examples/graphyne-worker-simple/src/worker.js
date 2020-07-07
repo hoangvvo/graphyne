@@ -1,5 +1,5 @@
 import { GraphyneWorker } from 'graphyne-worker';
-import { makeExecutableSchema } from 'graphql-tools';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 
 const typeDefs = `
   type Query {

@@ -1,8 +1,13 @@
 import { GraphyneServer } from '../src';
-import { makeExecutableSchema } from 'graphql-tools';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 import { strict as assert } from 'assert';
 import request from 'supertest';
 import { createServer } from 'http';
+// @ts-ignore
+import express from 'express';
+// @ts-ignore
+import micro from 'micro';
+import fastify from 'fastify';
 
 const typeDefs = `
   type Query {
@@ -11,6 +16,7 @@ const typeDefs = `
 `;
 const resolvers = {
   Query: {
+    // @ts-ignore
     hello: (obj, variables, context) => `Hello ${context.world}!`,
   },
 };
@@ -20,7 +26,7 @@ const schema = makeExecutableSchema({
   resolvers,
 });
 
-function testSupertest(app) {
+function testSupertest(app: any) {
   return request(app)
     .post('/graphql')
     .set('content-type', 'application/json')
@@ -30,7 +36,7 @@ function testSupertest(app) {
 
 describe('Integrations', () => {
   it('express', () => {
-    const app = require('express')();
+    const app = express();
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
@@ -39,7 +45,6 @@ describe('Integrations', () => {
     return testSupertest(app);
   });
   it('micro', () => {
-    const micro = require('micro');
     const graphyne = new GraphyneServer({
       schema,
       context: () => ({ world: 'world' }),
@@ -59,14 +64,14 @@ describe('Integrations', () => {
         reply.code(status).headers(headers).send(body);
       },
     });
-    const fastify = require('fastify')();
-    fastify.decorateRequest('method', {
+    const app = fastify();
+    app.decorateRequest('method', {
       getter() {
         return this.raw.method;
       },
     });
-    fastify.post('/graphql', graphyne.createHandler());
-    fastify.inject(
+    app.post('/graphql', graphyne.createHandler());
+    app.inject(
       {
         url: '/graphql',
         payload: { query: '{hello}' },
@@ -110,7 +115,7 @@ describe('Integrations', () => {
         headers: {},
         httpMethod: 'GET',
       };
-      function callback(err, { body, headers, statusCode }) {
+      function callback(err: any, { body, headers, statusCode }: any) {
         res.writeHead(statusCode, headers).end(body);
       }
       handler(event, {}, callback);

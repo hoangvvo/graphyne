@@ -6,7 +6,7 @@ import {
 import { GraphyneServer } from '../../graphyne-server/src';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
-import { makeExecutableSchema } from 'graphql-tools';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 import { PubSub } from 'graphql-subscriptions';
 import { createServer } from 'http';
 import request from 'supertest';
@@ -181,7 +181,7 @@ describe('graphyne-ws', () => {
     startServer(
       {},
       {
-        formatError: (err) => {
+        formatError: () => {
           return new GraphQLError('Internal server error');
         },
       }
