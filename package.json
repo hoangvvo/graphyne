@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@graphql-tools/schema": "^6.0.12",
-    "@types/mocha": "^7.0.2",
+    "@types/mocha": "^8.0.0",
     "@types/node-fetch": "^2.5.7",
     "@types/supertest": "^2.0.10",
     "@typescript-eslint/eslint-plugin": "^3.6.0",
