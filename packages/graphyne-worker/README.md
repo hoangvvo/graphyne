@@ -5,6 +5,8 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
+> This package is highly experimental and may be changed or removed at any time!
+
 GraphQL execution layer in the browser and at the edge. A package of [Graphyne](https://github.com/hoangvvo/graphyne).
 
 [Example](/examples/graphyne-worker-simple)

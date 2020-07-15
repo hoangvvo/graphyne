@@ -5,6 +5,8 @@
 [![codecov](https://codecov.io/gh/hoangvvo/graphyne/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/graphyne)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](/CONTRIBUTING.md)
 
+> This package is highly experimental and may be changed or removed at any time!
+
 Lightning-fast GraphQL Server for any JavaScript frameworks or severless environments. A package of [Graphyne](https://github.com/hoangvvo/graphyne).
 
 ## Install
