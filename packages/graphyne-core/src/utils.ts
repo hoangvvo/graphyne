@@ -1,5 +1,5 @@
 import { ExecutionResult } from 'graphql';
-import { QueryBody, QueryRequest } from '.';
+import { QueryBody } from '.';
 
 export function parseBodyByContentType(rawBody: string, oCtype: string) {
   const semiIndex = oCtype.indexOf(';');
@@ -25,8 +25,8 @@ export function getGraphQLParams({
   body,
 }: {
   queryParams: Record<string, string | string[] | null | undefined>;
-  body: QueryBody | null;
-}): Partial<QueryRequest> {
+  body: Record<string, any> | null;
+}): QueryBody {
   return {
     query: (body?.query || queryParams.query) as string | undefined | null,
     variables:

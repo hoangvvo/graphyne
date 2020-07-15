@@ -17,8 +17,8 @@ import lru, { Lru } from 'tiny-lru';
 import {
   Config,
   QueryCache,
-  QueryRequest,
-  QueryResponse,
+  HttpQueryRequest,
+  HttpQueryResponse,
   GraphQLArgs,
   FormattedExecutionResult,
 } from './types';
@@ -117,9 +117,9 @@ export class GraphyneCore {
   }
 
   public runHttpQuery(
-    { query, variables, operationName, context, httpMethod }: QueryRequest,
-    cb: (result: QueryResponse) => void
-  ): void | Promise<void> {
+    { query, variables, operationName, context, httpMethod }: HttpQueryRequest,
+    cb: (result: HttpQueryResponse) => void
+  ): void {
     const createResponse = (
       code: number,
       obj: ExecutionResult,

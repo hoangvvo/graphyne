@@ -6,14 +6,10 @@ import {
 } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 
-export type TContext = Record<string, any>;
-
 export interface Config {
   schema: GraphQLSchema;
-  context?: TContext | ((...args: any[]) => TContext | Promise<TContext>);
   rootValue?: ((parsedQuery: DocumentNode) => any) | any;
   formatError?: (error: GraphQLError) => GraphQLFormattedError;
-  path?: string;
 }
 
 export interface QueryBody {
@@ -22,12 +18,12 @@ export interface QueryBody {
   operationName?: string | null;
 }
 
-export interface QueryRequest extends QueryBody {
+export interface HttpQueryRequest extends QueryBody {
   context: Record<string, any>;
   httpMethod: string;
 }
 
-export interface QueryResponse {
+export interface HttpQueryResponse {
   status: number;
   body: string;
   headers: Record<string, string>;
