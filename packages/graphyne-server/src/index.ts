@@ -1,1 +1,2 @@
-export { GraphyneServer } from './graphyneServer';
+export { createHandler } from './createHandler';
+export { GraphyneCore as Graphyne } from 'graphyne-core';

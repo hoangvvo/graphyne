@@ -1,16 +1,17 @@
 import { QueryBody, parseBodyByContentType } from 'graphyne-core';
-import { ExpectedRequest } from './types';
+import { IncomingMessage } from 'http';
 
 export function parseNodeRequest(
-  req: ExpectedRequest,
+  req: IncomingMessage | (IncomingMessage & { body: any }),
   cb: (err: any, body: QueryBody | null) => void
 ): void {
   // If body has been parsed as a keyed object, use it.
   let rawBody = '';
 
-  if (typeof req.body === 'object') {
-    return cb(null, req.body);
-  } else if (typeof req.body === 'string') rawBody = req.body;
+  if ('body' in req) {
+    if (typeof req.body === 'object') return cb(null, req.body);
+    else if (typeof req.body === 'string') rawBody = req.body;
+  }
 
   const oCtype = req.headers['content-type'];
   // Skip requests without content types.
@@ -26,8 +27,6 @@ export function parseNodeRequest(
     }
     return;
   }
-  // skip if it is no IncomingMessage
-  if (!('on' in req)) return cb(null, null);
 
   req.on('data', (chunk) => (rawBody += chunk));
   req.on('error', (err) => cb(err, null));

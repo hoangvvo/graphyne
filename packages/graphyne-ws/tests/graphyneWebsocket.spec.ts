@@ -4,7 +4,7 @@ import {
   GraphyneWebSocketConnection,
 } from '../src/graphyneWebsocket';
 import { GraphyneCore } from '../../graphyne-core/src';
-import { parseNodeRequest } from '../../graphyne-server/src/utils';
+import { parseNodeRequest } from '../../graphyne-server/src/parseBody';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
 import { makeExecutableSchema } from '@graphql-tools/schema';

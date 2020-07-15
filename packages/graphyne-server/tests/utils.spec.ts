@@ -1,4 +1,4 @@
-import { parseNodeRequest } from '../src/utils';
+import { parseNodeRequest } from '../src/parseBody';
 import { strict as assert } from 'assert';
 import { createServer } from 'http';
 import request from 'supertest';
@@ -6,13 +6,13 @@ import request from 'supertest';
 describe('core utils', () => {
   describe('parseNodeRequest', () => {
     it('returns if req.body has been parsed', (done) => {
-      const req = { body: { query: 1 }, headers: {}, method: '' };
+      const req: any = { body: { query: 1 }, headers: {}, method: '' };
       parseNodeRequest(req, (err, parsedBody) => {
         done(assert.deepStrictEqual(parsedBody, req.body));
       });
     });
     it('treat req.body as rawBody if it is string (and skip reading)', (done) => {
-      const req = {
+      const req: any = {
         body: '{ "query": 1 }',
         headers: { 'content-type': 'application/json' },
         on: () => {
@@ -22,12 +22,6 @@ describe('core utils', () => {
       };
       parseNodeRequest(req, (err, parsedBody) => {
         done(assert.deepStrictEqual(parsedBody, JSON.parse(req.body)));
-      });
-    });
-    it('skip reading from req if it is not IncomingMessage', (done) => {
-      const req = { headers: { 'content-type': 'meh' }, method: '' };
-      parseNodeRequest(req, (err, parsedBody) => {
-        done(assert.deepStrictEqual(parsedBody, null));
       });
     });
     describe('errors body is malformed', async () => {

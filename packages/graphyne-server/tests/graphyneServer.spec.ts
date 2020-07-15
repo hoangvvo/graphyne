@@ -1,9 +1,8 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import request from 'supertest';
-import { strict as assert } from 'assert';
 import { Config } from '../../graphyne-core/src';
 import { createServer } from 'http';
-import { GraphyneServer } from '../src';
+import { Graphyne, createHandler } from '../src';
 import { HandlerConfig } from '../src/types';
 
 function createGQLServer({
@@ -21,11 +20,11 @@ function createGQLServer({
       typeDefs: typeDefs as string,
       resolvers,
     });
-  const graphyne = new GraphyneServer({
+  const graphyne = new Graphyne({
     schema,
     ...options,
   });
-  return createServer(graphyne.createHandler());
+  return createServer(createHandler(graphyne, options));
 }
 
 const schema = makeExecutableSchema({
@@ -44,71 +43,11 @@ const schema = makeExecutableSchema({
 });
 
 describe('createHandler', () => {
-  describe('maps request using onRequest', () => {
-    it('with IncomingMessage', async () => {
-      const graphyne = new GraphyneServer({
-        schema,
-        onRequest: ([ctx], done) => done(ctx.req),
-        onResponse: ({ status, body, headers }, ctx) =>
-          ctx.res.writeHead(status, headers).end(body),
-      });
-      const handler = graphyne.createHandler();
-      const server = createServer((req, res) => {
-        const ctx = { req, res };
-        handler(ctx);
-      });
-      await request(server)
-        .get('/graphql')
-        .query({ query: 'query { hello }' })
-        .expect('{"data":{"hello":"world"}}');
-    });
-    it('with constructed request object', async () => {
-      const graphyne = new GraphyneServer({
-        schema,
-        onRequest: ([request], done) =>
-          done({
-            url: request.url,
-            headers: request.httpHeaders,
-            method: request.httpMethod,
-          }),
-        onResponse: ({ status, body, headers }, event, res) =>
-          res.writeHead(status, headers).end(body),
-      });
-      const handler = graphyne.createHandler();
-      const server = createServer((req, res) => {
-        const request = {
-          url: `/graphql?query={hello}`,
-          httpHeaders: {},
-          httpMethod: 'GET',
-        };
-        handler(request, res);
-      });
-      await request(server)
-        .get('/graphql')
-        .query({ query: 'query { hello }' })
-        .expect('{"data":{"hello":"world"}}');
-    });
-  });
-  it('allow custom onResponse', async () => {
-    const graphyne = new GraphyneServer({
-      schema,
-      onResponse: (result, req, res) => {
-        res.setHeader('test', 'ok');
-        res.end(result.body);
-      },
-    });
-    const server = createServer(graphyne.createHandler());
-    await request(server)
-      .get('/graphql')
-      .query({ query: 'query { hello }' })
-      .expect('test', 'ok')
-      .expect('{"data":{"hello":"world"}}');
-  });
   it('returns 400 on body parsing error', async () => {
-    const graphyne = new GraphyneServer({
+    const graphyne = new Graphyne({
       schema,
     });
-    const server = createServer(graphyne.createHandler());
+    const server = createServer(createHandler(graphyne));
     await request(server)
       .post('/graphql')
       .set('content-type', 'application/json')
@@ -164,26 +103,19 @@ describe('HTTP handler', () => {
     });
   });
   describe('explicitly run on specific path if options.path is set', () => {
-    const graphyne = new GraphyneServer({
-      schema,
-      path: '/api',
-    });
+    const graphyne = new Graphyne({ schema });
     it('by checking against req.url', async () => {
-      const server = createServer(graphyne.createHandler());
+      const server = createServer(createHandler(graphyne, { path: '/api' }));
       await request(server).get('/api?query={hello}').expect(200);
       await request(server).get('/graphql?query={hello}').expect(404);
     });
     it('by checking against req.path when available', async () => {
       const server = createServer((req, res) => {
         (req as any).path = req.url.substring(0, req.url.indexOf('?'));
-        graphyne.createHandler()(req, res);
+        createHandler(graphyne, { path: '/api' })(req, res);
       });
       await request(server).get('/api?query={hello}').expect(200);
       await request(server).get('/graphql?query={hello}').expect(404);
     });
   });
-});
-
-describe('deprecated createHandler(options)', () => {
-  assert.throws(() => new GraphyneServer({ schema }).createHandler({}));
 });

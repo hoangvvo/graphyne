@@ -19,45 +19,41 @@ npm i graphyne-server graphql
 yarn add graphyne-server graphql
 ```
 
-## Usage (with bare Node HTTP Server)
+## Usage
+
+### Node HTTP Server
 
 ```javascript
 const http = require("http");
-const { GraphyneServer } = require("graphyne-server");
+const { Graphyne, createHandler } = require("graphyne-server");
 
-const graphyne = new GraphyneServer(options);
-// Define `options.path` if you want GraphQL to run on specific path only (such as `/graphql`)
+const graphyne = new Graphyne(options);
 
-const server = http.createServer(graphyne.createHandler());
+const server = http.createServer(createHandler(graphyne, handlerOptions));
+// Define `handlerOptions.path` if you want GraphQL to run on specific path only (such as `/graphql`)
 
 server.listen(3000, () => {
   console.log(`🚀  Server ready at :3000`);
 });
 ```
 
-If you do not use Node HTTP Server (which is likely), you must define `options.onRequest` and `options.onResponse`. See [framework-specific integration](#framework-specific-integration). Some frameworks such as `express` and `micro` are supported out of the box.
+Also, check out examples for [Express](/examples/with-express) and [Micro](/examples/with-micro)
 
 ## API
 
-### `new GraphyneServer(options)`
+### `new Graphyne(options)`
 
-Constructing a Graphyne GraphQL server. It accepts the following options:
+Constructing a Graphyne instance. It accepts the following options:
 
 | options | description | default |
 |---------|-------------|---------|
 | schema | A `GraphQLSchema` instance. It can be created using `makeExecutableSchema` from [graphql-tools](https://github.com/apollographql/graphql-tools). | (required) |
-| context | An object or function called to creates a context shared across resolvers per request. The function signature is the same to the framework's [handler function](#framework-specific-integration). | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
-| path | Specify a path for the GraphQL endpoint, and `graphyne-server` will response with `404` elsewhere. You **should not** set this when using with frameworks with built-in routers (such as `express`, `fastify`, etc.). | `undefined` (run on all paths) |
-| onRequest | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `([req, res], done) => done(req)` |
-| onResponse | Used to integrate to frameworks other than Node.js HTTP. See [Framework-specific integration](https://github.com/hoangvvo/graphyne#framework-specific-integration). | `(result, req, res) => res.writeHead(result.status, result.headers).end(result.body)` |
 
-### `GraphyneServer#createHandler()`
+**Looking for `options.context`?** It is in `createHandler`.
 
-Create a handler for HTTP server.
-
-### `GraphyneServer#graphql({ source, contextValue, variableValues, operationName })`
+### `Graphyne#graphql({ source, contextValue, variableValues, operationName })`
 
 Execute the GraphQL query with:
 
@@ -68,59 +64,14 @@ Execute the GraphQL query with:
 
 The function returns a never-rejected promise of the execution result, which is an object of `data` and `errors`.
 
-**Warning:**
 
-- `options.context` does not run here. You need to supply the context object to `contextValue`.
+### `createHandler(graphyne, handlerOptions)`
 
-## Framework-specific integration
+Create a handling function for incoming HTTP requests. It accepts the following in `handlerOptions`:
 
-**Handler function** refers to framework/runtimes-specific handler of incoming request. For example, in `Express.js`, it is [`(req, res, next)`](https://expressjs.com/en/guide/writing-middleware.html). In `Fastify`, it is [`(request, reply)`](https://www.fastify.io/docs/latest/Routes/). In `Hapi`, it is [`(request, h)`](https://hapi.dev/tutorials/routing/?lang=en_US#-methods). In `AWS Lambda`, it is [`(event, context, callback)`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html). In `Micro` or `Node HTTP Server`, it is simply `(req, res)`.
-
-By default, `graphyne-server` expects the `Node HTTP Server` listener/handler function of `(req, res)`. However, as seen above, frameworks/runtimes like Hapi or AWS Lambda do not follow the convention. In such cases, `onRequest` and `onResponse` must be defined when calling `new GraphyneServer`.
-
-See [integrations.md](./integrations.md) to learn how `onRequest` and `onResponse` are used.
-
-### `onRequest(args, done)`
-
-This is the function to resolve frameworks with handler functions differing to `(req, res)`. It will be called with `args`, an array of *arguments* from a framework's handler function, and a callback function `done` to be called with one of the two:
-
-- `req`: `IncomingMessage` from Node.js
-- A compatible request object (See section below)
-
-By default, `onRequest` assumes `request` is the fist argument of the handler function. In Node.js HTTP Server, `args` is `[req, res]`, and `onRequest` defaults to `([req, res], done) => done(req))`.
-
-#### Compatible request object
-
-Sometimes, `IncomingMessage` is not available, when used in a non-Node.js environments like [AWS](https://docs.aws.amazon.com/lambda/latest/dg/lambda-services.html) or when the framework does not expose it.
-
-In such cases, you must create an object with the following properties:
-
-- `headers`: **(Required)** A key-value object of the HTTP headers.
-- `method`: **(Required)** The HTTP method verb (`GET`, `POST`, etc).
-- `body`: The body of the request (object or string).
-
-...with the additions of:
-
-- `url`: The url of the request (path + query strings) so `graphyne-server` can parse `path` and `query` itself.
-
-or supply it directly with:
-
-- `path`: The path of the request (before query strings).
-- `query`: The key-value object of the query strings.
-
-### `onResponse(result, ...args)`
-
-This is the function called to send back the HTTP response. It will be called with `args`, spreaded arguments of the framework handler function, and `result`, an object of:
-
-- `status` (the status code that should be set)
-- `headers` (the headers that should be set)
-- `body` (the **stringified** response body).
-
-By default, `onResponse` assumes `response` is the second argument of the handler function. In Node.js HTTP Server, `...args` is `req, res`, and `onResponse` defaults to `(result, req, res) => res.writeHead(result.status, result.headers).end(result.body)`.
-
-### Integration examples
-
-See [integrations.md](./integrations.md).
+| options | description | default |
+|---------|-------------|---------|
+| context | An object or function `(req, res) => ContextObject` to creates a context shared across resolvers per request. | `{}` | path | Specify a path for the GraphQL endpoint, and `graphyne-server` will response with `404` elsewhere. You **should not** set this when using with frameworks with built-in routers (such as `express`). | `undefined` (run on all paths) |
 
 ## Additional features
 

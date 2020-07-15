@@ -4,7 +4,7 @@ import {
   QueryBody,
   parseBodyByContentType,
   getGraphQLParams,
-  QueryRequest,
+  HttpQueryRequest,
 } from 'graphyne-core';
 
 export class GraphyneWorker extends GraphyneCore {
