@@ -1,4 +1,4 @@
-import { GraphQLError, ExecutionResult } from 'graphql';
+import { ExecutionResult, DocumentNode } from 'graphql';
 import { QueryBody, Graphyne, FormattedExecutionResult } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
@@ -50,7 +50,7 @@ export interface SubscriptionConnection {
 
 export class SubscriptionConnection extends EventEmitter {
   private operations: Map<string, AsyncIterator<ExecutionResult>> = new Map();
-  contextPromise?: Promise<Record<string, any>>;
+  contextPromise: Promise<Record<string, any>>;
   constructor(
     public socket: WebSocket,
     public request: IncomingMessage,
@@ -58,6 +58,7 @@ export class SubscriptionConnection extends EventEmitter {
     private options: GraphyneWSOptions
   ) {
     super();
+    this.contextPromise = Promise.resolve({});
   }
 
   async handleMessage(message: string) {
@@ -65,9 +66,7 @@ export class SubscriptionConnection extends EventEmitter {
     try {
       data = JSON.parse(message);
     } catch (err) {
-      return this.sendMessage(GQL_ERROR, null, {
-        errors: [new GraphQLError('Malformed message')],
-      });
+      return this.sendError(undefined, new Error('Malformed message'));
     }
     switch (data.type) {
       case GQL_CONNECTION_INIT:
@@ -102,9 +101,7 @@ export class SubscriptionConnection extends EventEmitter {
             ? this.options.context(initContext)
             : this.options.context
         );
-      } else this.contextPromise = Promise.resolve(initContext);
-      if (!(await this.contextPromise))
-        throw new GraphQLError('Prohibited connection!');
+      }
       this.sendMessage(GQL_CONNECTION_ACK);
       // Emit
       this.emit('connection_init', data.payload as ConnectionParams);
@@ -123,28 +120,25 @@ export class SubscriptionConnection extends EventEmitter {
     const { query, variables, operationName } = data.payload;
 
     if (!query) {
-      return this.sendMessage(GQL_ERROR, data.id, {
-        errors: [new GraphQLError('Must provide query string.')],
-      });
+      return this.sendError(data.id, new Error('Must provide query string.'));
     }
 
-    const context = (await this.contextPromise) || {};
+    const {
+      document,
+      compiledQuery,
+      operation,
+    } = this.graphyne.getCompiledQuery(query, operationName);
 
-    const executionResult = await this.graphyne
-      .subscribe({
-        source: query,
-        contextValue: context,
-        variableValues: variables,
-        operationName,
-      })
-      .catch((errorOrResult: Error | ExecutionResult) => {
-        if ('errors' in errorOrResult || 'data' in errorOrResult) {
-          this.sendMessage(GQL_ERROR, data.id, errorOrResult);
-        }
-        return null;
-      });
-
-    if (!executionResult) return this.handleGQLStop(data.id);
+    const context = await this.contextPromise;
+    const executionResult = await this.graphyne[
+      operation === 'subscription' ? 'subscribe' : 'execute'
+    ]({
+      document: document as DocumentNode,
+      contextValue: context,
+      variableValues: variables,
+      operationName,
+      compiledQuery,
+    });
 
     const executionIterable = isAsyncIterable(executionResult)
       ? (executionResult as AsyncIterator<ExecutionResult>)
@@ -166,9 +160,9 @@ export class SubscriptionConnection extends EventEmitter {
         this.sendMessage(GQL_COMPLETE, data.id);
       },
       (err) => {
-        this.sendMessage(GQL_ERROR, data.id, {
-          errors: [err],
-        });
+        // If something thrown, it must be a system error, otherwise, it should have landed in the regular callback with as GQL_DATA
+        // See `mapAsyncIterator`
+        this.sendError(data.id, err);
       }
     );
   }
@@ -192,6 +186,16 @@ export class SubscriptionConnection extends EventEmitter {
       // Emit
       this.emit('connection_terminate');
     }, 10);
+  }
+
+  sendError(id: string | undefined, error: Error) {
+    this.socket.send(
+      JSON.stringify({
+        type: GQL_ERROR,
+        ...(id && { id }),
+        payload: { message: error.message },
+      })
+    );
   }
 
   sendMessage(type: string, id?: string | null, result?: ExecutionResult) {
