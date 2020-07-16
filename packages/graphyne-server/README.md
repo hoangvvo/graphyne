@@ -7,7 +7,7 @@
 
 > This package is highly experimental and may be changed or removed at any time!
 
-Lightning-fast GraphQL Server for any JavaScript frameworks or severless environments.
+Lightning-fast GraphQL Server for JavaScript servers. Supports `express`, `micro`, `Node HTTP server` and more.
 
 ## Install
 
