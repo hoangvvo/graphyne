@@ -67,7 +67,6 @@ Constructing a Graphyne instance. It accepts the following options:
 
 **Looking for `options.context`?** It is in `handleRequest` or `Graphyne#graphql`.
 
-
 ### `Graphyne#graphql({ source, contextValue, variableValues, operationName })`
 
 Execute the GraphQL query with:

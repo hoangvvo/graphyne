@@ -66,8 +66,6 @@ app.listen(3000, () => {
 module.exports = gqlHandle;
 ```
 
-
-
 ## API
 
 ### `new Graphyne(options)`
@@ -92,7 +90,6 @@ Execute the GraphQL query with:
 - `operationName` (string): The operation to be run if `source` contains multiple operations.
 
 The function returns a never-rejected promise of the execution result, which is an object of `data` and `errors`.
-
 
 ### `httpHandler(graphyne, handlerOptions)`
 
