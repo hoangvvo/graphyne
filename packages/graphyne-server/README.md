@@ -96,7 +96,11 @@ The function returns a never-rejected promise of the execution result, which is 
 
 ### `httpHandler(graphyne, handlerOptions)`
 
-Create a handling function for incoming HTTP requests. It accepts the following in `handlerOptions`:
+Create a handling function for incoming HTTP requests.
+
+`graphyne` is an instance of [`Graphyne`](#new-graphyneoptions).
+
+`handlerOptions` accepts the following:
 
 | options | description | default |
 |---------|-------------|---------|

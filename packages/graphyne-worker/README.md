@@ -81,6 +81,8 @@ The function returns a never-rejected promise of the execution result, which is 
 
 ### `handleRequest(graphyne, request, handlerOptions)`
 
+`graphyne` is an instance of [`Graphyne`](#new-graphyneoptions).
+
 Handles the [FetchEvent.request](https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent/request) (`request`) and returns a promise of [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) to be used in `event.respondWith`.
 
 `handlerOptions` accepts the following:
