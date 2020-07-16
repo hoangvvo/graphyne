@@ -48,6 +48,8 @@ server.listen(3000, () => {
 });
 ```
 
+See more examples [here](/examples/).
+
 ## API
 
 ### wsHandler(graphyne, options)
@@ -62,11 +64,13 @@ Create a handler for incoming WebSocket connection (from `wss.on('connection')`)
   - `connectionParams`: Object that is sent from the client. See an example in [`apollo-link-ws`](https://www.apollographql.com/docs/react/data/subscriptions/#authentication-over-websocket)
   - `socket`: The [WebSocket connection](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#event-connection).
   - `request`: The incoming request.
-- `onSubscriptionConnection`: A function to called with the `SubscriptionConnection` instance whenever one is created (on every websocket connection).
+- `onSubscriptionConnection`: (**Experimental**) A function to called with the `SubscriptionConnection` instance whenever one is created (on every websocket connection).
 
 ### `Class: SubscriptionConnection`
 
 This class represents an *internal* subscription connection that handles incoming message (`ws.on('message')`) via `SubscriptionConnection#handleMessage`. See [/packages/graphyne-worker/src/handler.ts](handler.ts) for its usage.
+
+> This class, along with `onSubscriptionConnection`, are experimental and may suffer breaking changes at any time.
 
 #### SubscriptionConnection#socket
 

@@ -32,6 +32,8 @@ const gqlHandle = httpHandler(graphyne, handlerOptions);
 // Define `handlerOptions.path` if you want `gqlHandle` to run on specific path and respond with 404 otherwise
 ```
 
+See more examples [here](/examples/).
+
 ### Node HTTP Server
 
 ```javascript
