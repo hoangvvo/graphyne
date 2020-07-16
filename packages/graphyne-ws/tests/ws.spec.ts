@@ -1,7 +1,7 @@
 import { wsHandler } from '../src';
 import { GraphyneWSOptions } from '../src/types';
 import { SubscriptionConnection } from '../src/connection';
-import { Graphyne, Config as GraphyneConfig } from '../../graphyne-core/src';
+import { Graphyne, Config as GraphyneConfig } from 'graphyne-core/src';
 import { parseBody } from '../../graphyne-server/src/http/parseBody';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
@@ -95,7 +95,7 @@ async function startServer(
   return { server, client, ws };
 }
 
-describe('graphyne-ws', () => {
+describe('graphyne-ws: wsHandler', () => {
   it('replies with connection_ack', async () => {
     const { server, client } = await startServer();
     client.write(
@@ -324,7 +324,7 @@ describe('graphyne-ws', () => {
       });
     });
   });
-  it('stop subscription upon GQL_STOP', async () => {
+  it('stops subscription upon GQL_STOP', async () => {
     const { server, client } = await startServer();
     client.write(
       JSON.stringify({
@@ -384,7 +384,7 @@ describe('graphyne-ws', () => {
       server.close();
     });
   });
-  it('close connection on error in context function', (done) => {
+  it('closes connection on error in context function', (done) => {
     // @ts-ignore
     const context = ({ connectionParams }) => {
       if (connectionParams?.unauthenticated) return false;
@@ -412,7 +412,7 @@ describe('graphyne-ws', () => {
       });
     });
   });
-  it('close connection on connection_terminate', (done) => {
+  it('closes connection on connection_terminate', (done) => {
     startServer().then(({ server, client }) => {
       client.write(
         JSON.stringify({
@@ -433,170 +433,171 @@ describe('graphyne-ws', () => {
       });
     });
   });
-  describe('SubscriptionConnection', () => {
-    it('emits connection_init', () => {
-      // eslint-disable-next-line no-async-promise-executor
-      return new Promise(async (resolve, reject) => {
-        const { client, server } = await startServer(
-          {},
-          {},
-          {
-            onSubscriptionConnection: (connection: SubscriptionConnection) => {
-              connection.on('connection_init', (connectionParams) => {
-                try {
-                  assert.deepStrictEqual(connectionParams, { test: 'ok' });
-                  resolve();
-                } catch (e) {
-                  reject(e);
-                } finally {
-                  client.end();
-                  server.close();
-                }
-              });
-            },
-          }
-        );
-        client.write(
-          JSON.stringify({
-            payload: { test: 'ok' },
-            type: 'connection_init',
-          })
-        );
-      });
+});
+
+describe('graphyne-ws: SubscriptionConnection', () => {
+  it('emits connection_init', () => {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      const { client, server } = await startServer(
+        {},
+        {},
+        {
+          onSubscriptionConnection: (connection: SubscriptionConnection) => {
+            connection.on('connection_init', (connectionParams) => {
+              try {
+                assert.deepStrictEqual(connectionParams, { test: 'ok' });
+                resolve();
+              } catch (e) {
+                reject(e);
+              } finally {
+                client.end();
+                server.close();
+              }
+            });
+          },
+        }
+      );
+      client.write(
+        JSON.stringify({
+          payload: { test: 'ok' },
+          type: 'connection_init',
+        })
+      );
     });
-    it('emits subscription_start', () => {
-      // eslint-disable-next-line no-async-promise-executor
-      return new Promise(async (resolve, reject) => {
-        const body = {
+  });
+  it('emits subscription_start', () => {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      const body = {
+        id: 1,
+        type: 'start',
+        payload: {
+          query: `
+        subscription {
+          notificationAdded {
+            message
+          }
+        }
+      `,
+        },
+      };
+      const { client, server } = await startServer(
+        {},
+        {},
+        {
+          onSubscriptionConnection,
+          context: () => ({ test: true }),
+        }
+      );
+      function onSubscriptionConnection(connection: SubscriptionConnection) {
+        connection.on('subscription_start', (id, payload, context) => {
+          try {
+            assert.strictEqual(id, body.id);
+            assert.strictEqual(context.test, true);
+            assert.deepStrictEqual(payload, body.payload);
+            resolve();
+          } catch (e) {
+            reject(e);
+          } finally {
+            client.end();
+            server.close();
+          }
+        });
+      }
+      client.write(
+        JSON.stringify({
+          payload: { test: 'ok' },
+          type: 'connection_init',
+        })
+      );
+      client.write(JSON.stringify(body));
+    });
+  });
+  it('emits subscription_stop', () => {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      const { client, server } = await startServer(
+        {},
+        {},
+        {
+          onSubscriptionConnection,
+        }
+      );
+      function onSubscriptionConnection(connection: SubscriptionConnection) {
+        connection.on('subscription_stop', (id) => {
+          try {
+            assert.strictEqual(id, 1);
+            resolve();
+          } catch (e) {
+            reject(e);
+          } finally {
+            client.end();
+            server.close();
+          }
+        });
+      }
+      client.write(
+        JSON.stringify({
+          type: 'connection_init',
+        })
+      );
+      client.write(
+        JSON.stringify({
           id: 1,
           type: 'start',
           payload: {
             query: `
-          subscription {
-            notificationAdded {
-              message
-            }
-          }
-        `,
-          },
-        };
-        const { client, server } = await startServer(
-          {},
-          {},
-          {
-            onSubscriptionConnection,
-            context: () => ({ test: true }),
-          }
-        );
-        function onSubscriptionConnection(connection: SubscriptionConnection) {
-          connection.on('subscription_start', (id, payload, context) => {
-            try {
-              assert.strictEqual(id, body.id);
-              assert.strictEqual(context.test, true);
-              assert.deepStrictEqual(payload, body.payload);
-              resolve();
-            } catch (e) {
-              reject(e);
-            } finally {
-              client.end();
-              server.close();
-            }
-          });
-        }
-        client.write(
-          JSON.stringify({
-            payload: { test: 'ok' },
-            type: 'connection_init',
-          })
-        );
-        client.write(JSON.stringify(body));
-      });
-    });
-    it('emits subscription_stop', () => {
-      // eslint-disable-next-line no-async-promise-executor
-      return new Promise(async (resolve, reject) => {
-        const { client, server } = await startServer(
-          {},
-          {},
-          {
-            onSubscriptionConnection,
-          }
-        );
-        function onSubscriptionConnection(connection: SubscriptionConnection) {
-          connection.on('subscription_stop', (id) => {
-            try {
-              assert.strictEqual(id, 1);
-              resolve();
-            } catch (e) {
-              reject(e);
-            } finally {
-              client.end();
-              server.close();
-            }
-          });
-        }
-        client.write(
-          JSON.stringify({
-            type: 'connection_init',
-          })
-        );
-        client.write(
-          JSON.stringify({
-            id: 1,
-            type: 'start',
-            payload: {
-              query: `
-              subscription {
-                notificationAdded {
-                  message
-                }
+            subscription {
+              notificationAdded {
+                message
               }
-            `,
-            },
-          })
-        );
-        client.on('data', (chunk) => {
-          const data = JSON.parse(chunk);
-          if (data.type === 'connection_ack') {
-            client.write(
-              JSON.stringify({
-                id: 1,
-                type: 'stop',
-              })
-            );
-          }
-        });
-      });
-    });
-    it('emits connection_terminate', () => {
-      // eslint-disable-next-line no-async-promise-executor
-      return new Promise(async (resolve, reject) => {
-        const { client, server } = await startServer(
-          {},
-          {},
-          {
-            onSubscriptionConnection,
-          }
-        );
-        function onSubscriptionConnection(connection: SubscriptionConnection) {
-          connection.on('connection_terminate', () => {
-            resolve();
-            client.end();
-            server.close();
-          });
-        }
-        client.write(
-          JSON.stringify({
-            type: 'connection_init',
-          })
-        );
-        client.on('data', () => {
+            }
+          `,
+          },
+        })
+      );
+      client.on('data', (chunk) => {
+        const data = JSON.parse(chunk);
+        if (data.type === 'connection_ack') {
           client.write(
             JSON.stringify({
-              type: 'connection_terminate',
+              id: 1,
+              type: 'stop',
             })
           );
+        }
+      });
+    });
+  });
+  it('emits connection_terminate', () => {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      const { client, server } = await startServer(
+        {},
+        {},
+        {
+          onSubscriptionConnection,
+        }
+      );
+      function onSubscriptionConnection(connection: SubscriptionConnection) {
+        connection.on('connection_terminate', () => {
+          resolve();
+          client.end();
+          server.close();
         });
+      }
+      client.write(
+        JSON.stringify({
+          type: 'connection_init',
+        })
+      );
+      client.on('data', () => {
+        client.write(
+          JSON.stringify({
+            type: 'connection_terminate',
+          })
+        );
       });
     });
   });

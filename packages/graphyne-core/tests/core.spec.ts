@@ -52,7 +52,7 @@ const schema = makeExecutableSchema({
   },
 });
 
-describe('graphyne-core', () => {
+describe('graphyne-core: Graphyne', () => {
   it('throws if initializing instance with no option', () => {
     assert.throws(() => {
       // @ts-expect-error
@@ -68,7 +68,7 @@ describe('graphyne-core', () => {
   });
 });
 
-describe('HTTP Operations', () => {
+describe('graphyne-core: Graphyne#runHttpQuery', () => {
   type ExpectedBodyFn = (str: string) => void;
 
   function testHttp(
@@ -426,7 +426,7 @@ describe('HTTP Operations', () => {
   });
 });
 
-describe('graphql()', () => {
+describe('graphyne-core: Graphyne#graphql', () => {
   type ExpectedResultFn = (res: FormattedExecutionResult) => void;
   async function testGQL(
     args: GraphQLArgs,

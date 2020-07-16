@@ -44,7 +44,7 @@ const schema = makeExecutableSchema({
   },
 });
 
-describe('HTTP', () => {
+describe('graphyne-server/http: httpHandler', () => {
   it('returns 400 on body parsing error', async () => {
     const graphyne = new Graphyne({
       schema,
@@ -101,7 +101,7 @@ describe('HTTP', () => {
         .expect('{"data":{"helloMe":"hoang"}}');
     });
   });
-  describe('explicitly run on specific path if options.path is set', () => {
+  describe('sends 404 response accordingly if options.path is set', () => {
     const graphyne = new Graphyne({ schema });
     it('by checking against req.url', async () => {
       const server = createServer(httpHandler(graphyne, { path: '/api' }));
@@ -119,7 +119,7 @@ describe('HTTP', () => {
   });
 });
 
-describe('HTTP/parseBody', () => {
+describe('graphyne-server/http: parseBody', () => {
   it('returns if req.body has been parsed', (done) => {
     const req: any = { body: { query: 1 }, headers: {}, method: '' };
     parseBody(req, (err, parsedBody) => {

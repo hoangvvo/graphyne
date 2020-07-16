@@ -1,7 +1,7 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import * as fetch from 'node-fetch';
 import { strict as assert } from 'assert';
-import { HttpQueryResponse } from '../../graphyne-core/src';
+import { HttpQueryResponse } from 'graphyne-core/src';
 import { Graphyne, handleRequest } from '../src';
 
 const schema = makeExecutableSchema({
@@ -55,7 +55,7 @@ before(() => {
   global.Response = fetch.Response;
 });
 
-describe('handleRequest', () => {
+describe('graphyne-worker: handleRequest', () => {
   it('works with queryParams', async () => {
     await testRequest(
       '/graphql?query={ hello }',
