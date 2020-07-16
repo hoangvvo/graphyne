@@ -1,9 +1,9 @@
-import { QueryBody, parseBodyByContentType } from 'graphyne-core';
+import { parseBodyByContentType } from 'graphyne-core';
 import { IncomingMessage } from 'http';
 
 export function parseBody(
   req: IncomingMessage | (IncomingMessage & { body: any }),
-  cb: (err: any, body: QueryBody | null) => void
+  cb: (err: any, body: Record<string, any> | null) => void
 ): void {
   // If body has been parsed as a keyed object, use it.
   if ('body' in req && typeof req.body === 'object') {

@@ -1,6 +1,5 @@
 import {
   Graphyne,
-  QueryBody,
   parseBodyByContentType,
   getGraphQLParams,
   HttpQueryRequest,
@@ -28,7 +27,7 @@ export async function handleRequest(
       }
     );
   }
-  let body: QueryBody | null = null;
+  let body: Record<string, any> | null = null;
 
   if (request.method === 'POST') {
     const oCtype = request.headers.get('content-type');

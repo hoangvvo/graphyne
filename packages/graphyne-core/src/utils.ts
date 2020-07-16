@@ -1,7 +1,10 @@
 import { ExecutionResult } from 'graphql';
-import { QueryBody } from '.';
+import { QueryBody } from './types';
 
-export function parseBodyByContentType(rawBody: string, oCtype: string) {
+export function parseBodyByContentType(
+  rawBody: string,
+  oCtype: string
+): Record<string, any> | null {
   const semiIndex = oCtype.indexOf(';');
   const ctype = (semiIndex !== -1
     ? oCtype.substring(0, semiIndex)

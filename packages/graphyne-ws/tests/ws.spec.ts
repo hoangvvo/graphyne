@@ -10,7 +10,8 @@ import {
 } from '../src';
 import { GraphyneWSOptions } from '../src/types';
 import { SubscriptionConnection } from '../src/connection';
-import { Graphyne, Config as GraphyneConfig } from '../../graphyne-core/src';
+import { Graphyne } from '../../graphyne-core/src';
+import { Config as GraphyneConfig } from '../../graphyne-core/src/types';
 import { parseBody } from '../../graphyne-server/src/http/parseBody';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
