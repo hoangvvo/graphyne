@@ -6,8 +6,8 @@ declare module '@polka/url' {
   ): {
     path: string;
     pathname: string;
-    search: string;
-    query: { [key: string]: string };
+    search: string | null;
+    query: { [key: string]: string } | null;
     href: string;
     _raw: string;
   };

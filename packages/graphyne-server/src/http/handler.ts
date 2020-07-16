@@ -32,7 +32,7 @@ export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
     parseBody(req, (err, body) => {
       if (err) return sendErrorResponse(res, err);
       const params = getGraphQLParams({
-        queryParams: parseUrl(req, true).query,
+        queryParams: parseUrl(req, true).query || {},
         body,
       }) as HttpQueryRequest;
       params.httpMethod = req.method as string;
