@@ -10,6 +10,8 @@ export function parseBody(
     return cb(null, req.body);
   }
 
+  if (req.method === 'GET') return cb(null, null);
+
   const oCtype = req.headers['content-type'];
   // Skip requests without content types.
   if (!oCtype) return cb(null, null);
