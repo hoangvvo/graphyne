@@ -1,5 +1,5 @@
 import {
-  GraphyneCore,
+  Graphyne,
   getGraphQLParams,
   HttpQueryResponse,
   HttpQueryRequest,
@@ -9,10 +9,7 @@ import parseUrl from '@polka/url';
 import { HandlerConfig, TContext } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
 
-export function createHandler(
-  graphyne: GraphyneCore,
-  options: HandlerConfig = {}
-) {
+export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
   function sendResponse(res: ServerResponse, result: HttpQueryResponse) {
     res.writeHead(result.status, result.headers).end(result.body);
   }

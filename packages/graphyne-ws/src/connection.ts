@@ -1,9 +1,5 @@
 import { GraphQLError, ExecutionResult } from 'graphql';
-import {
-  QueryBody,
-  GraphyneCore,
-  FormattedExecutionResult,
-} from 'graphyne-core';
+import { QueryBody, Graphyne, FormattedExecutionResult } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -58,7 +54,7 @@ export class SubscriptionConnection extends EventEmitter {
   constructor(
     public socket: WebSocket,
     public request: IncomingMessage,
-    private graphyne: GraphyneCore,
+    private graphyne: Graphyne,
     private options?: GraphyneWSOptions
   ) {
     super();

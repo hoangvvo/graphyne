@@ -1,10 +1,7 @@
 import { wsHandler } from '../src';
 import { GraphyneWSOptions } from '../src/types';
 import { SubscriptionConnection } from '../src/connection';
-import {
-  GraphyneCore,
-  Config as GraphyneConfig,
-} from '../../graphyne-core/src';
+import { Graphyne, Config as GraphyneConfig } from '../../graphyne-core/src';
 import { parseBody } from '../../graphyne-server/src/http/parseBody';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
@@ -71,7 +68,7 @@ async function startServer(
 ) {
   // @ts-ignore
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
-  const graphyne = new GraphyneCore({ schema, ...graphyneOpts });
+  const graphyne = new Graphyne({ schema, ...graphyneOpts });
   const server = createServer((req, res) => {
     parseBody(req, async (err, body) => {
       graphyne.runHttpQuery(

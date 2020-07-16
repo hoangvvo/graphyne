@@ -26,7 +26,7 @@ import {
 import flatstr from 'flatstr';
 import { isAsyncIterable } from './utils';
 
-export class GraphyneCore {
+export class Graphyne {
   private lru: Lru<QueryCache>;
   public schema: GraphQLSchema;
   protected options: Config;
