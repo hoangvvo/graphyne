@@ -4,9 +4,9 @@ import {
   HttpQueryResponse,
   HttpQueryRequest,
 } from 'graphyne-core';
-import { parseNodeRequest } from './parseBody';
+import { parseBody } from './parseBody';
 import parseUrl from '@polka/url';
-import { HandlerConfig, TContext } from './types';
+import { HandlerConfig, TContext } from '../types';
 import { IncomingMessage, ServerResponse } from 'http';
 
 export function createHandler(
@@ -32,7 +32,7 @@ export function createHandler(
       (req.path || parseUrl(req, true).pathname) !== options.path
     )
       return sendResponse(res, { status: 404, body: 'not found', headers: {} });
-    parseNodeRequest(req, (err, body) => {
+    parseBody(req, (err, body) => {
       if (err) return sendErrorResponse(res, err);
       const params = getGraphQLParams({
         queryParams: parseUrl(req, true).query,

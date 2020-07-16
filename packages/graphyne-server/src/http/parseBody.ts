@@ -1,7 +1,7 @@
 import { QueryBody, parseBodyByContentType } from 'graphyne-core';
 import { IncomingMessage } from 'http';
 
-export function parseNodeRequest(
+export function parseBody(
   req: IncomingMessage | (IncomingMessage & { body: any }),
   cb: (err: any, body: QueryBody | null) => void
 ): void {

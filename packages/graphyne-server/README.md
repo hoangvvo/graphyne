@@ -21,23 +21,52 @@ yarn add graphyne-server graphql
 
 ## Usage
 
+Start out by creating an instance of `Graphyne` and create a HTTP handler using that instance.
+
+```javascript
+const { Graphyne, httpHandler } = require("graphyne-server");
+
+const graphyne = new Graphyne(options);
+
+const gqlHandle = httpHandler(graphyne, handlerOptions);
+// Define `handlerOptions.path` if you want `gqlHandle` to run on specific path and respond with 404 otherwise
+```
+
 ### Node HTTP Server
 
 ```javascript
 const http = require("http");
-const { Graphyne, createHandler } = require("graphyne-server");
-
-const graphyne = new Graphyne(options);
-
-const server = http.createServer(createHandler(graphyne, handlerOptions));
-// Define `handlerOptions.path` if you want GraphQL to run on specific path only (such as `/graphql`)
+const server = http.createServer(gqlHandle);
 
 server.listen(3000, () => {
   console.log(`🚀  Server ready at :3000`);
 });
 ```
 
-Also, check out examples for [Express](/examples/with-express) and [Micro](/examples/with-micro)
+### [Express](https://github.com/expressjs/express)
+
+[Example](/examples/with-express)
+
+```javascript
+const express = require('express')
+const app = express()
+
+app.all('/graphql', gqlHandle);
+
+app.listen(3000, () => {
+  console.log(`🚀  Server ready at :3000`);
+});
+```
+
+### [Micro](https://github.com/zeit/micro)
+
+[Example](/examples/with-micro)
+
+```javascript
+module.exports = gqlHandle;
+```
+
+
 
 ## API
 
@@ -51,7 +80,7 @@ Constructing a Graphyne instance. It accepts the following options:
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
 
-**Looking for `options.context`?** It is in `createHandler`.
+**Looking for `options.context`?** It is in `Graphyne#httpHandler` or `Graphyne#graphql`.
 
 ### `Graphyne#graphql({ source, contextValue, variableValues, operationName })`
 
@@ -65,7 +94,7 @@ Execute the GraphQL query with:
 The function returns a never-rejected promise of the execution result, which is an object of `data` and `errors`.
 
 
-### `createHandler(graphyne, handlerOptions)`
+### `httpHandler(graphyne, handlerOptions)`
 
 Create a handling function for incoming HTTP requests. It accepts the following in `handlerOptions`:
 

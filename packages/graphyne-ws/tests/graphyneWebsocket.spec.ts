@@ -4,7 +4,7 @@ import {
   GraphyneWebSocketConnection,
 } from '../src/graphyneWebsocket';
 import { GraphyneCore } from '../../graphyne-core/src';
-import { parseNodeRequest } from '../../graphyne-server/src/parseBody';
+import { parseBody } from '../../graphyne-server/src/http/parseBody';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
 import { makeExecutableSchema } from '@graphql-tools/schema';
@@ -71,7 +71,7 @@ async function startServer(
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
   const graphyne = new GraphyneCore({ schema, ...graphyneOpts });
   const server = createServer((req, res) => {
-    parseNodeRequest(req, async (err, body) => {
+    parseBody(req, async (err, body) => {
       graphyne.runHttpQuery(
         {
           query: body.query,
