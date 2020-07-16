@@ -22,7 +22,6 @@ import {
   GraphQLArgs,
   FormattedExecutionResult,
 } from './types';
-// @ts-ignore
 import flatstr from 'flatstr';
 import { isAsyncIterable } from './utils';
 

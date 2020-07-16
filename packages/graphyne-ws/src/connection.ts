@@ -74,8 +74,9 @@ export class SubscriptionConnection extends EventEmitter {
         this.handleConnectionInit(data);
         break;
       case GQL_START:
-        // @ts-ignore
-        this.handleGQLStart(data);
+        this.handleGQLStart(
+          data as OperationMessage & { id: string; payload: QueryBody }
+        );
         break;
       case GQL_STOP:
         this.handleGQLStop(data.id as string);

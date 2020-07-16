@@ -1,7 +1,7 @@
 import { wsHandler } from '../src';
 import { GraphyneWSOptions } from '../src/types';
 import { SubscriptionConnection } from '../src/connection';
-import { Graphyne, Config as GraphyneConfig } from 'graphyne-core/src';
+import { Graphyne, Config as GraphyneConfig } from '../../graphyne-core';
 import { parseBody } from '../../graphyne-server/src/http/parseBody';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
@@ -60,13 +60,11 @@ const schema = makeExecutableSchema({
   resolvers,
 });
 
-// @ts-ignore
 async function startServer(
   options: { ws?: WebSocket } = {},
   graphyneOpts: Omit<GraphyneConfig, 'schema'> = {},
   graphyneWsOptions: GraphyneWSOptions = {}
 ) {
-  // @ts-ignore
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
   const graphyne = new Graphyne({ schema, ...graphyneOpts });
   const server = createServer((req, res) => {
@@ -85,7 +83,6 @@ async function startServer(
     });
   });
   const wss = new WebSocket.Server({ server });
-  // @ts-ignore
   wss.on('connection', wsHandler(graphyne, graphyneWsOptions));
   const client = WebSocket.createWebSocketStream(ws, {
     encoding: 'utf8',
@@ -166,9 +163,7 @@ describe('graphyne-ws: wsHandler', () => {
     });
   });
   it('rejects socket protocol other than graphql-ws', async () => {
-    // @ts-ignore
     const ws = new WebSocket('ws://localhost:4000', 'graphql-subscriptions');
-    // @ts-ignore
     const { server, client } = await startServer({ ws });
     await new Promise((resolve) =>
       ws.on('close', () => {
@@ -385,7 +380,6 @@ describe('graphyne-ws: wsHandler', () => {
     });
   });
   it('closes connection on error in context function', (done) => {
-    // @ts-ignore
     const context = ({ connectionParams }) => {
       if (connectionParams?.unauthenticated) return false;
       return {};
