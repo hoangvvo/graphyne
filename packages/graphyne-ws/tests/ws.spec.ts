@@ -78,7 +78,7 @@ let serverInit;
 async function startServer(
   options: { ws?: WebSocket } = {},
   graphyneOpts: Omit<GraphyneConfig, 'schema'> = {},
-  graphyneWsOptions: GraphyneWSOptions = {}
+  graphyneWsOptions?: GraphyneWSOptions
 ) {
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
   const graphyne = new Graphyne({ schema, ...graphyneOpts });
