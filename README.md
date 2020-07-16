@@ -8,20 +8,13 @@ A **lightning-fast** JavaScript GraphQL Server, featuring:
 
 - Caching of query validation and compilation with LRU strategy.
 - Highly performant Just-In-Time compiler via [graphql-jit](https://github.com/zalando-incubator/graphql-jit).
-- Framework-agnostic: Works out-of-the-box with most Node.js frameworks, in the browser ([Web Worker](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API)), and in serverless environments.
+- Lightweight, non-opinionated, and non-coupled integration with great extensibility: Does nothing more but returning handler functions to integrate into framework' routers, web workers, or [`ws`](https://github.com/websockets/ws).
+
+Inspired by [`fastify-gql`](https://github.com/mcollina/fastify-gql).
 
 ## Why
 
 `Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([more than 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
-
-| Server | Requests/s | Latency | Throughput/Mb |
-| ------ | ---------- | ------- | ------------- |
-| graphyne-server | 5471.6 | 0.30 | 34.10 |
-| express-graphql | 1609.4 | 2.73 | 10.13 |
-| apollo-server-express | 1481.0 | 2.95 | 9.28 |
-| graphql-yoga | 1240.2 | 3.46 | 7.84 |
-
-<sup>Benchmarks with popular GraphQL Server libraries using [benawad/node-graphql-benchmarks](https://github.com/benawad/node-graphql-benchmarks).</sup>
 
 ## Examples
 
@@ -33,7 +26,7 @@ See [examples](examples).
 
 [![npm](https://badgen.net/npm/v/graphyne-server)](https://www.npmjs.com/package/graphyne-server)
 
-Agnostic and fast GraphQL Server for **any** ([yes](packages/graphyne-server#framework-specific-integration)) Node.js frameworks. Also works in Serverless environment.
+Fast and simple GraphQL Server for Node.js frameworks.
 
 [Documentation](packages/graphyne-server) [npm](https://www.npmjs.com/package/graphyne-server)
 
