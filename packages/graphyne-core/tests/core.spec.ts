@@ -1,12 +1,11 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { GraphQLSchema } from 'graphql';
+import { GraphQLSchema, GraphQLArgs } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
 import {
   Graphyne,
   Config,
   QueryBody,
   QueryCache,
-  GraphQLArgs,
   FormattedExecutionResult,
 } from '../src';
 import { Lru } from 'tiny-lru';
@@ -429,7 +428,12 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
 describe('graphyne-core: Graphyne#graphql', () => {
   type ExpectedResultFn = (res: FormattedExecutionResult) => void;
   async function testGQL(
-    args: GraphQLArgs,
+    args: Pick<
+      GraphQLArgs,
+      'contextValue' | 'variableValues' | 'operationName'
+    > & {
+      source: string;
+    },
     expected: FormattedExecutionResult | ExpectedResultFn,
     options?: Partial<Config>
   ) {
