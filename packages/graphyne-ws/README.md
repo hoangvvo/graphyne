@@ -13,7 +13,7 @@ For now, this package is exclusively used with [Graphyne](https://github.com/hoa
 
 ## Install
 
-Since `graphyne-ws` uses [`ws`](https://github.com/websockets/ws) behind the hood, you must also install it if you haven't already.
+Since `graphyne-ws` uses [`ws`](https://github.com/websockets/ws) under the hood, you must also install it if you haven't already.
 
 ```shell
 npm i graphyne-ws ws
@@ -36,7 +36,7 @@ const { wsHandler } = require('graphyne-ws');
 const graphyne = new Graphyne(options);
 const server = http.createServer(httpHandler(graphyne));
 
-// Create a WebSocket.Server using the `ws` package
+// Create a WebSocket.Server from the `ws` package
 const wss = new WebSocket.Server({ path: '/graphql', server });
 
 // Attach wsHandler to WebSocket.Server `connection` event
@@ -47,8 +47,6 @@ server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);
 });
 ```
-
-To learn how to create a subscription as well as using different pubsub implementations (like Redis), see [graphql-subscriptions documentation](https://github.com/apollographql/graphql-subscriptions#getting-started-with-your-first-subscription).
 
 ## API
 
@@ -64,13 +62,17 @@ Create a handler for incoming WebSocket connection (from `wss.on('connection')`)
   - `connectionParams`: Object that is sent from the client. See an example in [`apollo-link-ws`](https://www.apollographql.com/docs/react/data/subscriptions/#authentication-over-websocket)
   - `socket`: The [WebSocket connection](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#event-connection).
   - `request`: The incoming request.
-- `onGraphyneWebSocketConnection`: A function to called with the `GraphyneWebSocketConnection` instance whenever one is created (on every websocket connection).
+- `onSubscriptionConnection`: A function to called with the `SubscriptionConnection` instance whenever one is created (on every websocket connection).
 
-### `GraphyneWebSocketConnection`
+### `Class: SubscriptionConnection`
 
-#### GraphyneWebSocketConnection#socket
+This class represents an *internal* subscription connection that handles incoming message (`ws.on('message')`) via `SubscriptionConnection#handleMessage`. See [/packages/graphyne-worker/src/handler.ts](handler.ts) for its usage.
 
-`GraphyneWebSocketConnection` exposes `socket` which is a `WebSocket`. This is helpful if you want to implement something like a "heartbeat" to detect broken connections according to [RFC 6455 Ping-Pong](https://tools.ietf.org/html/rfc6455#section-5.5):
+#### SubscriptionConnection#socket
+
+`SubscriptionConnection` exposes `socket` which is the same `WebSocket` from `wss.on('connection')`. 
+
+This is helpful if you want to implement something like a "heartbeat" to detect broken connections according to [RFC 6455 Ping-Pong](https://tools.ietf.org/html/rfc6455#section-5.5):
 
 ```javascript
 const HEARTBEAT_INTERVAL = 10000; // 10 sec
@@ -78,7 +80,7 @@ const HEARTBEAT_INTERVAL = 10000; // 10 sec
 const wss = new WebSocket.Server({ path: '/graphql', server });
 
 wss.on('connection', wsHandler(graphyne, {
-  onGraphyneWebSocketConnection: (connection) => {
+  onSubscriptionConnection: (connection) => {
     connection.socket.isAlive = true;
     connection.socket.on('pong', () => {
       connection.socket.isAlive = true;
@@ -104,15 +106,15 @@ wss.on('close', function close() {
 
 #### Events
 
-An instance of `GraphyneWebSocketConnection` extends `EventEmitter`.
+An instance of `SubscriptionConnection` extends `EventEmitter`.
 
 It emits several events upon connection acknowledged, subscription started or stopped, and connection terminated.
 
 ```javascript
-import { startSubscriptionServer } from "graphyne-ws";
+import { wsHandler } from "graphyne-ws";
 
-startSubscriptionServer({
-  onGraphyneWebSocketConnection: (connection) => {
+wsHandler(graphyne, wss, {
+  onSubscriptionConnection: (connection) => {
     // called after the connection is initialized and acknowledged
     connection.on('connection_init', (connectionParams) => {
       // optional parameters that the client specifies in connectionParams
@@ -134,6 +136,7 @@ startSubscriptionServer({
     connection.on('connection_terminate', () => {
       // This event has no argument
     });
+
   },
 });
 ```

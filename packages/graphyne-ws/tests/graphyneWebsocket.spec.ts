@@ -1,6 +1,6 @@
 import { wsHandler } from '../src';
-import { GraphyneWSOptions } from '../src/handler';
-import { GraphyneWebSocketConnection } from '../src/connection';
+import { GraphyneWSOptions } from '../src/types';
+import { SubscriptionConnection } from '../src/connection';
 import {
   GraphyneCore,
   Config as GraphyneConfig,
@@ -436,7 +436,7 @@ describe('graphyne-ws', () => {
       });
     });
   });
-  describe('GraphyneWebSocketConnection', () => {
+  describe('SubscriptionConnection', () => {
     it('emits connection_init', () => {
       // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
@@ -444,24 +444,21 @@ describe('graphyne-ws', () => {
           {},
           {},
           {
-            onGraphyneWebSocketConnection,
+            onSubscriptionConnection: (connection: SubscriptionConnection) => {
+              connection.on('connection_init', (connectionParams) => {
+                try {
+                  assert.deepStrictEqual(connectionParams, { test: 'ok' });
+                  resolve();
+                } catch (e) {
+                  reject(e);
+                } finally {
+                  client.end();
+                  server.close();
+                }
+              });
+            },
           }
         );
-        function onGraphyneWebSocketConnection(
-          connection: GraphyneWebSocketConnection
-        ) {
-          connection.on('connection_init', (connectionParams) => {
-            try {
-              assert.deepStrictEqual(connectionParams, { test: 'ok' });
-              resolve();
-            } catch (e) {
-              reject(e);
-            } finally {
-              client.end();
-              server.close();
-            }
-          });
-        }
         client.write(
           JSON.stringify({
             payload: { test: 'ok' },
@@ -490,13 +487,11 @@ describe('graphyne-ws', () => {
           {},
           {},
           {
-            onGraphyneWebSocketConnection,
+            onSubscriptionConnection,
             context: () => ({ test: true }),
           }
         );
-        function onGraphyneWebSocketConnection(
-          connection: GraphyneWebSocketConnection
-        ) {
+        function onSubscriptionConnection(connection: SubscriptionConnection) {
           connection.on('subscription_start', (id, payload, context) => {
             try {
               assert.strictEqual(id, body.id);
@@ -527,12 +522,10 @@ describe('graphyne-ws', () => {
           {},
           {},
           {
-            onGraphyneWebSocketConnection,
+            onSubscriptionConnection,
           }
         );
-        function onGraphyneWebSocketConnection(
-          connection: GraphyneWebSocketConnection
-        ) {
+        function onSubscriptionConnection(connection: SubscriptionConnection) {
           connection.on('subscription_stop', (id) => {
             try {
               assert.strictEqual(id, 1);
@@ -585,12 +578,10 @@ describe('graphyne-ws', () => {
           {},
           {},
           {
-            onGraphyneWebSocketConnection,
+            onSubscriptionConnection,
           }
         );
-        function onGraphyneWebSocketConnection(
-          connection: GraphyneWebSocketConnection
-        ) {
+        function onSubscriptionConnection(connection: SubscriptionConnection) {
           connection.on('connection_terminate', () => {
             resolve();
             client.end();

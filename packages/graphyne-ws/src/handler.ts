@@ -1,16 +1,9 @@
 import { GraphyneCore } from 'graphyne-core';
 import { IncomingMessage } from 'http';
 import * as WebSocket from 'ws';
-import { GraphyneWebSocketConnection } from './connection';
 import { GRAPHQL_WS } from './messageTypes';
-import { ContextFn } from './types';
-
-export interface GraphyneWSOptions {
-  context?: ContextFn;
-  onGraphyneWebSocketConnection?: (
-    connection: GraphyneWebSocketConnection
-  ) => void;
-}
+import { GraphyneWSOptions } from './types';
+import { SubscriptionConnection } from './connection';
 
 export function createHandler(
   graphyne: GraphyneCore,
@@ -23,15 +16,16 @@ export function createHandler(
       socket.protocol.indexOf(GRAPHQL_WS) === -1
     )
       return socket.close(1002);
-    const connection = new GraphyneWebSocketConnection({
+
+    const connection = new SubscriptionConnection(
       socket,
       request,
       graphyne,
-      contextFn: options?.context,
-    });
+      options
+    );
 
-    if (options?.onGraphyneWebSocketConnection)
-      options.onGraphyneWebSocketConnection(connection);
+    if (options?.onSubscriptionConnection)
+      options.onSubscriptionConnection(connection);
 
     socket.on('message', (message) => {
       connection.handleMessage(message.toString());

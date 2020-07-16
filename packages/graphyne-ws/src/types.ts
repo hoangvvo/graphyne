@@ -1,6 +1,7 @@
 import { QueryBody } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { IncomingMessage } from 'http';
+import { SubscriptionConnection } from './connection';
 
 export type ConnectionParams = Record<string, any>;
 
@@ -16,6 +17,9 @@ export interface InitContext {
   request: IncomingMessage;
 }
 
-export type ContextFn =
-  | Record<string, any>
-  | ((initContext: InitContext) => Record<string, any>);
+export interface GraphyneWSOptions {
+  context?:
+    | Record<string, any>
+    | ((initContext: InitContext) => Record<string, any>);
+  onSubscriptionConnection?: (connection: SubscriptionConnection) => void;
+}

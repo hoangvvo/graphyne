@@ -20,13 +20,13 @@ import {
   GQL_STOP,
 } from './messageTypes';
 import {
-  ContextFn,
   ConnectionParams,
   OperationMessage,
   InitContext,
+  GraphyneWSOptions,
 } from './types';
 
-export interface GraphyneWebSocketConnection {
+export interface SubscriptionConnection {
   on(
     event: 'connection_init',
     listener: (connectionParams: ConnectionParams) => void
@@ -52,24 +52,16 @@ export interface GraphyneWebSocketConnection {
   emit(event: 'connection_terminate'): boolean;
 }
 
-export class GraphyneWebSocketConnection extends EventEmitter {
-  public socket: WebSocket;
-  private request: IncomingMessage;
+export class SubscriptionConnection extends EventEmitter {
   private operations: Map<string, AsyncIterator<ExecutionResult>> = new Map();
   contextPromise?: Promise<Record<string, any>>;
-  graphyne: GraphyneCore;
-  contextFn?: ContextFn;
-  constructor(options: {
-    socket: WebSocket;
-    request: IncomingMessage;
-    graphyne: GraphyneCore;
-    contextFn?: ContextFn;
-  }) {
+  constructor(
+    public socket: WebSocket,
+    public request: IncomingMessage,
+    private graphyne: GraphyneCore,
+    private options?: GraphyneWSOptions
+  ) {
     super();
-    this.socket = options.socket;
-    this.request = options.request;
-    this.graphyne = options.graphyne;
-    this.contextFn = options.contextFn;
   }
 
   async handleMessage(message: string) {
@@ -107,11 +99,11 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     };
     try {
       // resolve context
-      if (this.contextFn) {
+      if (this.options?.context) {
         this.contextPromise = Promise.resolve(
-          typeof this.contextFn === 'function'
-            ? this.contextFn(initContext)
-            : this.contextFn
+          typeof this.options?.context === 'function'
+            ? this.options?.context(initContext)
+            : this.options?.context
         );
       } else this.contextPromise = Promise.resolve(initContext);
       if (!(await this.contextPromise))
