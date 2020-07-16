@@ -1,9 +1,8 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import * as fetch from 'node-fetch';
 import { strict as assert } from 'assert';
 import { HttpQueryResponse } from '../../graphyne-core/src';
-import { GraphyneWorker } from '../src';
-import { EventEmitter } from 'events';
-import * as fetch from 'node-fetch';
+import { Graphyne, handleRequest } from '../src';
 
 const schema = makeExecutableSchema({
   typeDefs: `
@@ -26,33 +25,26 @@ async function testRequest(
   input: string,
   init: fetch.RequestInit,
   expected: Partial<HttpQueryResponse> | null,
-  graphyneOpts = {}
+  handlerOptions = {}
 ) {
-  const handle = new GraphyneWorker({
-    schema,
-    ...graphyneOpts,
-  }).createHandler();
+  const graphyne = new Graphyne({ schema });
   return new Promise((resolve, reject) => {
-    function respondWith(responsePromise: Promise<Response>) {
-      if (!expected) throw new Error('Should not call me');
-      responsePromise
-        .then(async (response) => {
-          if (expected.body)
-            assert.strictEqual(expected.body, await response.text());
-          assert.strictEqual(expected.status || 200, response.status);
-          resolve();
-        })
-        .catch(reject);
-    }
-    const myEmitter = new EventEmitter();
     const fetchEvent = {
-      respondWith,
       request: new fetch.Request(
         input.startsWith('/') ? `http://localhost:0${input}` : input,
         init
       ),
     };
-    myEmitter.on('fetch', handle).emit('fetch', fetchEvent);
+    // @ts-ignore
+    // Mock Web Request using node-fetch Request
+    handleRequest(graphyne, fetchEvent.request as Request, handlerOptions).then(
+      async (response) => {
+        if (expected.body)
+          assert.strictEqual(expected.body, await response.text());
+        assert.strictEqual(expected.status || 200, response.status);
+        resolve();
+      }
+    );
   });
 }
 
@@ -63,7 +55,7 @@ before(() => {
   global.Response = fetch.Response;
 });
 
-describe.skip('Event handler', () => {
+describe('handleRequest', () => {
   it('works with queryParams', async () => {
     await testRequest(
       '/graphql?query={ hello }',
@@ -156,37 +148,5 @@ describe.skip('Event handler', () => {
         },
       }
     );
-  });
-
-  describe('response with GraphQL', () => {
-    it('default to /graphql path', async () => {
-      await testRequest(
-        '/graphql?query={ hello }',
-        {},
-        { status: 200, body: `{"data":{"hello":"world"}}` }
-      );
-    });
-    it('on custom path', async () => {
-      await testRequest(
-        '/api?query={ hello }',
-        {},
-        { status: 200, body: `{"data":{"hello":"world"}}` },
-        { path: '/api' }
-      );
-    });
-    it('pass through if not GraphQL path', (done) => {
-      testRequest('/myApi', {}, null);
-      // responseWith will not call
-      setTimeout(done, 30);
-    });
-  });
-});
-
-describe.skip('handleRequest', () => {
-  it('can be used to execute query programmatically', async () => {
-    const response = await new GraphyneWorker({ schema }).handleRequest(
-      new Request('http://localhost:0/graphql?query={hello}')
-    );
-    assert.strictEqual(await response.text(), `{"data":{"hello":"world"}}`);
   });
 });
