@@ -126,19 +126,6 @@ describe('graphyne-server/http: parseBody', () => {
       done(assert.deepStrictEqual(parsedBody, req.body));
     });
   });
-  it('treat req.body as rawBody if it is string (and skip reading)', (done) => {
-    const req: any = {
-      body: '{ "query": 1 }',
-      headers: { 'content-type': 'application/json' },
-      on: () => {
-        throw new Error('Do not call me!');
-      },
-      method: '',
-    };
-    parseBody(req, (err, parsedBody) => {
-      done(assert.deepStrictEqual(parsedBody, JSON.parse(req.body)));
-    });
-  });
   describe('errors body is malformed', async () => {
     await request(
       createServer((req, res) => {
