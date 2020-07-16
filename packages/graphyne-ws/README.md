@@ -7,40 +7,41 @@
 
 > This package is highly experimental and may be changed or removed at any time!
 
-WebSocket support for [`graphyne-server`](/packages/graphyne-server) implementing [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md). A package of [Graphyne](https://github.com/hoangvvo/graphyne).
+WebSocket support implementing [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
+
+For now, this package is exclusively used with [Graphyne](https://github.com/hoangvvo/graphyne).
 
 ## Install
 
-Install `graphyne-ws` to use `Graphyne` with WebSocket and [`graphql-subscriptions`](https://github.com/apollographql/graphql-subscriptions) to implement PubSub Subcriptions system.
+Since `graphyne-ws` uses [`ws`](https://github.com/websockets/ws) behind the hood, you must also install it if you haven't already.
 
 ```shell
-npm i graphyne-ws graphql-subscriptions graphql
+npm i graphyne-ws ws
 // or
-yarn add graphyne-ws graphql-subscriptions graphql
+yarn add graphyne-ws ws
 ```
 
 ## Usage
 
 [Example](/examples/with-graphql-subscriptions)
 
-Creating an instance of `GraphyneWebSocketServer` using `startSubscriptionServer` function.
+Create a [WebSocket.Server](https://github.com/websockets/ws/blob/master/doc/ws.md#class-websocketserver) instance and uses `wsHandler` to handle its `connection` event.
 
 ```javascript
 const http = require('http');
-const { GraphyneServer } = require('graphyne-server');
-const { startSubscriptionServer } = require('graphyne-ws');
+const { Graphyne, httpHandler } = require('graphyne-server');
+const { wsHandler } = require('graphyne-ws');
 
-// Create a GraphyneServer instance
-const graphyne = new GraphyneServer(options);
+// Create a Graphyne instance
+const graphyne = new Graphyne(options);
+const server = http.createServer(httpHandler(graphyne));
 
-const server = http.createServer(graphyne.createHandler());
+// Create a WebSocket.Server using the `ws` package
+const wss = new WebSocket.Server({ path: '/graphql', server });
 
-// Hook it with graphyne-ws
-const wss = startSubscriptionServer({
-  graphyne: graphyne, // Require an instance of Graphyne Server
-  server: server, // Require an instance of HTTP Server
-  path: '/graphql', // The ws path to listen to
-});
+// Attach wsHandler to WebSocket.Server `connection` event
+// See https://github.com/websockets/ws/blob/master/doc/ws.md#event-connection
+wss.on('connection', wsHandler(graphyne, options));
 
 server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);
@@ -51,14 +52,14 @@ To learn how to create a subscription as well as using different pubsub implemen
 
 ## API
 
-`GraphyneWebSocketServer` extends `WebSocket.Server`from [`ws`](https://www.npmjs.com/package/ws) and thus inherits its [API](https://github.com/websockets/ws/blob/HEAD/doc/ws.md).
+### wsHandler(graphyne, options)
 
-### startSubscriptionServer(options)
+Create a handler for incoming WebSocket connection (from `wss.on('connection')`) and execute GraphQL based on [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
 
-Create an instance of `GraphyneWebSocketServer` **and** listen to incoming connections automatically. The accepted options are the same as [`ws` options](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#new-websocketserveroptions-callback), with the additions of:
+`graphyne` is an instance of [`Graphyne`](/packages/graphyne-server#new-graphyneoptions).
 
-- `graphyne`: (required) The instance of Graphyne Server to hook into.
-- `server`: (required) The Node.js HTTP/S server to listen to. No server mode is not suppported. (This is part of [`ws` options](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#new-websocketserveroptions-callback))
+`options` accepts the following:
+
 - `context`: An object or function called to creates a context shared across resolvers per connection. The function receives an object with the following:
   - `connectionParams`: Object that is sent from the client. See an example in [`apollo-link-ws`](https://www.apollographql.com/docs/react/data/subscriptions/#authentication-over-websocket)
   - `socket`: The [WebSocket connection](https://github.com/websockets/ws/blob/HEAD/doc/ws.md#event-connection).
@@ -74,14 +75,16 @@ Create an instance of `GraphyneWebSocketServer` **and** listen to incoming conne
 ```javascript
 const HEARTBEAT_INTERVAL = 10000; // 10 sec
 
-const wss = startSubscriptionServer({
+const wss = new WebSocket.Server({ path: '/graphql', server });
+
+wss.on('connection', wsHandler(graphyne, {
   onGraphyneWebSocketConnection: (connection) => {
     connection.socket.isAlive = true;
     connection.socket.on('pong', () => {
       connection.socket.isAlive = true;
     });
   }
-})
+}));
 
 const wssPingPong = setInterval(() => {
   wss.clients.forEach((ws) => {
@@ -137,34 +140,16 @@ startSubscriptionServer({
 
 ## Framework integration
 
-### [Express](https://github.com/expressjs/express)
+Framework integration is not a concern of `graphyne-ws` but one of [`ws`](https://github.com/websockets/ws). As long as a [`WebSocket.Server`](https://github.com/websockets/ws/blob/master/doc/ws.md#class-websocketserver) is supplied, you're good to go.
 
-The HTTP Server instance is returned after `app.listen` is called.
-
-```javascript
-app.post('/graphql', graphyne.createHandler());
-
-const server = app.listen(PORT);
-
-const wss = startSubscriptionServer({
-  server: server,
-  graphyne: graphyne,
-  // other options
-});
-```
-
-### [Micro](https://github.com/zeit/micro)
-
-You need to [use Micro programmatically](https://www.npmjs.com/package/micro#programmatic-use) for WebSocket support. `micro()` returns the HTTP Server instance.
+For example, if you use [`fastify-websocket`](https://github.com/fastify/fastify-websocket) package, the [`WebSocket.Server`](https://github.com/websockets/ws/blob/master/doc/ws.md#class-websocketserver) instance can be found at `fastify.websocketServer`.
 
 ```javascript
-const server = micro(graphyne.createHandler());
+// https://github.com/fastify/fastify-websocket#usage
+const fastify = require('fastify')();
 
-const wss = startSubscriptionServer({
-  server: server,
-  graphyne: graphyne,
-  // other options
-});
+fastify.register(require('fastify-websocket'), { handle, options });
+// The above "decorate" WebSocket.Server at fastify.
 ```
 
 ## Contributing

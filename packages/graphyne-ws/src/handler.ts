@@ -237,12 +237,11 @@ export class GraphyneWebSocketConnection extends EventEmitter {
   }
 }
 
-export function startSubscriptionServer(
+export function createHandler(
   graphyne: GraphyneCore,
-  wss: WebSocket.Server,
   graphyneWsOptions?: GraphyneWSOptions
-): WebSocket.Server {
-  wss.on('connection', (socket: WebSocket, request: IncomingMessage) => {
+) {
+  return function connection(socket: WebSocket, request: IncomingMessage) {
     // Check that socket.protocol is GRAPHQL_WS
     if (
       socket.protocol === undefined ||
@@ -264,6 +263,5 @@ export function startSubscriptionServer(
     });
     socket.on('error', () => connection.handleConnectionClose());
     socket.on('close', () => connection.handleConnectionClose());
-  });
-  return wss;
+  };
 }

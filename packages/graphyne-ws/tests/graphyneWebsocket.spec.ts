@@ -1,8 +1,5 @@
-import { startSubscriptionServer } from '../src';
-import {
-  GraphyneWSOptions,
-  GraphyneWebSocketConnection,
-} from '../src/graphyneWebsocket';
+import { wsHandler } from '../src';
+import { GraphyneWSOptions, GraphyneWebSocketConnection } from '../src/handler';
 import {
   GraphyneCore,
   Config as GraphyneConfig,
@@ -89,8 +86,9 @@ async function startServer(
       );
     });
   });
+  const wss = new WebSocket.Server({ server });
   // @ts-ignore
-  startSubscriptionServer(graphyne, { server }, graphyneWsOptions);
+  wss.on('connection', wsHandler(graphyne, graphyneWsOptions));
   const client = WebSocket.createWebSocketStream(ws, {
     encoding: 'utf8',
     objectMode: true,
