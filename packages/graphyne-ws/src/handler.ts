@@ -1,14 +1,11 @@
-import { GraphyneCore } from 'graphyne-core';
+import { Graphyne } from 'graphyne-core';
 import { IncomingMessage } from 'http';
 import * as WebSocket from 'ws';
 import { GRAPHQL_WS } from './messageTypes';
 import { GraphyneWSOptions } from './types';
 import { SubscriptionConnection } from './connection';
 
-export function createHandler(
-  graphyne: GraphyneCore,
-  options?: GraphyneWSOptions
-) {
+export function createHandler(graphyne: Graphyne, options?: GraphyneWSOptions) {
   return function connection(socket: WebSocket, request: IncomingMessage) {
     // Check that socket.protocol is GRAPHQL_WS
     if (
