@@ -3,7 +3,10 @@ import {
   GraphyneWSOptions,
   GraphyneWebSocketConnection,
 } from '../src/graphyneWebsocket';
-import { GraphyneCore } from '../../graphyne-core/src';
+import {
+  GraphyneCore,
+  Config as GraphyneConfig,
+} from '../../graphyne-core/src';
 import { parseBody } from '../../graphyne-server/src/http/parseBody';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
@@ -64,8 +67,9 @@ const schema = makeExecutableSchema({
 
 // @ts-ignore
 async function startServer(
-  options: Omit<GraphyneWSOptions, 'server' | 'graphyne'> = {},
-  graphyneOpts = {}
+  options: { ws?: WebSocket } = {},
+  graphyneOpts: Omit<GraphyneConfig, 'schema'> = {},
+  graphyneWsOptions: GraphyneWSOptions = {}
 ) {
   // @ts-ignore
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
@@ -85,12 +89,8 @@ async function startServer(
       );
     });
   });
-  startSubscriptionServer({
-    server,
-    // @ts-ignore
-    graphyne,
-    ...options,
-  });
+  // @ts-ignore
+  startSubscriptionServer(graphyne, { server }, graphyneWsOptions);
   const client = WebSocket.createWebSocketStream(ws, {
     encoding: 'utf8',
     objectMode: true,
@@ -394,7 +394,7 @@ describe('graphyne-ws', () => {
       if (connectionParams?.unauthenticated) return false;
       return {};
     };
-    startServer({ context }).then(({ server, client }) => {
+    startServer({}, {}, { context }).then(({ server, client }) => {
       client.write(
         JSON.stringify({
           type: 'connection_init',
@@ -441,9 +441,13 @@ describe('graphyne-ws', () => {
     it('emits connection_init', () => {
       // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
-        const { client, server } = await startServer({
-          onGraphyneWebSocketConnection,
-        });
+        const { client, server } = await startServer(
+          {},
+          {},
+          {
+            onGraphyneWebSocketConnection,
+          }
+        );
         function onGraphyneWebSocketConnection(
           connection: GraphyneWebSocketConnection
         ) {
@@ -483,10 +487,14 @@ describe('graphyne-ws', () => {
         `,
           },
         };
-        const { client, server } = await startServer({
-          onGraphyneWebSocketConnection,
-          context: () => ({ test: true }),
-        });
+        const { client, server } = await startServer(
+          {},
+          {},
+          {
+            onGraphyneWebSocketConnection,
+            context: () => ({ test: true }),
+          }
+        );
         function onGraphyneWebSocketConnection(
           connection: GraphyneWebSocketConnection
         ) {
@@ -516,9 +524,13 @@ describe('graphyne-ws', () => {
     it('emits subscription_stop', () => {
       // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
-        const { client, server } = await startServer({
-          onGraphyneWebSocketConnection,
-        });
+        const { client, server } = await startServer(
+          {},
+          {},
+          {
+            onGraphyneWebSocketConnection,
+          }
+        );
         function onGraphyneWebSocketConnection(
           connection: GraphyneWebSocketConnection
         ) {
@@ -570,9 +582,13 @@ describe('graphyne-ws', () => {
     it('emits connection_terminate', () => {
       // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
-        const { client, server } = await startServer({
-          onGraphyneWebSocketConnection,
-        });
+        const { client, server } = await startServer(
+          {},
+          {},
+          {
+            onGraphyneWebSocketConnection,
+          }
+        );
         function onGraphyneWebSocketConnection(
           connection: GraphyneWebSocketConnection
         ) {

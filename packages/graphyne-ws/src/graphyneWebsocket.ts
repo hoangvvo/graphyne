@@ -4,7 +4,6 @@ import {
   GraphyneCore,
   FormattedExecutionResult,
 } from 'graphyne-core';
-import { isCompiledQuery } from 'graphql-jit';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -33,7 +32,8 @@ interface OperationMessage {
 interface GraphyneWebSocketConnectionConstruct {
   socket: WebSocket;
   request: IncomingMessage;
-  wss: GraphyneWebSocketServer;
+  graphyne: GraphyneCore;
+  contextFn?: ContextFn;
 }
 
 interface InitContext {
@@ -42,9 +42,8 @@ interface InitContext {
   request: IncomingMessage;
 }
 
-export interface GraphyneWSOptions extends WebSocket.ServerOptions {
+export interface GraphyneWSOptions {
   context?: ContextFn;
-  graphyne: GraphyneCore;
   onGraphyneWebSocketConnection?: (
     connection: GraphyneWebSocketConnection
   ) => void;
@@ -81,18 +80,18 @@ export interface GraphyneWebSocketConnection {
 }
 
 export class GraphyneWebSocketConnection extends EventEmitter {
-  private graphyne: GraphyneCore;
   public socket: WebSocket;
   private request: IncomingMessage;
-  private wss: GraphyneWebSocketServer;
   private operations: Map<string, AsyncIterator<ExecutionResult>> = new Map();
   contextPromise?: Promise<Record<string, any>>;
+  graphyne: GraphyneCore;
+  contextFn?: ContextFn;
   constructor(options: GraphyneWebSocketConnectionConstruct) {
     super();
     this.socket = options.socket;
-    this.wss = options.wss;
-    this.graphyne = options.wss.graphyne;
     this.request = options.request;
+    this.graphyne = options.graphyne;
+    this.contextFn = options.contextFn;
   }
 
   async handleMessage(message: string) {
@@ -123,7 +122,6 @@ export class GraphyneWebSocketConnection extends EventEmitter {
 
   async handleConnectionInit(data: OperationMessage) {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init
-    const { contextFn } = this.wss;
     const initContext: InitContext = {
       request: this.request,
       socket: this.socket,
@@ -131,9 +129,11 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     };
     try {
       // resolve context
-      if (contextFn) {
+      if (this.contextFn) {
         this.contextPromise = Promise.resolve(
-          typeof contextFn === 'function' ? contextFn(initContext) : contextFn
+          typeof this.contextFn === 'function'
+            ? this.contextFn(initContext)
+            : this.contextFn
         );
       } else this.contextPromise = Promise.resolve(initContext);
       if (!(await this.contextPromise))
@@ -237,20 +237,11 @@ export class GraphyneWebSocketConnection extends EventEmitter {
   }
 }
 
-class GraphyneWebSocketServer extends WebSocket.Server {
-  public graphyne: GraphyneCore;
-  public contextFn?: ContextFn;
-  constructor(options: GraphyneWSOptions) {
-    super(options);
-    this.contextFn = options.context;
-    this.graphyne = options.graphyne;
-  }
-}
-
 export function startSubscriptionServer(
-  options: GraphyneWSOptions
-): GraphyneWebSocketServer {
-  const wss = new GraphyneWebSocketServer(options);
+  graphyne: GraphyneCore,
+  wss: WebSocket.Server,
+  graphyneWsOptions?: GraphyneWSOptions
+): WebSocket.Server {
   wss.on('connection', (socket: WebSocket, request: IncomingMessage) => {
     // Check that socket.protocol is GRAPHQL_WS
     if (
@@ -261,11 +252,12 @@ export function startSubscriptionServer(
     const connection = new GraphyneWebSocketConnection({
       socket,
       request,
-      wss: wss,
+      graphyne,
+      contextFn: graphyneWsOptions?.context,
     });
 
-    if (options.onGraphyneWebSocketConnection)
-      options.onGraphyneWebSocketConnection(connection);
+    if (graphyneWsOptions?.onGraphyneWebSocketConnection)
+      graphyneWsOptions.onGraphyneWebSocketConnection(connection);
 
     socket.on('message', (message) => {
       connection.handleMessage(message.toString());
