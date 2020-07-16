@@ -9,6 +9,9 @@ import {
   DocumentNode,
   formatError,
   createSourceEventStream,
+  SubscriptionArgs,
+  GraphQLArgs,
+  ExecutionArgs,
 } from 'graphql';
 // FIXME: Dangerous import
 import mapAsyncIterator from 'graphql/subscription/mapAsyncIterator';
@@ -19,7 +22,6 @@ import {
   QueryCache,
   HttpQueryRequest,
   HttpQueryResponse,
-  GraphQLArgs,
   FormattedExecutionResult,
 } from './types';
 import flatstr from 'flatstr';
@@ -161,13 +163,18 @@ export class Graphyne {
         ],
       });
 
-    this.getExecutionResult(
+    const result = this.execute({
       compiledQuery,
-      document,
-      context,
-      variables,
-      (result) => createResponse(200, result, compiledQuery.stringify)
-    );
+      document: document as DocumentNode,
+      contextValue: context,
+      variableValues: variables,
+    });
+
+    'then' in result
+      ? result.then((resolvedResult) =>
+          createResponse(200, resolvedResult, compiledQuery.stringify)
+        )
+      : createResponse(200, result, compiledQuery.stringify);
   }
 
   formatExecutionResult(result: ExecutionResult): FormattedExecutionResult {
@@ -178,63 +185,61 @@ export class Graphyne {
     return o;
   }
 
-  private getExecutionResult(
-    compiledQuery: CompiledQuery | ExecutionResult,
-    document: DocumentNode | undefined,
-    contextValue: Record<string, any>,
-    variableValues: Record<string, any> | null | undefined,
-    callback: (this: void, result: ExecutionResult) => void
-  ): void {
-    if (!isCompiledQuery(compiledQuery)) return callback(compiledQuery);
-    const maybePromiseResult = compiledQuery.query(
+  public async graphql({
+    source,
+    contextValue,
+    variableValues,
+    operationName,
+  }: Pick<GraphQLArgs, 'contextValue' | 'variableValues' | 'operationName'> & {
+    source: string;
+  }): Promise<FormattedExecutionResult> {
+    const { document, compiledQuery } = this.getCompiledQuery(
+      source,
+      operationName
+    );
+    return this.formatExecutionResult(
+      await this.execute({
+        compiledQuery,
+        document: document as DocumentNode,
+        contextValue,
+        variableValues,
+      })
+    );
+  }
+
+  // Reimplements graphql/execution/execute but using jit
+  execute({
+    compiledQuery,
+    document,
+    contextValue,
+    variableValues,
+  }: Pick<ExecutionArgs, 'document' | 'contextValue' | 'variableValues'> & {
+    compiledQuery: CompiledQuery | ExecutionResult;
+  }): ExecutionResult | Promise<ExecutionResult> {
+    if (!isCompiledQuery(compiledQuery)) return compiledQuery;
+    return compiledQuery.query(
       typeof this.options.rootValue === 'function'
         ? this.options.rootValue(document as DocumentNode)
         : this.options.rootValue || {},
       contextValue,
       variableValues
     );
-    'then' in maybePromiseResult
-      ? maybePromiseResult.then(callback)
-      : callback(maybePromiseResult);
   }
 
-  public async graphql({
-    source,
-    contextValue,
-    variableValues,
-    operationName,
-  }: GraphQLArgs): Promise<FormattedExecutionResult> {
-    const { document, compiledQuery } = this.getCompiledQuery(
-      source,
-      operationName
-    );
-    return new Promise<FormattedExecutionResult>((resolve) => {
-      this.getExecutionResult(
-        compiledQuery,
-        document,
-        contextValue,
-        variableValues,
-        (result) => resolve(this.formatExecutionResult(result))
-      );
-    });
-  }
-
-  // Reimplements graphql/subscription/subscribe with DocumentNode replaced with Source
+  // Reimplements graphql/subscription/subscribe but using jit
   async subscribe({
-    source,
+    document,
     contextValue,
     variableValues,
     operationName,
-  }: GraphQLArgs): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
-    const { document, compiledQuery, operation } = this.getCompiledQuery(
-      source,
-      operationName
-    );
-    if (!isCompiledQuery(compiledQuery)) return Promise.reject(compiledQuery);
-    if (operation !== 'subscription')
-      return Promise.reject({
-        errors: [new GraphQLError('Not a subscription operation')],
-      });
+    compiledQuery,
+  }: Pick<
+    SubscriptionArgs,
+    'document' | 'contextValue' | 'variableValues' | 'operationName'
+  > & {
+    compiledQuery: CompiledQuery | ExecutionResult;
+  }): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
+    if (!isCompiledQuery(compiledQuery)) return compiledQuery;
     const resultOrStream = await createSourceEventStream(
       this.schema,
       document as DocumentNode,

@@ -35,13 +35,6 @@ export interface QueryCache {
   compiledQuery: CompiledQuery;
 }
 
-export interface GraphQLArgs {
-  source: string;
-  contextValue?: any;
-  variableValues?: Record<string, any> | null;
-  operationName?: string | null;
-}
-
 // Can be replaced with `FormattedExecutionResult` from 5.3.0
 export interface FormattedExecutionResult<
   TData = { [key: string]: any },
