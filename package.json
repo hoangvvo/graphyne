@@ -34,7 +34,7 @@
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
     "express": "^4.17.1",
-    "fastify": "^2.15.1",
+    "fastify": "^3.0.3",
     "graphql": "^15.1.0",
     "graphql-subscriptions": "^1.1.0",
     "lerna": "^3.22.1",
