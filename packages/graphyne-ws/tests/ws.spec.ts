@@ -1,4 +1,13 @@
-import { wsHandler } from '../src';
+import {
+  wsHandler,
+  GQL_CONNECTION_INIT,
+  GQL_DATA,
+  GQL_CONNECTION_ACK,
+  GQL_START,
+  GQL_COMPLETE,
+  GQL_STOP,
+  GQL_CONNECTION_TERMINATE,
+} from '../src';
 import { GraphyneWSOptions } from '../src/types';
 import { SubscriptionConnection } from '../src/connection';
 import { Graphyne, Config as GraphyneConfig } from '../../graphyne-core/src';
@@ -125,31 +134,31 @@ function sendMessageMutation() {
 
 describe('graphyne-ws: wsHandler', () => {
   it('replies with connection_ack', async () => {
-    const { server, client } = await startServer();
+    const { client } = await startServer();
     client.write(
       JSON.stringify({
-        type: 'connection_init',
+        type: GQL_CONNECTION_INIT,
       })
     );
     await new Promise((resolve) => {
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const json = JSON.parse(chunk);
-        assert.deepStrictEqual(json, { type: 'connection_ack' });
+        assert.deepStrictEqual(json, { type: GQL_CONNECTION_ACK });
         resolve();
       });
     });
   });
   it('sends updates via subscription', async function () {
-    const { server, client } = await startServer();
+    const { client } = await startServer();
     client.write(
       JSON.stringify({
-        type: 'connection_init',
+        type: GQL_CONNECTION_INIT,
       })
     );
     client.write(
       JSON.stringify({
         id: 1,
-        type: 'start',
+        type: GQL_START,
         payload: {
           query: `
           subscription {
@@ -163,14 +172,14 @@ describe('graphyne-ws: wsHandler', () => {
       })
     );
     await new Promise((resolve, reject) => {
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const data = JSON.parse(chunk);
-        if (data.type === 'connection_ack') {
+        if (data.type === GQL_CONNECTION_ACK) {
           return sendMessageMutation();
         }
-        if (data.type === 'data') {
+        if (data.type === GQL_DATA) {
           assert.deepStrictEqual(data, {
-            type: 'data',
+            type: GQL_DATA,
             id: 1,
             payload: {
               data: {
@@ -188,7 +197,7 @@ describe('graphyne-ws: wsHandler', () => {
   });
   it('rejects socket protocol other than graphql-ws', async () => {
     const ws = new WebSocket('ws://localhost:4000', 'graphql-subscriptions');
-    const { server, client } = await startServer({ ws });
+    await startServer({ ws });
     await new Promise((resolve) =>
       ws.on('close', () => {
         resolve();
@@ -198,7 +207,7 @@ describe('graphyne-ws: wsHandler', () => {
   it('errors on malformed message', (done) => {
     startServer().then(({ server, client, ws }) => {
       client.write(`{"type":"connection_init","payload":`);
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const json = JSON.parse(chunk);
         if (json.type === 'error') {
           assert.deepStrictEqual(json, {
@@ -221,13 +230,13 @@ describe('graphyne-ws: wsHandler', () => {
     ).then(({ server, client, ws }) => {
       client.write(
         JSON.stringify({
-          type: 'connection_init',
+          type: GQL_CONNECTION_INIT,
         })
       );
       client.write(
         JSON.stringify({
           id: 1,
-          type: 'start',
+          type: GQL_START,
           payload: {
             query: `
             subscription {
@@ -240,15 +249,15 @@ describe('graphyne-ws: wsHandler', () => {
           },
         })
       );
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const json = JSON.parse(chunk);
-        if (json.type === 'connection_ack') {
+        if (json.type === GQL_CONNECTION_ACK) {
           sendMessageMutation();
         }
-        if (json.type === 'data') {
+        if (json.type === GQL_DATA) {
           assert.deepStrictEqual(json, {
             id: 1,
-            type: 'data',
+            type: GQL_DATA,
             payload: {
               data: {
                 notificationAdded: {
@@ -266,23 +275,23 @@ describe('graphyne-ws: wsHandler', () => {
     });
   });
   it('errors on empty query', async function () {
-    const { server, client } = await startServer();
+    const { client } = await startServer();
     client.write(
       JSON.stringify({
-        type: 'connection_init',
+        type: GQL_CONNECTION_INIT,
       })
     );
     client.write(
       JSON.stringify({
         id: 1,
-        type: 'start',
+        type: GQL_START,
         payload: {
           query: null,
         },
       })
     );
     await new Promise((resolve, reject) => {
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const json = JSON.parse(chunk);
         if (json.type === 'error') {
           assert.deepStrictEqual(json, {
@@ -297,16 +306,16 @@ describe('graphyne-ws: wsHandler', () => {
   });
   it('resolves also queries and mutations', async function () {
     // We can also add a Query test just to be sure but Mutation one only should be sufficient
-    const { server, client } = await startServer();
+    const { client } = await startServer();
     client.write(
       JSON.stringify({
-        type: 'connection_init',
+        type: GQL_CONNECTION_INIT,
       })
     );
     client.write(
       JSON.stringify({
         id: 1,
-        type: 'start',
+        type: GQL_START,
         payload: {
           query: `
           mutation {
@@ -320,17 +329,17 @@ describe('graphyne-ws: wsHandler', () => {
     );
     await new Promise((resolve, reject) => {
       let resolved = false;
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const json = JSON.parse(chunk);
         if (json.type === `data`) {
           assert.deepStrictEqual(json, {
-            type: 'data',
+            type: GQL_DATA,
             id: 1,
             payload: { data: { addNotification: { message: 'Hello World' } } },
           });
           resolved = true;
         }
-        if (json.type === 'complete' && resolved === true) {
+        if (json.type === GQL_COMPLETE && resolved === true) {
           // It should complete the subscription immediately since it is a mutations/queries
           resolve();
         }
@@ -339,16 +348,16 @@ describe('graphyne-ws: wsHandler', () => {
     });
   });
   it('errors on syntax error', async () => {
-    const { server, client } = await startServer();
+    const { client } = await startServer();
     client.write(
       JSON.stringify({
-        type: 'connection_init',
+        type: GQL_CONNECTION_INIT,
       })
     );
     client.write(
       JSON.stringify({
         id: 1,
-        type: 'start',
+        type: GQL_START,
         payload: {
           query: `
             subscription {
@@ -361,9 +370,9 @@ describe('graphyne-ws: wsHandler', () => {
       })
     );
     await new Promise((resolve, reject) => {
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const json = JSON.parse(chunk);
-        if (json.type === 'data') {
+        if (json.type === GQL_DATA) {
           const {
             payload: {
               errors: [{ message }],
@@ -380,16 +389,16 @@ describe('graphyne-ws: wsHandler', () => {
     });
   });
   it('stops subscription upon GQL_STOP', async () => {
-    const { server, client } = await startServer();
+    const { client } = await startServer();
     client.write(
       JSON.stringify({
-        type: 'connection_init',
+        type: GQL_CONNECTION_INIT,
       })
     );
     client.write(
       JSON.stringify({
         id: 1,
-        type: 'start',
+        type: GQL_START,
         payload: {
           query: `
           subscription {
@@ -402,14 +411,14 @@ describe('graphyne-ws: wsHandler', () => {
       })
     );
     await new Promise((resolve, reject) => {
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const data = JSON.parse(chunk);
         let timer;
-        if (data.type === 'connection_ack') {
+        if (data.type === GQL_CONNECTION_ACK) {
           client.write(
             JSON.stringify({
               id: 1,
-              type: 'stop',
+              type: GQL_STOP,
             })
           );
           sendMessageMutation().then(() => {
@@ -417,7 +426,7 @@ describe('graphyne-ws: wsHandler', () => {
             timer = setTimeout(resolve, 20);
           });
         }
-        if (data.type === 'data') {
+        if (data.type === GQL_DATA) {
           // We have unsubscribed, there should not be data
           if (timer) clearTimeout(timer);
           reject();
@@ -434,14 +443,14 @@ describe('graphyne-ws: wsHandler', () => {
     startServer({}, {}, { context }).then(({ server, client }) => {
       client.write(
         JSON.stringify({
-          type: 'connection_init',
+          type: GQL_CONNECTION_INIT,
           payload: {
             unauthenticated: true,
           },
         })
       );
       let isErrored = false;
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         isErrored =
           chunk ===
           `{"type":"connection_error","payload":{"errors":[{"message":"You must be authenticated!"}]}}`;
@@ -455,13 +464,13 @@ describe('graphyne-ws: wsHandler', () => {
     startServer().then(({ server, client }) => {
       client.write(
         JSON.stringify({
-          type: 'connection_init',
+          type: GQL_CONNECTION_INIT,
         })
       );
-      client.on('data', () => {
+      client.on(GQL_DATA, () => {
         client.write(
           JSON.stringify({
-            type: 'connection_terminate',
+            type: GQL_CONNECTION_TERMINATE,
           })
         );
       });
@@ -476,12 +485,12 @@ describe('graphyne-ws: SubscriptionConnection', () => {
   it('emits connection_init', () => {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const { client, server } = await startServer(
+      const { client } = await startServer(
         {},
         {},
         {
           onSubscriptionConnection: (connection: SubscriptionConnection) => {
-            connection.on('connection_init', (connectionParams) => {
+            connection.on(GQL_CONNECTION_INIT, (connectionParams) => {
               try {
                 assert.deepStrictEqual(connectionParams, { test: 'ok' });
                 resolve();
@@ -495,7 +504,7 @@ describe('graphyne-ws: SubscriptionConnection', () => {
       client.write(
         JSON.stringify({
           payload: { test: 'ok' },
-          type: 'connection_init',
+          type: GQL_CONNECTION_INIT,
         })
       );
     });
@@ -505,7 +514,7 @@ describe('graphyne-ws: SubscriptionConnection', () => {
     return new Promise(async (resolve, reject) => {
       const body = {
         id: 1,
-        type: 'start',
+        type: GQL_START,
         payload: {
           query: `
         subscription {
@@ -516,7 +525,7 @@ describe('graphyne-ws: SubscriptionConnection', () => {
       `,
         },
       };
-      const { client, server } = await startServer(
+      const { client } = await startServer(
         {},
         {},
         {
@@ -539,7 +548,7 @@ describe('graphyne-ws: SubscriptionConnection', () => {
       client.write(
         JSON.stringify({
           payload: { test: 'ok' },
-          type: 'connection_init',
+          type: GQL_CONNECTION_INIT,
         })
       );
       client.write(JSON.stringify(body));
@@ -548,7 +557,7 @@ describe('graphyne-ws: SubscriptionConnection', () => {
   it('emits subscription_stop', () => {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const { client, server } = await startServer(
+      const { client } = await startServer(
         {},
         {},
         {
@@ -567,13 +576,13 @@ describe('graphyne-ws: SubscriptionConnection', () => {
       }
       client.write(
         JSON.stringify({
-          type: 'connection_init',
+          type: GQL_CONNECTION_INIT,
         })
       );
       client.write(
         JSON.stringify({
           id: 1,
-          type: 'start',
+          type: GQL_START,
           payload: {
             query: `
             subscription {
@@ -585,13 +594,13 @@ describe('graphyne-ws: SubscriptionConnection', () => {
           },
         })
       );
-      client.on('data', (chunk) => {
+      client.on(GQL_DATA, (chunk) => {
         const data = JSON.parse(chunk);
-        if (data.type === 'connection_ack') {
+        if (data.type === GQL_CONNECTION_ACK) {
           client.write(
             JSON.stringify({
               id: 1,
-              type: 'stop',
+              type: GQL_STOP,
             })
           );
         }
@@ -601,7 +610,7 @@ describe('graphyne-ws: SubscriptionConnection', () => {
   it('emits connection_terminate', () => {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const { client, server } = await startServer(
+      const { client } = await startServer(
         {},
         {},
         {
@@ -609,19 +618,19 @@ describe('graphyne-ws: SubscriptionConnection', () => {
         }
       );
       function onSubscriptionConnection(connection: SubscriptionConnection) {
-        connection.on('connection_terminate', () => {
+        connection.on(GQL_CONNECTION_TERMINATE, () => {
           resolve();
         });
       }
       client.write(
         JSON.stringify({
-          type: 'connection_init',
+          type: GQL_CONNECTION_INIT,
         })
       );
-      client.on('data', () => {
+      client.on(GQL_DATA, () => {
         client.write(
           JSON.stringify({
-            type: 'connection_terminate',
+            type: GQL_CONNECTION_TERMINATE,
           })
         );
       });
