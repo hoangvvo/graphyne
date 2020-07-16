@@ -100,7 +100,10 @@ Create a handling function for incoming HTTP requests. It accepts the following 
 
 | options | description | default |
 |---------|-------------|---------|
-| context | An object or function `(req, res) => ContextObject` to creates a context shared across resolvers per request. | `{}` | path | Specify a path for the GraphQL endpoint, and `graphyne-server` will response with `404` elsewhere. You **should not** set this when using with frameworks with built-in routers (such as `express`). | `undefined` (run on all paths) |
+| context | An object or function called to creates a context shared across resolvers per request. The function accepts [IncomingMessage](https://nodejs.org/api/http.html#http_class_http_incomingmessage) as the only argument. | `{}` |
+| path | Specify a path for the GraphQL endpoint, and `graphyne-server` will response with `404` elsewhere. You **should not** set this when using with frameworks with built-in routers (such as `express`). | `undefined` (run on all paths) |
+
+*Note*: In frameworks like `express`, `context` function will accept [`express`'s Request](https://expressjs.com/en/4x/api.html#req) instead.
 
 ## Additional features
 

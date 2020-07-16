@@ -39,7 +39,7 @@ export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
       try {
         params.context =
           typeof options.context === 'function'
-            ? options.context(req, res)
+            ? options.context(req)
             : options.context || {};
         'then' in params.context
           ? params.context.then(
