@@ -1,6 +1,6 @@
 {
   "name": "graphyne-server",
-  "version": "0.13.2",
+  "version": "0.14.0",
   "description": "Lightning-fast JavaScript GraphQL Server",
   "author": "Hoang Vo (https://www.hoangvvo.com)",
   "keywords": [
@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@polka/url": "^1.0.0-next.11",
-    "graphyne-core": "^0.14.0"
+    "graphyne-core": "^0.15.0"
   },
   "peerDependencies": {
     "graphql": "^14.0.0 || ^15.0.0"
