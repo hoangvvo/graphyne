@@ -1,5 +1,5 @@
 const http = require('http');
-const { GraphyneServer } = require('graphyne-server');
+const { Graphyne, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 const DataLoader = require('dataloader');
 const { getUsers } = require('./users');
@@ -41,16 +41,17 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new GraphyneServer({
-  schema,
-  context: (req, res) => ({
-    // other contexts
-    loaders: createLoaders(),
-  }),
-  path: '/graphql',
-});
+const graphyne = new Graphyne({ schema });
 
-const server = http.createServer(graphyne.createHandler());
+const server = http.createServer(
+  httpHandler(graphyne, {
+    context: (req, res) => ({
+      // other contexts
+      loaders: createLoaders(),
+    }),
+    path: '/graphql',
+  })
+);
 
 server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);
