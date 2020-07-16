@@ -1,5 +1,6 @@
 import { wsHandler } from '../src';
-import { GraphyneWSOptions, GraphyneWebSocketConnection } from '../src/handler';
+import { GraphyneWSOptions } from '../src/handler';
+import { GraphyneWebSocketConnection } from '../src/connection';
 import {
   GraphyneCore,
   Config as GraphyneConfig,
