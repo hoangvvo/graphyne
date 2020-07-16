@@ -10,12 +10,12 @@ import { HandlerConfig } from './types';
 export async function handleRequest(
   graphyne: Graphyne,
   request: Request,
-  options?: HandlerConfig
+  options: HandlerConfig = {}
 ): Promise<Response> {
   const url = new URL(request.url);
   let context: Record<string, any>;
   try {
-    const contextFn = options?.context || {};
+    const contextFn = options.context || {};
     context =
       typeof contextFn === 'function' ? await contextFn(request) : contextFn;
   } catch (err) {

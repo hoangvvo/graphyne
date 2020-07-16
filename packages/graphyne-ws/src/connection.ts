@@ -55,7 +55,7 @@ export class SubscriptionConnection extends EventEmitter {
     public socket: WebSocket,
     public request: IncomingMessage,
     private graphyne: Graphyne,
-    private options?: GraphyneWSOptions
+    private options: GraphyneWSOptions
   ) {
     super();
   }
@@ -95,11 +95,11 @@ export class SubscriptionConnection extends EventEmitter {
     };
     try {
       // resolve context
-      if (this.options?.context) {
+      if (this.options.context) {
         this.contextPromise = Promise.resolve(
-          typeof this.options?.context === 'function'
-            ? this.options?.context(initContext)
-            : this.options?.context
+          typeof this.options.context === 'function'
+            ? this.options.context(initContext)
+            : this.options.context
         );
       } else this.contextPromise = Promise.resolve(initContext);
       if (!(await this.contextPromise))

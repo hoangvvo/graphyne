@@ -5,7 +5,10 @@ import { GRAPHQL_WS } from './messageTypes';
 import { GraphyneWSOptions } from './types';
 import { SubscriptionConnection } from './connection';
 
-export function createHandler(graphyne: Graphyne, options?: GraphyneWSOptions) {
+export function createHandler(
+  graphyne: Graphyne,
+  options: GraphyneWSOptions = {}
+) {
   return function connection(socket: WebSocket, request: IncomingMessage) {
     // Check that socket.protocol is GRAPHQL_WS
     if (
@@ -21,7 +24,7 @@ export function createHandler(graphyne: Graphyne, options?: GraphyneWSOptions) {
       options
     );
 
-    if (options?.onSubscriptionConnection)
+    if (options.onSubscriptionConnection)
       options.onSubscriptionConnection(connection);
 
     socket.on('message', (message) => {

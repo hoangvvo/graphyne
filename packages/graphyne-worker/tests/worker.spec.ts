@@ -149,4 +149,30 @@ describe('graphyne-worker: handleRequest', () => {
       }
     );
   });
+
+  describe('resolves options.context that is', () => {
+    it('an object', async () => {
+      await testRequest(
+        '/graphql?query={helloMe}',
+        {},
+        {
+          status: 200,
+          body: `{"data":{"helloMe":"hoang"}}`,
+        },
+        { context: { me: 'hoang' } }
+      );
+    });
+
+    it('a function', async () => {
+      await testRequest(
+        '/graphql?query={helloMe}',
+        {},
+        {
+          status: 200,
+          body: `{"data":{"helloMe":"hoang"}}`,
+        },
+        { context: async () => ({ me: 'hoang' }) }
+      );
+    });
+  });
 });
