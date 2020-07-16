@@ -1,4 +1,4 @@
-import { GraphyneWorker } from 'graphyne-worker';
+import { Graphyne, handleRequest } from 'graphyne-worker';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 
 const typeDefs = `
@@ -17,10 +17,14 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new GraphyneWorker({
-  schema,
-  context: () => ({ world: 'world' }),
-  path: '/graphql',
-});
+const graphyne = new Graphyne({ schema });
 
-global.addEventListener('fetch', graphyne.createHandler());
+addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  if (url.pathname === '/graphql')
+    return event.respondWith(
+      handleRequest(graphyne, event.request, {
+        context: () => ({ world: 'world' }),
+      })
+    );
+});

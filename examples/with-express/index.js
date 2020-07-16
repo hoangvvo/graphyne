@@ -25,7 +25,7 @@ const app = express();
 app.post(
   '/graphql',
   httpHandler(graphyne, {
-    context: (req, res, next) => ({ world: 'world' }),
+    context: (req) => ({ world: 'world' }),
   })
 );
 

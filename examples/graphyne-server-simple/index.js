@@ -23,7 +23,7 @@ const graphyne = new Graphyne({ schema });
 const server = http.createServer(
   httpHandler(graphyne, {
     path: '/graphql',
-    context: (req, res) => ({ world: 'world' }),
+    context: (req) => ({ world: 'world' }),
   })
 );
 

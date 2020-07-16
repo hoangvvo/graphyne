@@ -45,7 +45,7 @@ const graphyne = new Graphyne({ schema });
 
 const server = http.createServer(
   httpHandler(graphyne, {
-    context: (req, res) => ({
+    context: (req) => ({
       // other contexts
       loaders: createLoaders(),
     }),

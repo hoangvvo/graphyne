@@ -1,5 +1,4 @@
-const { send } = require('micro');
-const { GraphyneServer } = require('graphyne-server');
+const { Graphyne, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 
 const typeDefs = `
@@ -18,10 +17,9 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new GraphyneServer({
-  schema,
-  context: (req, res) => ({ world: 'world' }),
+const graphyne = new Graphyne({ schema });
+
+module.exports = httpHandler(graphyne, {
+  context: (req) => ({ world: 'world' }),
   path: '/graphql',
 });
-
-module.exports = graphyne.createHandler();

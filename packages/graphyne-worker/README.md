@@ -39,7 +39,7 @@ import { Graphyne, handleRequest } from 'graphyne-worker';
 const graphyne = new Graphyne(options);
 
 addEventListener('fetch', (event) => {
-  const url = new URL(request.url);
+  const url = new URL(event.request.url);
   if (url.pathname === '/graphql')
     return event.respondWith(
       handleRequest(graphyne, event.request, handlerOptions)
