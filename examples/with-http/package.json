@@ -1,5 +1,5 @@
 {
-  "name": "graphyne-server-simple",
+  "name": "with-http",
   "private": true,
   "scripts": {
     "start": "node index.js"

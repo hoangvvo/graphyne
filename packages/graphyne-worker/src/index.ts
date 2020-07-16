@@ -1,1 +1,2 @@
-export { GraphyneWorker } from './graphyneWorker';
+export { Graphyne } from 'graphyne-core';
+export { handleRequest } from './handler';

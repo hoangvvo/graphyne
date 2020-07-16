@@ -1,5 +1,5 @@
 const express = require('express');
-const { GraphyneServer } = require('graphyne-server');
+const { Graphyne, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 
 const typeDefs = `
@@ -18,14 +18,17 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new GraphyneServer({
-  schema,
-  context: (req, res, next) => ({ world: 'world' }),
-});
+const graphyne = new Graphyne({ schema });
 
 const app = express();
 
-app.post('/graphql', graphyne.createHandler());
+app.post(
+  '/graphql',
+  httpHandler(graphyne, {
+    context: (req) => ({ world: 'world' }),
+  })
+);
 
-app.listen(4000);
-console.log('Running a GraphQL API server at http://localhost:4000/graphql');
+app.listen(4000, () => {
+  console.log('Running a GraphQL API server at http://localhost:4000/graphql');
+});

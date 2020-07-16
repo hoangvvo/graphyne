@@ -7,9 +7,9 @@
 
 > This package is highly experimental and may be changed or removed at any time!
 
-GraphQL execution layer in the browser and at the edge. A package of [Graphyne](https://github.com/hoangvvo/graphyne).
+GraphQL execution layer in the browser and at the edge.
 
-[Example](/examples/graphyne-worker-simple)
+[Service Worker Example](/examples/with-service-worker)
 
 ## Why GraphQL in the browser
 
@@ -28,40 +28,23 @@ npm i graphyne-worker graphql
 yarn add graphyne-worker graphql
 ```
 
-## Usage (in browser w/ bundler)
+## Usage
 
-Create a service worker that listens to `fetch` in `worker.js`.
+This assumes basic understanding of service worker. If not, you can learn how to register the service worker [here](https://developers.google.com/web/fundamentals/primers/service-workers/registration).
 
 ```javascript
-const { GraphyneWorker } = require("graphyne-worker");
+import { Graphyne, handleRequest } from 'graphyne-worker';
 
-const graphyne = new GraphyneWorker(options);
+// Creating an instance of Graphyne
+const graphyne = new Graphyne(options);
 
-addEventListener("fetch", graphyne.createHandler());
-
-// OR: instead of using createHandler, you can call GraphyneWorker#handleRequest manually.
-
-addEventListener("fetch", (event) => {
-  const url = new URL();
-  if (url.pathname === "/graphql")
-    event.respondWith(graphyne.handleRequest(event.request));
-  // if requesting something else, let the browser handles it
+addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  if (url.pathname === '/graphql')
+    return event.respondWith(
+      handleRequest(graphyne, event.request, handlerOptions)
+    );
 });
-```
-
-Register that worker using `navigator.serviceWorker`.
-
-```javascript
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker
-    .register('/worker.js')
-    .then(function (registration) {
-      console.log('Registration successful, scope is:', registration.scope);
-    })
-    .catch(function (error) {
-      console.log('Service worker registration failed, error:', error);
-    });
-}
 ```
 
 Fetch requests to `/graphql` will now be intercepted by the registered worker.
@@ -72,29 +55,19 @@ See [Using Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Wor
 
 ## API
 
-### `new GraphyneWorker(options)`
+### `new Graphyne(options)`
 
-Constructing a Graphyne GraphQL worker. It accepts the following options:
+Constructing a Graphyne instance. It accepts the following options:
 
 | options | description | default |
 |---------|-------------|---------|
 | schema | A `GraphQLSchema` instance. It can be created using `makeExecutableSchema` from [graphql-tools](https://github.com/apollographql/graphql-tools). | (required) |
-| context | An object or function called to creates a context shared across resolvers per request. The function accepts [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) as the only argument. | `{}` |
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
-| path | Specify a path for the GraphQL endpoint. | `/graphql` |
 
-### `GraphyneWorker#createHandler()`
+**Looking for `options.context`?** It is in `handleRequest` or `Graphyne#graphql`.
 
-Create a handler for [fetchEvents](https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent).
-
-### `GraphyneWorker#handleRequest(request)`
-
-Instead of using `GraphyneWorker#createHandler`, you can handle a [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) (`fetchEvent.request`) of a `fetchEvent` manually.
-
-Returns a promise of [`Resposne`](https://developer.mozilla.org/en-US/docs/Web/API/Response)
-
-### `GraphyneWorker#graphql({ source, contextValue, variableValues, operationName })`
+### `Graphyne#graphql({ source, contextValue, variableValues, operationName })`
 
 Execute the GraphQL query with:
 
@@ -105,9 +78,17 @@ Execute the GraphQL query with:
 
 The function returns a never-rejected promise of the execution result, which is an object of `data` and `errors`.
 
-**Warning:**
+### `handleRequest(graphyne, request, handlerOptions)`
 
-- `options.context` does not run here. You need to supply the context object to `contextValue`.
+`graphyne` is an instance of [`Graphyne`](#new-graphyneoptions).
+
+Handles the [FetchEvent.request](https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent/request) (`request`) and returns a promise of [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) to be used in `event.respondWith`.
+
+`handlerOptions` accepts the following:
+
+| options | description | default |
+|---------|-------------|---------|
+| context | An object or function called to creates a context shared across resolvers per request. The function accepts [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) as the only argument. | `{}` |
 
 ## Contributing
 

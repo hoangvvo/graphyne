@@ -1,8 +1,9 @@
 const http = require('http');
-const { GraphyneServer } = require('graphyne-server');
+const WebSocket = require('ws');
+const { Graphyne, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('graphql-tools');
 const { PubSub } = require('graphql-subscriptions');
-const { startSubscriptionServer } = require('graphyne-ws');
+const { wsHandler } = require('graphyne-ws');
 
 const pubsub = new PubSub();
 
@@ -62,27 +63,26 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new GraphyneServer({
-  schema,
-  path: '/graphql',
-});
+const graphyne = new Graphyne({ schema });
 
-const server = http.createServer(graphyne.createHandler());
+const server = http.createServer(httpHandler(graphyne, { path: '/graphql' }));
 
-startSubscriptionServer({
-  server,
-  graphyne,
-  context: ({
-    connectionParams, // ConnectionParams such as in apollo-link-ws
-    socket, // WebSocket
-    request, // IncomingMessage
-  }) => {
-    // See connectionParams in https://www.apollographql.com/docs/react/data/subscriptions/#authentication-over-websocket
-    // Return a context to be used in resolvers
-    return {};
-  },
-  path: '/graphql',
-});
+const wss = new WebSocket.Server({ path: '/graphql', server });
+
+wss.on(
+  'connection',
+  wsHandler(graphyne, {
+    context: ({
+      connectionParams, // ConnectionParams such as in apollo-link-ws
+      socket, // WebSocket
+      request, // IncomingMessage
+    }) => {
+      // See connectionParams in https://www.apollographql.com/docs/react/data/subscriptions/#authentication-over-websocket
+      // Return a context to be used in resolvers
+      return {};
+    },
+  })
+);
 
 server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);

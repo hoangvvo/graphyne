@@ -1,10 +1,5 @@
-import { GraphQLError, ExecutionResult } from 'graphql';
-import {
-  QueryBody,
-  GraphyneCore,
-  FormattedExecutionResult,
-} from 'graphyne-core';
-import { isCompiledQuery } from 'graphql-jit';
+import { ExecutionResult, DocumentNode } from 'graphql';
+import { QueryBody, Graphyne, FormattedExecutionResult } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -19,42 +14,15 @@ import {
   GQL_ERROR,
   GQL_COMPLETE,
   GQL_STOP,
-  GRAPHQL_WS,
 } from './messageTypes';
+import {
+  ConnectionParams,
+  OperationMessage,
+  InitContext,
+  GraphyneWSOptions,
+} from './types';
 
-type ConnectionParams = Record<string, any>;
-
-interface OperationMessage {
-  id?: string;
-  payload?: QueryBody | ConnectionParams;
-  type: string;
-}
-
-interface GraphyneWebSocketConnectionConstruct {
-  socket: WebSocket;
-  request: IncomingMessage;
-  wss: GraphyneWebSocketServer;
-}
-
-interface InitContext {
-  connectionParams: ConnectionParams;
-  socket: WebSocket;
-  request: IncomingMessage;
-}
-
-export interface GraphyneWSOptions extends WebSocket.ServerOptions {
-  context?: ContextFn;
-  graphyne: GraphyneCore;
-  onGraphyneWebSocketConnection?: (
-    connection: GraphyneWebSocketConnection
-  ) => void;
-}
-
-type ContextFn =
-  | Record<string, any>
-  | ((initContext: InitContext) => Record<string, any>);
-
-export interface GraphyneWebSocketConnection {
+export interface SubscriptionConnection {
   on(
     event: 'connection_init',
     listener: (connectionParams: ConnectionParams) => void
@@ -80,19 +48,17 @@ export interface GraphyneWebSocketConnection {
   emit(event: 'connection_terminate'): boolean;
 }
 
-export class GraphyneWebSocketConnection extends EventEmitter {
-  private graphyne: GraphyneCore;
-  public socket: WebSocket;
-  private request: IncomingMessage;
-  private wss: GraphyneWebSocketServer;
+export class SubscriptionConnection extends EventEmitter {
   private operations: Map<string, AsyncIterator<ExecutionResult>> = new Map();
-  contextPromise?: Promise<Record<string, any>>;
-  constructor(options: GraphyneWebSocketConnectionConstruct) {
+  contextPromise: Promise<Record<string, any>>;
+  constructor(
+    public socket: WebSocket,
+    public request: IncomingMessage,
+    private graphyne: Graphyne,
+    private options: GraphyneWSOptions
+  ) {
     super();
-    this.socket = options.socket;
-    this.wss = options.wss;
-    this.graphyne = options.wss.graphyne;
-    this.request = options.request;
+    this.contextPromise = Promise.resolve({});
   }
 
   async handleMessage(message: string) {
@@ -100,17 +66,16 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     try {
       data = JSON.parse(message);
     } catch (err) {
-      return this.sendMessage(GQL_ERROR, null, {
-        errors: [new GraphQLError('Malformed message')],
-      });
+      return this.sendError(undefined, new Error('Malformed message'));
     }
     switch (data.type) {
       case GQL_CONNECTION_INIT:
         this.handleConnectionInit(data);
         break;
       case GQL_START:
-        // @ts-ignore
-        this.handleGQLStart(data);
+        this.handleGQLStart(
+          data as OperationMessage & { id: string; payload: QueryBody }
+        );
         break;
       case GQL_STOP:
         this.handleGQLStop(data.id as string);
@@ -123,7 +88,6 @@ export class GraphyneWebSocketConnection extends EventEmitter {
 
   async handleConnectionInit(data: OperationMessage) {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init
-    const { contextFn } = this.wss;
     const initContext: InitContext = {
       request: this.request,
       socket: this.socket,
@@ -131,13 +95,13 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     };
     try {
       // resolve context
-      if (contextFn) {
+      if (this.options.context) {
         this.contextPromise = Promise.resolve(
-          typeof contextFn === 'function' ? contextFn(initContext) : contextFn
+          typeof this.options.context === 'function'
+            ? this.options.context(initContext)
+            : this.options.context
         );
-      } else this.contextPromise = Promise.resolve(initContext);
-      if (!(await this.contextPromise))
-        throw new GraphQLError('Prohibited connection!');
+      }
       this.sendMessage(GQL_CONNECTION_ACK);
       // Emit
       this.emit('connection_init', data.payload as ConnectionParams);
@@ -156,28 +120,25 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     const { query, variables, operationName } = data.payload;
 
     if (!query) {
-      return this.sendMessage(GQL_ERROR, data.id, {
-        errors: [new GraphQLError('Must provide query string.')],
-      });
+      return this.sendError(data.id, new Error('Must provide query string.'));
     }
 
-    const context = (await this.contextPromise) || {};
+    const {
+      document,
+      compiledQuery,
+      operation,
+    } = this.graphyne.getCompiledQuery(query, operationName);
 
-    const executionResult = await this.graphyne
-      .subscribe({
-        source: query,
-        contextValue: context,
-        variableValues: variables,
-        operationName,
-      })
-      .catch((errorOrResult: Error | ExecutionResult) => {
-        if ('errors' in errorOrResult || 'data' in errorOrResult) {
-          this.sendMessage(GQL_ERROR, data.id, errorOrResult);
-        }
-        return null;
-      });
-
-    if (!executionResult) return this.handleGQLStop(data.id);
+    const context = await this.contextPromise;
+    const executionResult = await this.graphyne[
+      operation === 'subscription' ? 'subscribe' : 'execute'
+    ]({
+      document: document as DocumentNode,
+      contextValue: context,
+      variableValues: variables,
+      operationName,
+      compiledQuery,
+    });
 
     const executionIterable = isAsyncIterable(executionResult)
       ? (executionResult as AsyncIterator<ExecutionResult>)
@@ -199,9 +160,9 @@ export class GraphyneWebSocketConnection extends EventEmitter {
         this.sendMessage(GQL_COMPLETE, data.id);
       },
       (err) => {
-        this.sendMessage(GQL_ERROR, data.id, {
-          errors: [err],
-        });
+        // If something thrown, it must be a system error, otherwise, it should have landed in the regular callback with as GQL_DATA
+        // See `mapAsyncIterator`
+        this.sendError(data.id, err);
       }
     );
   }
@@ -227,6 +188,16 @@ export class GraphyneWebSocketConnection extends EventEmitter {
     }, 10);
   }
 
+  sendError(id: string | undefined, error: Error) {
+    this.socket.send(
+      JSON.stringify({
+        type: GQL_ERROR,
+        ...(id && { id }),
+        payload: { message: error.message },
+      })
+    );
+  }
+
   sendMessage(type: string, id?: string | null, result?: ExecutionResult) {
     const payload: FormattedExecutionResult | null = result
       ? this.graphyne.formatExecutionResult(result)
@@ -235,43 +206,4 @@ export class GraphyneWebSocketConnection extends EventEmitter {
       JSON.stringify({ type, ...(id && { id }), ...(payload && { payload }) })
     );
   }
-}
-
-class GraphyneWebSocketServer extends WebSocket.Server {
-  public graphyne: GraphyneCore;
-  public contextFn?: ContextFn;
-  constructor(options: GraphyneWSOptions) {
-    super(options);
-    this.contextFn = options.context;
-    this.graphyne = options.graphyne;
-  }
-}
-
-export function startSubscriptionServer(
-  options: GraphyneWSOptions
-): GraphyneWebSocketServer {
-  const wss = new GraphyneWebSocketServer(options);
-  wss.on('connection', (socket: WebSocket, request: IncomingMessage) => {
-    // Check that socket.protocol is GRAPHQL_WS
-    if (
-      socket.protocol === undefined ||
-      socket.protocol.indexOf(GRAPHQL_WS) === -1
-    )
-      return socket.close(1002);
-    const connection = new GraphyneWebSocketConnection({
-      socket,
-      request,
-      wss: wss,
-    });
-
-    if (options.onGraphyneWebSocketConnection)
-      options.onGraphyneWebSocketConnection(connection);
-
-    socket.on('message', (message) => {
-      connection.handleMessage(message.toString());
-    });
-    socket.on('error', () => connection.handleConnectionClose());
-    socket.on('close', () => connection.handleConnectionClose());
-  });
-  return wss;
 }
