@@ -1,5 +1,5 @@
 {
-  "name": "graphyne-worker-simple",
+  "name": "with-service-worker",
   "private": true,
   "scripts": {
     "build": "parcel build -d public src/index.html",

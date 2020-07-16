@@ -10,8 +10,6 @@ A **lightning-fast** JavaScript GraphQL Server, featuring:
 - Highly performant Just-In-Time compiler via [graphql-jit](https://github.com/zalando-incubator/graphql-jit).
 - Lightweight, non-opinionated, and non-coupled integration with great extensibility: Does nothing more but returning handler functions to integrate into framework' routers, web workers, or [`ws`](https://github.com/websockets/ws).
 
-Inspired by [`fastify-gql`](https://github.com/mcollina/fastify-gql).
-
 ## Why
 
 `Graphyne` uses `graphql-jit` under the hood to compile queries into optimized functions that significantly improve performance ([more than 10 times better than `graphql-js`](https://github.com/zalando-incubator/graphql-jit#benchmarks)). By furthur caching the compiled queries in memory using a LRU strategy, `Graphyne` manages to become lightning-fast.
@@ -56,8 +54,6 @@ Add WebSocket support to `graphyne-server`. Implements [GraphQL over WebSocket P
 - [ ] Gateway
 
 GraphQL execution layer is also bounded by the limitation of [graphql-jit](https://github.com/zalando-incubator/graphql-jit#differences-to-graphql-js). Yet, I have been using it in production and see no problems for my use-cases.
-
-To keep the code light-weight, some features (such as File Upload) is intentionally left out but can be [easily implemented](packages/graphyne-server#file-uploads) if needed.
 
 ## Contributing
 

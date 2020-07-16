@@ -7,9 +7,9 @@
 
 > This package is highly experimental and may be changed or removed at any time!
 
-GraphQL execution layer in the browser and at the edge. A package of [Graphyne](https://github.com/hoangvvo/graphyne).
+GraphQL execution layer in the browser and at the edge.
 
-[Example](/examples/graphyne-worker-simple)
+[Service Worker Example](/examples/with-service-worker)
 
 ## Why GraphQL in the browser
 
