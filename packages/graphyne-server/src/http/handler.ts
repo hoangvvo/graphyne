@@ -42,9 +42,8 @@ export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
           typeof options.context === 'function'
             ? options.context(req)
             : options.context || {};
-        // FIXME: This is dangerous since object may contain 'then' key
         // If performance gain is little, consider doing `await`
-        'then' in params.context
+        typeof params.context.then === 'function'
           ? (params.context as Promise<TContext>).then(
               (resolvedCtx) => {
                 params.context = resolvedCtx;
