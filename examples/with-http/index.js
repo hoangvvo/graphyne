@@ -1,6 +1,6 @@
 const http = require('http');
 const { Graphyne, httpHandler } = require('graphyne-server');
-const { makeExecutableSchema } = require('graphql-tools');
+const { makeExecutableSchema } = require('@graphql-tools/schema');
 
 const typeDefs = `
   type Query {

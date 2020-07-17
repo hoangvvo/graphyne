@@ -1,6 +1,6 @@
 const express = require('express');
 const { Graphyne, httpHandler } = require('graphyne-server');
-const { makeExecutableSchema } = require('graphql-tools');
+const { makeExecutableSchema } = require('@graphql-tools/schema');
 
 const typeDefs = `
   type Query {
@@ -22,7 +22,7 @@ const graphyne = new Graphyne({ schema });
 
 const app = express();
 
-app.post(
+app.all(
   '/graphql',
   httpHandler(graphyne, {
     context: (req) => ({ world: 'world' }),
