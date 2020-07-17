@@ -1,4 +1,4 @@
-import { QueryBody } from 'graphyne-core';
+import { GraphQLParams } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { IncomingMessage } from 'http';
 import { SubscriptionConnection } from './connection';
@@ -7,7 +7,7 @@ export type ConnectionParams = Record<string, any>;
 
 export interface OperationMessage {
   id?: string;
-  payload?: QueryBody | ConnectionParams;
+  payload?: GraphQLParams | ConnectionParams;
   type: string;
 }
 

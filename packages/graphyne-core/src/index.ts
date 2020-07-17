@@ -1,6 +1,6 @@
 export { Graphyne } from './core';
 export {
-  QueryBody,
+  GraphQLParams,
   HttpQueryRequest,
   HttpQueryResponse,
   FormattedExecutionResult,

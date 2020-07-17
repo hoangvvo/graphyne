@@ -12,13 +12,13 @@ export interface Config {
   formatError?: (error: GraphQLError) => GraphQLFormattedError;
 }
 
-export interface QueryBody {
+export interface GraphQLParams {
   query?: string | null;
   variables?: Record<string, any> | null;
   operationName?: string | null;
 }
 
-export interface HttpQueryRequest extends QueryBody {
+export interface HttpQueryRequest extends GraphQLParams {
   context: Record<string, any>;
   httpMethod: string;
 }

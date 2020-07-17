@@ -1,5 +1,9 @@
 import { ExecutionResult, DocumentNode } from 'graphql';
-import { QueryBody, Graphyne, FormattedExecutionResult } from 'graphyne-core';
+import {
+  GraphQLParams,
+  Graphyne,
+  FormattedExecutionResult,
+} from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -32,14 +36,14 @@ export interface SubscriptionConnection {
     event: 'subscription_start',
     listener: (
       id: string,
-      payload: QueryBody,
+      payload: GraphQLParams,
       context: Record<string, any>
     ) => void
   ): this;
   emit(
     event: 'subscription_start',
     id: string,
-    payload: QueryBody,
+    payload: GraphQLParams,
     context: Record<string, any>
   ): boolean;
   on(event: 'subscription_stop', listener: (id: string) => void): this;
@@ -74,7 +78,7 @@ export class SubscriptionConnection extends EventEmitter {
         break;
       case GQL_START:
         this.handleGQLStart(
-          data as OperationMessage & { id: string; payload: QueryBody }
+          data as OperationMessage & { id: string; payload: GraphQLParams }
         );
         break;
       case GQL_STOP:
@@ -114,7 +118,7 @@ export class SubscriptionConnection extends EventEmitter {
   }
 
   async handleGQLStart(
-    data: OperationMessage & { id: string; payload: QueryBody }
+    data: OperationMessage & { id: string; payload: GraphQLParams }
   ) {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_start
     const { query, variables, operationName } = data.payload;

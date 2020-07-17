@@ -1,7 +1,7 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { GraphQLSchema, GraphQLArgs } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
-import { Graphyne, QueryBody, FormattedExecutionResult } from '../src';
+import { Graphyne, GraphQLParams, FormattedExecutionResult } from '../src';
 import { Config, QueryCache } from '../src/types';
 import { Lru } from 'tiny-lru';
 
@@ -66,7 +66,7 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
   type ExpectedBodyFn = (str: string) => void;
 
   function testHttp(
-    queryRequest: QueryBody & {
+    queryRequest: GraphQLParams & {
       context?: Record<string, any>;
       httpMethod?: string;
     },
