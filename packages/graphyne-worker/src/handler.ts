@@ -12,7 +12,6 @@ export async function handleRequest(
   request: Request,
   options: HandlerConfig = {}
 ): Promise<Response> {
-  const url = new URL(request.url);
   let context: TContext;
   try {
     const contextFn = options.context || {};
@@ -45,7 +44,9 @@ export async function handleRequest(
   }
 
   const queryParams: { [key: string]: string } = {};
-  url.searchParams.forEach((value, key) => (queryParams[key] = value));
+  new URLSearchParams(request.url.slice(request.url.indexOf('?'))).forEach(
+    (value, key) => (queryParams[key] = value)
+  );
 
   const params = getGraphQLParams({
     queryParams,
