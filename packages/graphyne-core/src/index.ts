@@ -4,5 +4,6 @@ export {
   HttpQueryRequest,
   HttpQueryResponse,
   FormattedExecutionResult,
+  ValueOrPromise,
 } from './types';
 export { parseBodyByContentType, getGraphQLParams } from './utils';

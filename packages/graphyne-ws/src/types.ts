@@ -1,7 +1,9 @@
-import { GraphQLParams } from 'graphyne-core';
+import { GraphQLParams, ValueOrPromise } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { IncomingMessage } from 'http';
 import { SubscriptionConnection } from './connection';
+
+export type TContext = any;
 
 export type ConnectionParams = Record<string, any>;
 
@@ -18,8 +20,6 @@ export interface InitContext {
 }
 
 export interface GraphyneWSOptions {
-  context?:
-    | Record<string, any>
-    | ((initContext: InitContext) => Record<string, any>);
+  context?: TContext | ((initContext: InitContext) => ValueOrPromise<TContext>);
   onSubscriptionConnection?: (connection: SubscriptionConnection) => void;
 }

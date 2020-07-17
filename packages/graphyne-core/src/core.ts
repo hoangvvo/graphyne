@@ -23,6 +23,7 @@ import {
   HttpQueryRequest,
   HttpQueryResponse,
   FormattedExecutionResult,
+  ValueOrPromise,
 } from './types';
 import flatstr from 'flatstr';
 import { isAsyncIterable } from './utils';
@@ -215,7 +216,7 @@ export class Graphyne {
     variableValues,
   }: Pick<ExecutionArgs, 'document' | 'contextValue' | 'variableValues'> & {
     compiledQuery: CompiledQuery | ExecutionResult;
-  }): ExecutionResult | Promise<ExecutionResult> {
+  }): ValueOrPromise<ExecutionResult> {
     if (!isCompiledQuery(compiledQuery)) return compiledQuery;
     return compiledQuery.query(
       typeof this.options.rootValue === 'function'

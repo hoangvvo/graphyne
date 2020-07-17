@@ -4,7 +4,7 @@ import {
   getGraphQLParams,
   HttpQueryRequest,
 } from 'graphyne-core';
-import { HandlerConfig } from './types';
+import { HandlerConfig, TContext } from './types';
 
 export async function handleRequest(
   graphyne: Graphyne,
@@ -12,7 +12,7 @@ export async function handleRequest(
   options: HandlerConfig = {}
 ): Promise<Response> {
   const url = new URL(request.url);
-  let context: Record<string, any>;
+  let context: TContext;
   try {
     const contextFn = options.context || {};
     context =

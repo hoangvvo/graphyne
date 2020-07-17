@@ -3,6 +3,7 @@ import {
   getGraphQLParams,
   HttpQueryResponse,
   HttpQueryRequest,
+  ValueOrPromise,
 } from 'graphyne-core';
 import { parseBody } from './parseBody';
 import parseUrl from '@polka/url';
@@ -42,14 +43,14 @@ export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
             ? options.context(req)
             : options.context || {};
         'then' in params.context
-          ? params.context.then(
-              (resolvedCtx: TContext) => {
+          ? (params.context as Promise<TContext>).then(
+              (resolvedCtx) => {
                 params.context = resolvedCtx;
                 graphyne.runHttpQuery(params, (result) =>
                   sendResponse(res, result)
                 );
               },
-              (error: any) => {
+              (error) => {
                 error.message = `Context creation failed: ${error.message}`;
                 sendErrorResponse(res, error);
               }

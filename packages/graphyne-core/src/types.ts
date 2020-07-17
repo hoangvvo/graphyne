@@ -6,6 +6,8 @@ import {
 } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 
+type TContext = any;
+
 export interface Config {
   schema: GraphQLSchema;
   rootValue?: ((parsedQuery: DocumentNode) => any) | any;
@@ -19,7 +21,7 @@ export interface GraphQLParams {
 }
 
 export interface HttpQueryRequest extends GraphQLParams {
-  context: Record<string, any>;
+  context: TContext;
   httpMethod: string;
 }
 
@@ -44,3 +46,5 @@ export interface FormattedExecutionResult<
   data?: TData | null;
   extensions?: TExtensions;
 }
+
+export type ValueOrPromise<T> = T | Promise<T>;

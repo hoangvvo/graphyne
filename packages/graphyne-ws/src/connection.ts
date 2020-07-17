@@ -24,6 +24,7 @@ import {
   OperationMessage,
   InitContext,
   GraphyneWSOptions,
+  TContext,
 } from './types';
 
 export interface SubscriptionConnection {
@@ -34,17 +35,13 @@ export interface SubscriptionConnection {
   emit(event: 'connection_init', payload: ConnectionParams): boolean;
   on(
     event: 'subscription_start',
-    listener: (
-      id: string,
-      payload: GraphQLParams,
-      context: Record<string, any>
-    ) => void
+    listener: (id: string, payload: GraphQLParams, context: TContext) => void
   ): this;
   emit(
     event: 'subscription_start',
     id: string,
     payload: GraphQLParams,
-    context: Record<string, any>
+    context: TContext
   ): boolean;
   on(event: 'subscription_stop', listener: (id: string) => void): this;
   emit(event: 'subscription_stop', id: string): boolean;
@@ -54,7 +51,7 @@ export interface SubscriptionConnection {
 
 export class SubscriptionConnection extends EventEmitter {
   private operations: Map<string, AsyncIterator<ExecutionResult>> = new Map();
-  contextPromise: Promise<Record<string, any>>;
+  contextPromise: Promise<TContext>;
   constructor(
     public socket: WebSocket,
     public request: IncomingMessage,
