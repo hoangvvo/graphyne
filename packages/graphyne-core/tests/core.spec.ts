@@ -161,7 +161,7 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       {
         status: 400,
         body: 'Must provide query string.',
-        headers: { 'content-type': 'text/html; charset=utf-8' },
+        headers: {},
       }
     );
   });
@@ -174,7 +174,7 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       {
         status: 405,
         body: 'Operation mutation cannot be performed via a GET request.',
-        headers: { 'content-type': 'text/html; charset=utf-8' },
+        headers: {},
       }
     );
   });
@@ -187,7 +187,7 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       {
         status: 405,
         body: 'GraphQL only supports GET and POST requests.',
-        headers: { 'content-type': 'text/html; charset=utf-8' },
+        headers: {},
       }
     );
   });
