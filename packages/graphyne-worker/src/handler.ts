@@ -38,7 +38,7 @@ export async function handleRequest(
       } catch (err) {
         return new Response(err.message, {
           status: 400,
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'text/plain' },
         });
       }
     }
