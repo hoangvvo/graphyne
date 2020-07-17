@@ -67,7 +67,7 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
 
   function testHttp(
     queryRequest: GraphQLParams & {
-      context?: unknown;
+      context?: Record<string, any>;
       httpMethod?: string;
     },
     expected: {
