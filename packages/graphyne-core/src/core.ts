@@ -126,7 +126,7 @@ export class Graphyne {
       obj: ExecutionResult | string,
       stringify = JSON.stringify,
       headers: Record<string, string> = typeof obj === 'string'
-        ? {}
+        ? { 'content-type': 'text/plain' }
         : { 'content-type': 'application/json' }
     ) =>
       cb({
