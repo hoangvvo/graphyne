@@ -1,6 +1,6 @@
 import { IncomingMessage } from 'http';
 
-export type TContext = Record<string, any>;
+export type TContext = object;
 
 export interface HandlerConfig {
   path?: string;
