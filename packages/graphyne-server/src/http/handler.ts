@@ -3,10 +3,11 @@ import {
   getGraphQLParams,
   HttpQueryResponse,
   HttpQueryRequest,
+  TContext,
 } from 'graphyne-core';
 import { parseBody } from './parseBody';
 import parseUrl from '@polka/url';
-import { HandlerConfig, TContext } from '../types';
+import { HandlerConfig } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
 
 export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
@@ -41,15 +42,16 @@ export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
           typeof options.context === 'function'
             ? options.context(req)
             : options.context || {};
-        'then' in params.context
-          ? params.context.then(
-              (resolvedCtx: TContext) => {
+        // If performance gain is little, consider doing `await`
+        typeof params.context.then === 'function'
+          ? (params.context as Promise<TContext>).then(
+              (resolvedCtx) => {
                 params.context = resolvedCtx;
                 graphyne.runHttpQuery(params, (result) =>
                   sendResponse(res, result)
                 );
               },
-              (error: any) => {
+              (error) => {
                 error.message = `Context creation failed: ${error.message}`;
                 sendErrorResponse(res, error);
               }

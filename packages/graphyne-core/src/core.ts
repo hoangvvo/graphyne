@@ -23,6 +23,7 @@ import {
   HttpQueryRequest,
   HttpQueryResponse,
   FormattedExecutionResult,
+  ValueOrPromise,
 } from './types';
 import flatstr from 'flatstr';
 import { isAsyncIterable } from './utils';
@@ -105,7 +106,8 @@ export class Graphyne {
       );
 
       // Cache the compiled query
-      if (this.lru && !operationName && isCompiledQuery(compiledQuery)) {
+      // TODO: We are not caching multi document query right now
+      if (this.lru && isCompiledQuery(compiledQuery) && !operationName) {
         this.lru.set(query, {
           document,
           compiledQuery,
@@ -215,7 +217,7 @@ export class Graphyne {
     variableValues,
   }: Pick<ExecutionArgs, 'document' | 'contextValue' | 'variableValues'> & {
     compiledQuery: CompiledQuery | ExecutionResult;
-  }): ExecutionResult | Promise<ExecutionResult> {
+  }): ValueOrPromise<ExecutionResult> {
     if (!isCompiledQuery(compiledQuery)) return compiledQuery;
     return compiledQuery.query(
       typeof this.options.rootValue === 'function'

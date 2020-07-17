@@ -1,5 +1,10 @@
 import { ExecutionResult, DocumentNode } from 'graphql';
-import { QueryBody, Graphyne, FormattedExecutionResult } from 'graphyne-core';
+import {
+  GraphQLParams,
+  Graphyne,
+  FormattedExecutionResult,
+  TContext,
+} from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
 import { IncomingMessage } from 'http';
@@ -30,17 +35,13 @@ export interface SubscriptionConnection {
   emit(event: 'connection_init', payload: ConnectionParams): boolean;
   on(
     event: 'subscription_start',
-    listener: (
-      id: string,
-      payload: QueryBody,
-      context: Record<string, any>
-    ) => void
+    listener: (id: string, payload: GraphQLParams, context: TContext) => void
   ): this;
   emit(
     event: 'subscription_start',
     id: string,
-    payload: QueryBody,
-    context: Record<string, any>
+    payload: GraphQLParams,
+    context: TContext
   ): boolean;
   on(event: 'subscription_stop', listener: (id: string) => void): this;
   emit(event: 'subscription_stop', id: string): boolean;
@@ -50,7 +51,7 @@ export interface SubscriptionConnection {
 
 export class SubscriptionConnection extends EventEmitter {
   private operations: Map<string, AsyncIterator<ExecutionResult>> = new Map();
-  contextPromise: Promise<Record<string, any>>;
+  contextPromise: Promise<TContext>;
   constructor(
     public socket: WebSocket,
     public request: IncomingMessage,
@@ -74,7 +75,7 @@ export class SubscriptionConnection extends EventEmitter {
         break;
       case GQL_START:
         this.handleGQLStart(
-          data as OperationMessage & { id: string; payload: QueryBody }
+          data as OperationMessage & { id: string; payload: GraphQLParams }
         );
         break;
       case GQL_STOP:
@@ -114,7 +115,7 @@ export class SubscriptionConnection extends EventEmitter {
   }
 
   async handleGQLStart(
-    data: OperationMessage & { id: string; payload: QueryBody }
+    data: OperationMessage & { id: string; payload: GraphQLParams }
   ) {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_start
     const { query, variables, operationName } = data.payload;

@@ -1,5 +1,5 @@
-export type TContext = Record<string, any>;
+import { ValueOrPromise, TContext } from 'graphyne-core';
 
 export interface HandlerConfig {
-  context?: TContext | ((request: Request) => TContext | Promise<TContext>);
+  context?: TContext | ((request: Request) => ValueOrPromise<TContext>);
 }

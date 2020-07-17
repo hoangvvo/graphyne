@@ -1,8 +1,10 @@
 export { Graphyne } from './core';
 export {
-  QueryBody,
+  GraphQLParams,
   HttpQueryRequest,
   HttpQueryResponse,
   FormattedExecutionResult,
+  ValueOrPromise,
+  TContext,
 } from './types';
 export { parseBodyByContentType, getGraphQLParams } from './utils';

@@ -3,6 +3,7 @@ import {
   parseBodyByContentType,
   getGraphQLParams,
   HttpQueryRequest,
+  TContext,
 } from 'graphyne-core';
 import { HandlerConfig } from './types';
 
@@ -11,8 +12,7 @@ export async function handleRequest(
   request: Request,
   options: HandlerConfig = {}
 ): Promise<Response> {
-  const url = new URL(request.url);
-  let context: Record<string, any>;
+  let context: TContext;
   try {
     const contextFn = options.context || {};
     context =
@@ -37,18 +37,19 @@ export async function handleRequest(
       } catch (err) {
         return new Response(err.message, {
           status: 400,
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'text/plain' },
         });
       }
     }
   }
 
+  const queryParams: { [key: string]: string } = {};
+  new URLSearchParams(request.url.slice(request.url.indexOf('?'))).forEach(
+    (value, key) => (queryParams[key] = value)
+  );
+
   const params = getGraphQLParams({
-    queryParams: {
-      query: url.searchParams.get('query'),
-      variables: url.searchParams.get('variables'),
-      operationName: url.searchParams.get('operationName'),
-    },
+    queryParams,
     body,
   }) as HttpQueryRequest;
   params.httpMethod = request.method;

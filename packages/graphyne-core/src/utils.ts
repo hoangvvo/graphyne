@@ -1,5 +1,5 @@
 import { ExecutionResult } from 'graphql';
-import { QueryBody } from './types';
+import { GraphQLParams } from './types';
 
 export function parseBodyByContentType(
   rawBody: string,
@@ -27,18 +27,20 @@ export function getGraphQLParams({
   queryParams,
   body,
 }: {
-  queryParams: Record<string, string | string[] | null | undefined>;
+  queryParams: Record<string, string | null | undefined>;
   body: Record<string, any> | null;
-}): QueryBody {
+}): GraphQLParams {
   return {
     query: (body?.query || queryParams.query) as string | undefined | null,
     variables:
       body?.variables ||
-      (queryParams.variables && JSON.parse(queryParams.variables as string)),
-    operationName: (body?.operationName || queryParams.operationName) as
-      | string
-      | undefined
-      | null,
+      (queryParams.variables && JSON.parse(queryParams.variables)),
+    operationName:
+      body?.operationName ||
+      (queryParams.operationName as string | null | undefined),
+    extensions:
+      body?.extensions ||
+      (queryParams.extensions && JSON.parse(queryParams.extensions)),
   };
 }
 

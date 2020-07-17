@@ -6,20 +6,24 @@ import {
 } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 
+export type TContext = { [key: string]: any };
+
 export interface Config {
   schema: GraphQLSchema;
   rootValue?: ((parsedQuery: DocumentNode) => any) | any;
   formatError?: (error: GraphQLError) => GraphQLFormattedError;
 }
 
-export interface QueryBody {
+export interface GraphQLParams {
+  // https://github.com/graphql/graphql-over-http/blob/master/spec/GraphQLOverHTTP.md#request-parameters
   query?: string | null;
   variables?: Record<string, any> | null;
   operationName?: string | null;
+  extensions?: Record<string, any> | null;
 }
 
-export interface HttpQueryRequest extends QueryBody {
-  context: Record<string, any>;
+export interface HttpQueryRequest extends GraphQLParams {
+  context: TContext;
   httpMethod: string;
 }
 
@@ -44,3 +48,5 @@ export interface FormattedExecutionResult<
   data?: TData | null;
   extensions?: TExtensions;
 }
+
+export type ValueOrPromise<T> = T | Promise<T>;
