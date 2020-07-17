@@ -3,11 +3,11 @@ import {
   getGraphQLParams,
   HttpQueryResponse,
   HttpQueryRequest,
-  ValueOrPromise,
+  TContext,
 } from 'graphyne-core';
 import { parseBody } from './parseBody';
 import parseUrl from '@polka/url';
-import { HandlerConfig, TContext } from './types';
+import { HandlerConfig } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
 
 export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {

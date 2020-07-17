@@ -3,6 +3,7 @@ import {
   GraphQLParams,
   Graphyne,
   FormattedExecutionResult,
+  TContext,
 } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
@@ -24,7 +25,6 @@ import {
   OperationMessage,
   InitContext,
   GraphyneWSOptions,
-  TContext,
 } from './types';
 
 export interface SubscriptionConnection {

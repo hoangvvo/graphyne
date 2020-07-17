@@ -5,5 +5,6 @@ export {
   HttpQueryResponse,
   FormattedExecutionResult,
   ValueOrPromise,
+  TContext,
 } from './types';
 export { parseBodyByContentType, getGraphQLParams } from './utils';

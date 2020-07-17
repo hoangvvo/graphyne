@@ -6,7 +6,7 @@ import {
 } from 'graphql';
 import { CompiledQuery } from 'graphql-jit';
 
-type TContext = any;
+export type TContext = { [key: string]: any };
 
 export interface Config {
   schema: GraphQLSchema;

@@ -3,8 +3,9 @@ import {
   parseBodyByContentType,
   getGraphQLParams,
   HttpQueryRequest,
+  TContext,
 } from 'graphyne-core';
-import { HandlerConfig, TContext } from './types';
+import { HandlerConfig } from './types';
 
 export async function handleRequest(
   graphyne: Graphyne,
