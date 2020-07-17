@@ -25,28 +25,68 @@ describe('graphyne-core/utils: parseBodyByContentType', () => {
   });
 });
 describe('graphyne-core/utils: getGraphQLParams', () => {
-  it('works with queryParams', () => {
-    const { query, variables } = getGraphQLParams({
-      queryParams: { query: 'ok', variables: `{ "ok": "no" }` },
-      body: null,
+  describe('gets query from', () => {
+    it('queryParams', () => {
+      const { query } = getGraphQLParams({
+        queryParams: { query: 'ok' },
+        body: null,
+      });
+      assert.deepStrictEqual(query, 'ok');
     });
-    assert.deepStrictEqual(query, 'ok');
-    assert.deepStrictEqual(variables?.ok, 'no');
+    it('body', () => {
+      const { query } = getGraphQLParams({
+        queryParams: {},
+        body: { query: 'ok' },
+      });
+      assert.deepStrictEqual(query, 'ok');
+    });
   });
-  it('works with body', () => {
-    const { query, variables } = getGraphQLParams({
-      queryParams: {},
-      body: { query: 'ok', variables: { ok: 'no' } },
+  describe('gets variables from', () => {
+    it('queryParams', () => {
+      const { variables } = getGraphQLParams({
+        queryParams: { variables: `{ "ok": "no" }` },
+        body: null,
+      });
+      assert.deepStrictEqual(variables?.ok, 'no');
     });
-    assert.deepStrictEqual(query, 'ok');
-    assert.deepStrictEqual(variables?.ok, 'no');
+    it('body', () => {
+      const { variables } = getGraphQLParams({
+        queryParams: {},
+        body: { variables: { ok: 'no' } },
+      });
+      assert.deepStrictEqual(variables?.ok, 'no');
+    });
   });
-  it('works retrieving from both queryParams and body', () => {
-    const { query, variables } = getGraphQLParams({
-      queryParams: { query: 'ok' },
-      body: { variables: { ok: 'no' } },
+  describe('gets operationName from', () => {
+    it('queryParams', () => {
+      const { operationName } = getGraphQLParams({
+        queryParams: { operationName: `hey` },
+        body: null,
+      });
+      assert.deepStrictEqual(operationName, 'hey');
     });
-    assert.deepStrictEqual(query, 'ok');
-    assert.deepStrictEqual(variables?.ok, 'no');
+    it('body', () => {
+      const { operationName } = getGraphQLParams({
+        queryParams: {},
+        body: { operationName: `hey` },
+      });
+      assert.deepStrictEqual(operationName, 'hey');
+    });
+  });
+  describe('gets extensions from', () => {
+    it('queryParams', () => {
+      const { extensions } = getGraphQLParams({
+        queryParams: { extensions: `{"ilu": 3000}` },
+        body: null,
+      });
+      assert.deepStrictEqual(extensions, { ilu: 3000 });
+    });
+    it('body', () => {
+      const { extensions } = getGraphQLParams({
+        queryParams: {},
+        body: { extensions: { ilu: 3000 } },
+      });
+      assert.deepStrictEqual(extensions, { ilu: 3000 });
+    });
   });
 });

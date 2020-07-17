@@ -39,7 +39,8 @@ export function getGraphQLParams({
       body?.operationName ||
       (queryParams.operationName as string | null | undefined),
     extensions:
-      body?.extensions || (queryParams.extensions as string | null | undefined),
+      body?.extensions ||
+      (queryParams.extensions && JSON.parse(queryParams.extensions as string)),
   };
 }
 

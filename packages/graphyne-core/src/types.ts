@@ -15,6 +15,7 @@ export interface Config {
 }
 
 export interface GraphQLParams {
+  // https://github.com/graphql/graphql-over-http/blob/master/spec/GraphQLOverHTTP.md#request-parameters
   query?: string | null;
   variables?: Record<string, any> | null;
   operationName?: string | null;
