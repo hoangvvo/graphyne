@@ -35,10 +35,11 @@ export function getGraphQLParams({
     variables:
       body?.variables ||
       (queryParams.variables && JSON.parse(queryParams.variables as string)),
-    operationName: (body?.operationName || queryParams.operationName) as
-      | string
-      | undefined
-      | null,
+    operationName:
+      body?.operationName ||
+      (queryParams.operationName as string | null | undefined),
+    extensions:
+      body?.extensions || (queryParams.extensions as string | null | undefined),
   };
 }
 

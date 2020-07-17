@@ -18,6 +18,7 @@ export interface GraphQLParams {
   query?: string | null;
   variables?: Record<string, any> | null;
   operationName?: string | null;
+  extensions?: Record<string, any> | null;
 }
 
 export interface HttpQueryRequest extends GraphQLParams {
