@@ -105,7 +105,8 @@ describe('graphyne-worker: handleRequest', () => {
         },
         {
           status: 400,
-          body: `{"errors":[{"message":"Must provide query string."}]}`,
+          // Because body is not parsed, query string cannot be read
+          body: `Must provide query string.`,
         }
       );
     });
@@ -116,7 +117,7 @@ describe('graphyne-worker: handleRequest', () => {
       '/graphql',
       {},
       {
-        body: `{"errors":[{"message":"Must provide query string."}]}`,
+        body: `Must provide query string.`,
         status: 400,
       }
     );

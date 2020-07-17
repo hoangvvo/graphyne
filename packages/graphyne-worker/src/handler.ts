@@ -35,14 +35,10 @@ export async function handleRequest(
       try {
         body = parseBodyByContentType(await request.text(), oCtype);
       } catch (err) {
-        err.status = 400;
-        return new Response(
-          JSON.stringify(graphyne.formatExecutionResult({ errors: [err] })),
-          {
-            status: 400,
-            headers: { 'content-type': 'application/json' },
-          }
-        );
+        return new Response(err.message, {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        });
       }
     }
   }
