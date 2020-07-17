@@ -44,12 +44,11 @@ export async function handleRequest(
     }
   }
 
+  const queryParams: { [key: string]: string } = {};
+  url.searchParams.forEach((value, key) => (queryParams[key] = value));
+
   const params = getGraphQLParams({
-    queryParams: {
-      query: url.searchParams.get('query'),
-      variables: url.searchParams.get('variables'),
-      operationName: url.searchParams.get('operationName'),
-    },
+    queryParams,
     body,
   }) as HttpQueryRequest;
   params.httpMethod = request.method;
