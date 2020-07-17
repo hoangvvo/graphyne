@@ -123,19 +123,23 @@ export class Graphyne {
   ): void {
     const createResponse = (
       code: number,
-      obj: ExecutionResult,
-      stringify = JSON.stringify
+      obj: ExecutionResult | string,
+      stringify = JSON.stringify,
+      headers: Record<string, string> = typeof obj === 'string'
+        ? { 'content-type': 'text/html; charset=utf-8' }
+        : { 'content-type': 'application/json' }
     ) =>
       cb({
-        body: flatstr(stringify(this.formatExecutionResult(obj))),
+        body:
+          typeof obj === 'string'
+            ? obj
+            : flatstr(stringify(this.formatExecutionResult(obj))),
         status: code,
-        headers: { 'content-type': 'application/json' },
+        headers,
       });
 
     if (!query) {
-      return createResponse(400, {
-        errors: [new GraphQLError('Must provide query string.')],
-      });
+      return createResponse(400, 'Must provide query string.');
     }
 
     const { document, operation, compiledQuery } = this.getCompiledQuery(
@@ -149,19 +153,15 @@ export class Graphyne {
     }
 
     if (httpMethod !== 'POST' && httpMethod !== 'GET')
-      return createResponse(405, {
-        errors: [
-          new GraphQLError(`GraphQL only supports GET and POST requests.`),
-        ],
-      });
+      return createResponse(
+        405,
+        `GraphQL only supports GET and POST requests.`
+      );
     if (httpMethod === 'GET' && operation !== 'query')
-      return createResponse(405, {
-        errors: [
-          new GraphQLError(
-            `Operation ${operation} cannot be performed via a GET request`
-          ),
-        ],
-      });
+      return createResponse(
+        405,
+        `Operation ${operation} cannot be performed via a GET request.`
+      );
 
     const result = this.execute({
       compiledQuery,

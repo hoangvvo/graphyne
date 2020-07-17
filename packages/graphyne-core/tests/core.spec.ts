@@ -1,13 +1,8 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { GraphQLSchema, GraphQLArgs } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
-import {
-  Graphyne,
-  Config,
-  QueryBody,
-  QueryCache,
-  FormattedExecutionResult,
-} from '../src';
+import { Graphyne, QueryBody, FormattedExecutionResult } from '../src';
+import { Config, QueryCache } from '../src/types';
 import { Lru } from 'tiny-lru';
 
 const schema = makeExecutableSchema({
@@ -165,7 +160,8 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       { context: {} },
       {
         status: 400,
-        body: '{"errors":[{"message":"Must provide query string."}]}',
+        body: 'Must provide query string.',
+        headers: { 'content-type': 'text/html; charset=utf-8' },
       }
     );
   });
@@ -177,8 +173,8 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       },
       {
         status: 405,
-        body:
-          '{"errors":[{"message":"Operation mutation cannot be performed via a GET request"}]}',
+        body: 'Operation mutation cannot be performed via a GET request.',
+        headers: { 'content-type': 'text/html; charset=utf-8' },
       }
     );
   });
@@ -190,8 +186,8 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       },
       {
         status: 405,
-        body:
-          '{"errors":[{"message":"GraphQL only supports GET and POST requests."}]}',
+        body: 'GraphQL only supports GET and POST requests.',
+        headers: { 'content-type': 'text/html; charset=utf-8' },
       }
     );
   });
