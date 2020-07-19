@@ -9,8 +9,9 @@
     "last 1 chrome versions"
   ],
   "dependencies": {
-    "graphql": "^15.3.0",
     "@graphql-tools/schema": "^6.0.14",
+    "@urql/core": "^1.12.2",
+    "graphql": "^15.3.0",
     "graphyne-worker": "^0.5.0"
   },
   "license": "ISC",
