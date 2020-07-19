@@ -19,6 +19,7 @@ var schema = makeExecutableSchema({
 
 const graphyne = new Graphyne({ schema });
 
+// Execution via network
 addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.pathname === '/graphql')
@@ -28,3 +29,15 @@ addEventListener('fetch', (event) => {
       })
     );
 });
+
+// Execution via postMessage
+addEventListener('message', ev => {
+  graphyne
+    .graphql({
+      source: ev.data.query,
+      contextValue: { world: "world" },
+    })
+    .then((result) => {
+      ev.source.postMessage(result);
+    });
+})
