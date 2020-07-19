@@ -20,6 +20,9 @@
   >
     <script src="./index.js"></script>
     <h1>Graphyne Worker example with Service Worker API</h1>
+    <div>
+      <a href="https://github.com/hoangvvo/graphyne/tree/master/examples/with-service-worker">GitHub</a>
+    </div>
     <p>
       This example demonstrates a GraphQL execution <b>without a server</b> and
       instead right on the browser using
@@ -38,10 +41,10 @@
           <button id="queryUrql">Execute</button>
         </div>
         <h4>Using Graphyne#graphql</h4>
-        <code class="code">navigator.serviceWorker.controller.postMessage({
+        <code class="code">navigator.serviceWorker.addEventListener('message', writeResult);
+navigator.serviceWorker.controller.postMessage({
   query: '{ hello }'
 });
-navigator.serviceWorker.addEventListener('message', writeResult);
 
 // worker.js
 addEventListener('message', ev => {
@@ -77,7 +80,9 @@ addEventListener('message', ev => {
       intercept all <code>fetch</code> events:
     </p>
     <div style="padding: 1rem;">
-      <code class="code">addEventListener('fetch', (event) => {
+      <code class="code">const graphyne = new Graphyne({ schema });
+        
+addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.pathname === '/graphql')
     return event.respondWith(
