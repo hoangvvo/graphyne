@@ -21,6 +21,8 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+const QUERY = '{hello}'
+
 window.onload = () => {
   function printResult(json, duration) {
     const value = typeof json === 'object' ? JSON.stringify(json, null, '  ') : json;
@@ -34,14 +36,14 @@ window.onload = () => {
   document.querySelector('#queryFetch').onclick = async () => {
     resetResult();
     const t0 = performance.now();
-    const res = await fetch('/graphql?query={hello}');
+    const res = await fetch(`/graphql?query=${QUERY}`);
     printResult(await res.json(), performance.now() - t0);
   };
   // Via urql
   document.querySelector('#queryUrql').onclick = async () => {
     resetResult();
     const t0 = performance.now();
-    const result = await urqlClient.query('{ hello }').toPromise();
+    const result = await urqlClient.query(QUERY).toPromise();
     printResult({ data: result.data }, performance.now() - t0);
   };
   // Via service worker postMessage
@@ -54,8 +56,6 @@ window.onload = () => {
     }
     t0 = performance.now();
     navigator.serviceWorker.addEventListener('message', listenToResult);
-    navigator.serviceWorker.controller.postMessage({
-      query: '{ hello }'
-    });
+    navigator.serviceWorker.controller.postMessage({ query: QUERY });
   }
 };
