@@ -27,7 +27,6 @@
     </p>
     <div style="display: flex; flex-wrap: wrap;">
       <div style="flex: 1; padding: 0.5rem;">
-        <h3>Code</h3>
         <h4>Using <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">Fetch API</a></h4>
         <code class="code">fetch('/graphql?query={hello}')</code>
         <div style="padding: .4rem;">
@@ -38,19 +37,41 @@
         <div style="padding: .4rem;">
           <button id="queryUrql">Execute</button>
         </div>
+        <h4>Using Graphyne#graphql</h4>
+        <code class="code">navigator.serviceWorker.controller.postMessage({
+  query: '{ hello }'
+});
+navigator.serviceWorker.addEventListener('message', writeResult);
+
+// worker.js
+addEventListener('message', ev => {
+  graphyne
+    .graphql({
+      source: ev.data.query,
+      contextValue: { world: "world" },
+    })
+    .then((result) => {
+      ev.source.postMessage(result);
+    });
+})</code>
+        <div style="padding: .4rem;">
+          <button id="queryMessage">Execute</button>
+        </div>
       </div>
       <div style="flex: 1; padding: 0.5rem;">
-        <h3>Result</h3>
-        <textarea
-          rows="8"
-          cols="50"
-          style="display: block; resize: none; margin: 1rem auto; padding: 2rem;"
-          id="result"
-        ></textarea>
-        <p style="text-align: left; color: cornflowerblue;">Executed in ~<span id="result-ms"></span> ms</p>
+        <div style="position: sticky; top: 0;">
+          <h3>Result</h3>
+          <textarea
+            rows="8"
+            cols="50"
+            style="display: block; resize: none; margin: 1rem auto; padding: 2rem;"
+            id="result"
+          ></textarea>
+          <p style="text-align: left; color: cornflowerblue;">Executed in ~<span id="result-ms"></span> ms</p>
+        </div>
       </div>
     </div>
-    <h2>How it works?</h2>
+    <h2>How does it works?</h2>
     <p>
       After registering <code>worker.js</code> as a service worker, it will
       intercept all <code>fetch</code> events:
