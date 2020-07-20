@@ -8,13 +8,11 @@
     />  
     <style>
       .CodeMirror {
-        height: auto!important;
         border-radius: 6px;
+        height: auto!important;
       }
-      .CodeMirror-scroll {
-        height: auto;
-        overflow-y: hidden;
-        overflow-x: auto;
+      #result .CodeMirror {
+        height: 300px!important;
       }
     </style>
     <link
@@ -43,7 +41,7 @@
     </div>
     <div style="display: flex;">
       <div style="flex: 1; padding: 0.5rem; overflow: hidden;">
-        <div>
+        <div id="input">
           <h4>Query</h4>
           <div id="query"></div>
           <h4>Variables</h4>

@@ -36,7 +36,7 @@ function getFetchCode(q, v) {
   }).then((res) => res.json())`;
 }
 function getUrqlCode(q, v) {
-  return `urqlClient.query(\`${q}\`, ${JSON.stringify(
+  return `client.query(\`${q}\`, ${JSON.stringify(
     v,
     undefined,
     2
