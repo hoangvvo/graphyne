@@ -25,6 +25,7 @@ addEventListener('message', (ev) => {
   graphyne
     .graphql({
       source: ev.data.query,
+      variableValues: ev.data.variables,
       contextValue: { hello: 'world' },
     })
     .then((result) => {

@@ -11,8 +11,10 @@
   "dependencies": {
     "@graphql-tools/schema": "^6.0.14",
     "@urql/core": "^1.12.2",
+    "codemirror": "^5.55.0",
+    "codemirror-graphql": "^0.12.0",
     "graphql": "^15.3.0",
-    "graphyne-worker": "^0.5.0"
+    "graphyne-worker": "^0.5.2"
   },
   "license": "ISC",
   "devDependencies": {

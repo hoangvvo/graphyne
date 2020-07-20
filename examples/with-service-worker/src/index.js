@@ -1,3 +1,10 @@
+import CodeMirror from 'codemirror';
+import 'codemirror/mode/javascript/javascript';
+import 'codemirror/addon/hint/show-hint';
+import 'codemirror/addon/lint/lint';
+import 'codemirror-graphql/hint';
+import 'codemirror-graphql/lint';
+import 'codemirror-graphql/mode';
 import { createClient } from '@urql/core';
 
 const urqlClient = createClient({ url: '/graphql' });
@@ -21,13 +28,118 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-const QUERY = '{hello}';
+function getFetchCode(q, v) {
+  return `fetch('/graphql', {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: \`${JSON.stringify({ query: q, variables: v }, undefined, 2)}\`
+  }).then((res) => res.json())`;
+}
+function getUrqlCode(q, v) {
+  return `urqlClient.query(\`${q}\`, ${JSON.stringify(
+    v,
+    undefined,
+    2
+  )}).toPromise();`;
+}
+function getMessageCode(q, v) {
+  return `navigator.serviceWorker.addEventListener('message', writeResult);
+navigator.serviceWorker.controller.postMessage({
+  query: \`${q}\`,
+  variables: ${JSON.stringify(v, undefined, 2)}
+});
+
+// worker.js
+addEventListener('message', ev => {
+graphyne
+  .graphql({
+    source: ev.data.query,
+  })
+  .then((result) => {
+    ev.source.postMessage(result);
+  });`;
+}
+
+let query = `query pokemon($id: ID, $name: String) { 
+  pokemon(id: $id, name: $name) {
+    name
+    id
+  }
+}`;
+let variables = { id: 1 };
 
 window.onload = () => {
+  // Code sections
+  const fetchCM = CodeMirror(document.querySelector('#codeFetch'), {
+    theme: 'base16-light',
+    lineNumbers: true,
+    readOnly: true,
+    value: getFetchCode(query, variables),
+  });
+  const urqlCM = CodeMirror(document.querySelector('#codeUrql'), {
+    theme: 'base16-light',
+    lineNumbers: true,
+    readOnly: true,
+    value: getUrqlCode(query, variables),
+  });
+  const messageCM = CodeMirror(document.querySelector('#codeMessage'), {
+    theme: 'base16-light',
+    lineNumbers: true,
+    readOnly: true,
+    value: getMessageCode(query, variables),
+  });
+  CodeMirror.fromTextArea(document.querySelector('#codeHowWork'), {
+    mode: { name: 'javascript', json: true },
+    theme: 'base16-light',
+    lineNumbers: true,
+    readOnly: true,
+  });
+
+  function setQuery(q, v) {
+    try {
+      v = JSON.parse(v);
+    } catch (e) {
+      // noop
+      return;
+    }
+
+    query = q;
+    variables = v;
+
+    fetchCM.setValue(getFetchCode(q, v));
+
+    urqlCM.setValue(getUrqlCode(q, v));
+
+    messageCM.setValue(getMessageCode(q, v));
+  }
+
+  // Initial
+  CodeMirror(document.querySelector('#query'), {
+    mode: 'graphql',
+    theme: 'base16-light',
+    value: query,
+    lineNumbers: true,
+  }).on('change', (instance) => {
+    setQuery(instance.getValue(), variables);
+  });
+  CodeMirror(document.querySelector('#variables'), {
+    mode: { name: 'javascript', json: true },
+    theme: 'base16-light',
+    value: JSON.stringify(variables, undefined, 2),
+    lineNumbers: true,
+  }).on('change', (instance) => {
+    setQuery(query, instance.getValue());
+  });
+
+  const resultCM = CodeMirror(document.querySelector('#result'), {
+    mode: { name: 'javascript', json: true },
+    theme: 'base16-light',
+    lineNumbers: true,
+    readOnly: true,
+  });
+
   function printResult(json, duration) {
-    const value =
-      typeof json === 'object' ? JSON.stringify(json, null, '  ') : json;
-    document.querySelector('#result').value = value;
+    resultCM.setValue(JSON.stringify(json, undefined, 2));
     document.querySelector('#result-ms').innerText = duration.toFixed();
   }
   function resetResult() {
@@ -37,14 +149,23 @@ window.onload = () => {
   document.querySelector('#queryFetch').onclick = async () => {
     resetResult();
     const t0 = performance.now();
-    const res = await fetch(`/graphql?query=${QUERY}`);
+    const res = await fetch(`/graphql`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+    });
     printResult(await res.json(), performance.now() - t0);
   };
   // Via urql
   document.querySelector('#queryUrql').onclick = async () => {
     resetResult();
     const t0 = performance.now();
-    const result = await urqlClient.query(QUERY).toPromise();
+    const result = await urqlClient.query(query, variables).toPromise();
     printResult({ data: result.data }, performance.now() - t0);
   };
   // Via service worker postMessage
@@ -57,6 +178,6 @@ window.onload = () => {
     };
     t0 = performance.now();
     navigator.serviceWorker.addEventListener('message', listenToResult);
-    navigator.serviceWorker.controller.postMessage({ query: QUERY });
+    navigator.serviceWorker.controller.postMessage({ query, variables });
   };
 };

@@ -1,6 +1,6 @@
 module.exports = `
   type Query {
-    pokemon(name: String, id: Int): Pokemon
+    pokemon(name: String, id: ID): Pokemon
   }
 
   type Pokemon {
