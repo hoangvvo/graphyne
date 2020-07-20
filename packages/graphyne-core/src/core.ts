@@ -103,10 +103,7 @@ export class Graphyne {
       const compiledQuery = compileQuery(
         this.schema,
         document,
-        operationName || undefined,
-        {
-          customJSONSerializer: true,
-        }
+        operationName || undefined
       );
 
       // Cache the compiled query
