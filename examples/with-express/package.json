@@ -9,7 +9,7 @@
     "express": "^4.17.1",
     "graphql": "^15.3.0",
     "graphql-playground-middleware-express": "^1.7.18",
-    "graphyne-server": "^0.14.1",
+    "graphyne-server": "^0.14.3",
     "node-fetch": "^2.6.0"
   },
   "license": "ISC"
