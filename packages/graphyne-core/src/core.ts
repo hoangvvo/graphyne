@@ -15,7 +15,11 @@ import {
 } from 'graphql';
 // FIXME: Dangerous import
 import mapAsyncIterator from 'graphql/subscription/mapAsyncIterator';
-import { compileQuery, isCompiledQuery, CompiledQuery } from 'graphql-jit';
+import {
+  compileQuery,
+  isCompiledQuery,
+  CompiledQuery,
+} from '@hoangvvo/graphql-jit';
 import lru, { Lru } from 'tiny-lru';
 import {
   Config,
@@ -99,10 +103,7 @@ export class Graphyne {
       const compiledQuery = compileQuery(
         this.schema,
         document,
-        operationName || undefined,
-        {
-          customJSONSerializer: true,
-        }
+        operationName || undefined
       );
 
       // Cache the compiled query

@@ -354,7 +354,7 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
         },
         {
           formatError: (err) => {
-            return new Error('Internal server error');
+            return { message: 'Internal server error' };
           },
         }
       );
@@ -591,7 +591,7 @@ describe('graphyne-core: Graphyne#graphql', () => {
         },
         {
           formatError: (err) => {
-            return new Error('Internal server error');
+            return { message: 'Internal server error' };
           },
         }
       );
