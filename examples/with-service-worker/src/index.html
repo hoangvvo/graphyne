@@ -7,12 +7,18 @@
       href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/light.min.css"
     />  
     <style>
+      * {
+        box-sizing: border-box;
+      }
       .CodeMirror {
         border-radius: 6px;
         height: auto!important;
       }
       #result .CodeMirror {
-        height: 300px!important;
+        max-height: 300px!important;
+      }
+      .side {
+        width: 50%;
       }
     </style>
   </head>
@@ -21,20 +27,20 @@
   >
     <script src="./index.js"></script>
     <div style="text-align: center;">
-      <h1>Graphyne Worker example with Service Worker API</h1>
+      <h1>Graphyne Worker example</h1>
       <div>
         <a href="https://github.com/hoangvvo/graphyne/tree/master/examples/with-service-worker">GitHub</a>
       </div>
       <p>
         This example demonstrates a GraphQL execution <b>without a server</b> and
         instead right on the browser using
-        <a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">Service Worker API</a>.
+        <a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">Service Worker API</a>. Reload this page after first load to make sure Service Worker is activated.
       </p>
     </div>
-    <div style="display: flex;">
-      <div style="flex: 1; padding: 0.5rem; overflow: hidden;">
-        <div id="input">
-          <h4>Query</h4>
+    <div style="display: flex; flex-wrap: wrap;">
+      <div class="side" style="padding: 0.5rem;">
+        <div style="background: white; z-index: 10; position: sticky; top: 0; padding: .5rem; border: 1px gray dashed;">
+          <h4 style="margin-top: 0;">Query</h4>
           <div id="query"></div>
           <small>Use <span style="font-family: monospace;">Ctrl + Space</span> for autocomplete</small>
           <h4>Variables</h4>
@@ -60,7 +66,7 @@
           <button id="queryMessage">Execute</button>
         </div>
       </div>
-      <div style="flex: 1; padding: 0.5rem; overflow: hidden;">
+      <div class="side" style="padding: 0.5rem;">
         <div style="position: sticky; top: 0;">
           <h3>Result</h3>
           <div id="result"></div>
