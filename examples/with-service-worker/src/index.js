@@ -22,14 +22,6 @@ if ('serviceWorker' in navigator) {
     .catch(function (error) {
       console.log('Service worker registration failed, error:', error);
     });
-
-  self.addEventListener('install', function (event) {
-    event.waitUntil(self.skipWaiting()); // Activate worker immediately
-  });
-
-  self.addEventListener('activate', function (event) {
-    event.waitUntil(self.clients.claim()); // Become available to all pages
-  });
 }
 
 function getFetchCode(q, v) {
@@ -124,7 +116,8 @@ window.onload = async () => {
     `/graphql?query=${getIntrospectionQuery({ descriptions: false })}`
   )
     .then((res) => res.json())
-    .then((json) => buildClientSchema(json.data));
+    .then((json) => buildClientSchema(json.data))
+    .catch(() => null);
 
   CodeMirror(document.querySelector('#query'), {
     mode: 'graphql',
