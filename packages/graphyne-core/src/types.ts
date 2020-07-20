@@ -4,7 +4,7 @@ import {
   DocumentNode,
   GraphQLFormattedError,
 } from 'graphql';
-import { CompiledQuery } from 'graphql-jit';
+import { CompiledQuery } from '@hoangvvo/graphql-jit';
 
 export type TContext = { [key: string]: any };
 
