@@ -43,8 +43,7 @@ function getUrqlCode(q, v) {
   )}).toPromise();`;
 }
 function getMessageCode(q, v) {
-  return `navigator.serviceWorker.addEventListener('message', writeResult);
-navigator.serviceWorker.controller.postMessage({
+  return `navigator.serviceWorker.controller.postMessage({
   query: \`${q}\`,
   variables: ${JSON.stringify(v, undefined, 2)}
 });
@@ -62,8 +61,9 @@ graphyne
 
 let query = `query pokemon($id: ID, $name: String) { 
   pokemon(id: $id, name: $name) {
-    name
     id
+    name
+    __typename
   }
 }`;
 let variables = { id: 1 };
@@ -96,11 +96,14 @@ window.onload = () => {
   });
 
   function setQuery(q, v) {
-    try {
-      v = JSON.parse(v);
-    } catch (e) {
-      // noop
-      return;
+    if (typeof v === 'string') {
+      try {
+        v = JSON.parse(v);
+      } catch (e) {
+        // noop
+        console.log(v);
+        return;
+      }
     }
 
     query = q;

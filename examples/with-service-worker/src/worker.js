@@ -1,11 +1,5 @@
 import { Graphyne, handleRequest } from 'graphyne-worker';
-import { makeExecutableSchema } from '@graphql-tools/schema';
-import { typeDefs, resolvers } from '../../common/pokemon-graphql';
-
-var schema = makeExecutableSchema({
-  typeDefs,
-  resolvers,
-});
+import schema from './schema';
 
 const graphyne = new Graphyne({ schema });
 
