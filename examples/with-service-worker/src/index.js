@@ -63,7 +63,6 @@ let query = `query pokemon($id: ID, $name: String) {
   pokemon(id: $id, name: $name) {
     id
     name
-    __typename
   }
 }`;
 let variables = { id: 1 };
