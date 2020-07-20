@@ -2,10 +2,14 @@ import CodeMirror from 'codemirror';
 import 'codemirror/mode/javascript/javascript';
 import 'codemirror/addon/hint/show-hint';
 import 'codemirror/addon/lint/lint';
+import 'codemirror/addon/hint/show-hint.css';
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/theme/base16-light.css';
 import 'codemirror-graphql/hint';
 import 'codemirror-graphql/lint';
 import 'codemirror-graphql/mode';
 import { createClient } from '@urql/core';
+import { getIntrospectionQuery, buildClientSchema } from 'graphql';
 
 const urqlClient = createClient({ url: '/graphql' });
 
@@ -67,7 +71,7 @@ let query = `query pokemon($id: ID, $name: String) {
 }`;
 let variables = { id: 1 };
 
-window.onload = () => {
+window.onload = async () => {
   // Code sections
   const fetchCM = CodeMirror(document.querySelector('#codeFetch'), {
     theme: 'base16-light',
@@ -116,11 +120,19 @@ window.onload = () => {
   }
 
   // Initial
+  const schema = await fetch(
+    `/graphql?query=${getIntrospectionQuery({ descriptions: false })}`
+  )
+    .then((res) => res.json())
+    .then((json) => buildClientSchema(json.data));
+
   CodeMirror(document.querySelector('#query'), {
     mode: 'graphql',
     theme: 'base16-light',
     value: query,
     lineNumbers: true,
+    lint: { schema },
+    hintOptions: { schema },
   }).on('change', (instance) => {
     setQuery(instance.getValue(), variables);
   });
