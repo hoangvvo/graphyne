@@ -45,14 +45,15 @@ function getMessageCode(q, v) {
 });
 
 // worker.js
-addEventListener('message', ev => {
-graphyne
-  .graphql({
-    source: ev.data.query,
-  })
-  .then((result) => {
-    ev.source.postMessage(result);
-  });`;
+addEventListener("message", (ev) =>
+  graphyne
+    .graphql({
+      source: ev.data.query,
+    })
+    .then((result) => {
+      ev.source.postMessage(result);
+    })
+);`;
 }
 
 let query = `query pokemon($id: ID, $name: String) { 
