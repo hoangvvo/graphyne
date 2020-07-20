@@ -2,8 +2,8 @@
   "name": "with-service-worker",
   "private": true,
   "scripts": {
-    "build": "parcel build -d public src/index.html",
-    "dev": "parcel src/index.html"
+    "build": "parcel build -d public src/index.html --no-source-maps",
+    "dev": "parcel src/index.html --no-source-maps"
   },
   "browserslist": [
     "last 1 chrome versions"
