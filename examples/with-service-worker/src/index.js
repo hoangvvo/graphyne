@@ -12,20 +12,21 @@ if ('serviceWorker' in navigator) {
       console.log('Service worker registration failed, error:', error);
     });
 
-  self.addEventListener('install', function(event) {
+  self.addEventListener('install', function (event) {
     event.waitUntil(self.skipWaiting()); // Activate worker immediately
   });
-  
-  self.addEventListener('activate', function(event) {
+
+  self.addEventListener('activate', function (event) {
     event.waitUntil(self.clients.claim()); // Become available to all pages
   });
 }
 
-const QUERY = '{hello}'
+const QUERY = '{hello}';
 
 window.onload = () => {
   function printResult(json, duration) {
-    const value = typeof json === 'object' ? JSON.stringify(json, null, '  ') : json;
+    const value =
+      typeof json === 'object' ? JSON.stringify(json, null, '  ') : json;
     document.querySelector('#result').value = value;
     document.querySelector('#result-ms').innerText = duration.toFixed();
   }
@@ -47,15 +48,15 @@ window.onload = () => {
     printResult({ data: result.data }, performance.now() - t0);
   };
   // Via service worker postMessage
-  
+
   document.querySelector('#queryMessage').onclick = () => {
     let t0 = 0;
     const listenToResult = (event) => {
       printResult(event.data, performance.now() - t0);
       navigator.serviceWorker.removeEventListener('message', listenToResult);
-    }
+    };
     t0 = performance.now();
     navigator.serviceWorker.addEventListener('message', listenToResult);
     navigator.serviceWorker.controller.postMessage({ query: QUERY });
-  }
+  };
 };

@@ -1,17 +1,12 @@
 const express = require('express');
 const { Graphyne, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
+const expressPlayground = require('graphql-playground-middleware-express')
+  .default;
+const { typeDefs, resolvers } = require('../common/pokemon-graphql');
 
-const typeDefs = `
-  type Query {
-    hello: String
-  }
-`;
-const resolvers = {
-  Query: {
-    hello: (obj, variables, context) => `Hello ${context.world}!`,
-  },
-};
+// Polyfill fetch
+global.fetch = require('node-fetch');
 
 var schema = makeExecutableSchema({
   typeDefs,
@@ -22,10 +17,11 @@ const graphyne = new Graphyne({ schema });
 
 const app = express();
 
+app.get('/playground', expressPlayground({ endpoint: '/graphql' }));
 app.all(
   '/graphql',
   httpHandler(graphyne, {
-    context: (req) => ({ world: 'world' }),
+    context: (req) => ({ hello: 'world' }),
   })
 );
 

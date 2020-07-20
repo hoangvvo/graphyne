@@ -1,16 +1,6 @@
 import { Graphyne, handleRequest } from 'graphyne-worker';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-
-const typeDefs = `
-  type Query {
-    hello: String
-  }
-`;
-const resolvers = {
-  Query: {
-    hello: (obj, variables, context) => `Hello ${context.world}!`,
-  },
-};
+import { typeDefs, resolvers } from '../../common/pokemon-graphql';
 
 var schema = makeExecutableSchema({
   typeDefs,
@@ -25,19 +15,19 @@ addEventListener('fetch', (event) => {
   if (url.pathname === '/graphql')
     return event.respondWith(
       handleRequest(graphyne, event.request, {
-        context: () => ({ world: 'world' }),
+        context: () => ({ hello: 'world' }),
       })
     );
 });
 
 // Execution via postMessage
-addEventListener('message', ev => {
+addEventListener('message', (ev) => {
   graphyne
     .graphql({
       source: ev.data.query,
-      contextValue: { world: "world" },
+      contextValue: { hello: 'world' },
     })
     .then((result) => {
       ev.source.postMessage(result);
     });
-})
+});
