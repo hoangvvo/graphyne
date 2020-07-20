@@ -5,9 +5,10 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "graphql": "^15.3.0",
     "@graphql-tools/schema": "^6.0.14",
-    "graphyne-server": "^0.14.1"
+    "graphql": "^15.3.0",
+    "graphyne-server": "^0.14.3",
+    "pokemon-graphql-schema": "^0.0.1"
   },
   "license": "ISC"
 }

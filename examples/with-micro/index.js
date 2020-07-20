@@ -1,16 +1,9 @@
 const { Graphyne, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
+const { typeDefs, resolvers } = require('pokemon-graphql-schema');
 
-const typeDefs = `
-  type Query {
-    hello: String
-  }
-`;
-const resolvers = {
-  Query: {
-    hello: (obj, variables, context) => `Hello ${context.world}!`,
-  },
-};
+// Polyfill fetch
+global.fetch = require('node-fetch');
 
 var schema = makeExecutableSchema({
   typeDefs,
@@ -20,6 +13,6 @@ var schema = makeExecutableSchema({
 const graphyne = new Graphyne({ schema });
 
 module.exports = httpHandler(graphyne, {
-  context: (req) => ({ world: 'world' }),
+  context: (req) => ({ hello: 'world' }),
   path: '/graphql',
 });

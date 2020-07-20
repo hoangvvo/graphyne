@@ -2,8 +2,8 @@
   "name": "with-service-worker",
   "private": true,
   "scripts": {
-    "build": "parcel build -d public src/index.html",
-    "dev": "parcel src/index.html"
+    "build": "parcel build --dist-dir public src/index.html --no-source-maps",
+    "dev": "parcel serve src/index.html --no-source-maps"
   },
   "browserslist": [
     "last 1 chrome versions"
@@ -11,11 +11,14 @@
   "dependencies": {
     "@graphql-tools/schema": "^6.0.14",
     "@urql/core": "^1.12.2",
+    "codemirror": "^5.55.0",
+    "codemirror-graphql": "^0.12.0",
     "graphql": "^15.3.0",
-    "graphyne-worker": "^0.5.0"
+    "graphyne-worker": "^0.5.2",
+    "pokemon-graphql-schema": "^0.0.1"
   },
   "license": "ISC",
   "devDependencies": {
-    "parcel-bundler": "^1.12.4"
+    "parcel": "^2.0.0-beta.1"
   }
 }

@@ -1,23 +1,17 @@
 import { Graphyne, handleRequest } from 'graphyne-worker';
+import { typeDefs, resolvers } from 'pokemon-graphql-schema';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 
-const typeDefs = `
-  type Query {
-    hello: String
-  }
-`;
-const resolvers = {
-  Query: {
-    hello: (obj, variables, context) => `Hello ${context.world}!`,
-  },
-};
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+const graphyne = new Graphyne({ schema });
 
-var schema = makeExecutableSchema({
-  typeDefs,
-  resolvers,
+addEventListener('install', function (event) {
+  event.waitUntil(self.skipWaiting()); // Activate worker immediately
 });
 
-const graphyne = new Graphyne({ schema });
+addEventListener('activate', function (event) {
+  event.waitUntil(self.clients.claim()); // Become available to all pages
+});
 
 // Execution via network
 addEventListener('fetch', (event) => {
@@ -25,19 +19,20 @@ addEventListener('fetch', (event) => {
   if (url.pathname === '/graphql')
     return event.respondWith(
       handleRequest(graphyne, event.request, {
-        context: () => ({ world: 'world' }),
+        context: () => ({ hello: 'world' }),
       })
     );
 });
 
 // Execution via postMessage
-addEventListener('message', ev => {
+addEventListener('message', (ev) => {
   graphyne
     .graphql({
       source: ev.data.query,
-      contextValue: { world: "world" },
+      variableValues: ev.data.variables,
+      contextValue: { hello: 'world' },
     })
     .then((result) => {
       ev.source.postMessage(result);
     });
-})
+});

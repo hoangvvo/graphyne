@@ -2,85 +2,90 @@
 <html>
   <head>
     <title>Graphyne Worker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/light.min.css"
-    />
+    />  
     <style>
-      .code {
-        display: inline-block;
-        white-space: pre-wrap;
-        text-align: left;
-        padding: 1rem;
+      * {
+        box-sizing: border-box;
+      }
+      .CodeMirror {
+        border-radius: 6px;
+        height: auto!important;
+      }
+      #result .CodeMirror {
+        max-height: 300px!important;
+      }
+      .side {
+        width: 50%;
+      }
+      @media (max-width: 640px) {
+        .side {
+          width: 100%;
+        }
       }
     </style>
   </head>
   <body
-    style="text-align: center; max-width: 860px; padding: 1rem; margin: 0 auto;"
+    style="max-width: 860px; padding: 1rem; margin: 0 auto;"
   >
     <script src="./index.js"></script>
-    <h1>Graphyne Worker example with Service Worker API</h1>
-    <div>
-      <a href="https://github.com/hoangvvo/graphyne/tree/master/examples/with-service-worker">GitHub</a>
+    <div style="text-align: center;">
+      <h1>Graphyne Worker example</h1>
+      <div>
+        <a href="https://github.com/hoangvvo/graphyne/tree/master/examples/with-service-worker">GitHub</a>
+      </div>
+      <p>
+        This example demonstrates a GraphQL execution <b>without a server</b> and
+        instead right on the browser using
+        <a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">Service Worker API</a>. Reload this page after first load to make sure Service Worker is activated.
+      </p>
     </div>
-    <p>
-      This example demonstrates a GraphQL execution <b>without a server</b> and
-      instead right on the browser using
-      <a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">Service Worker API</a>.
-    </p>
     <div style="display: flex; flex-wrap: wrap;">
-      <div style="flex: 1; padding: 0.5rem;">
+      <div class="side" style="padding: 0.5rem;">
+        <div style="background: white; z-index: 10; position: sticky; top: 0; padding: .5rem; border: 1px gray dashed;">
+          <h4 style="margin-top: 0;">Query</h4>
+          <div id="query"></div>
+          <small>Use <span style="font-family: monospace;">Ctrl + Space</span> for autocomplete</small>
+          <h4>Variables</h4>
+          <div id="variables"></div>
+        </div>
+
         <h4>Using <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">Fetch API</a></h4>
-        <code class="code">fetch('/graphql?query={hello}')</code>
+        <div id="codeFetch"></div>
         <div style="padding: .4rem;">
           <button id="queryFetch">Execute</button>
         </div>
+
         <h4>Using a GraphQL Client (<a href="https://github.com/FormidableLabs/urql">urql</a>)</h4>
-        <code class="code">urqlClient.query('{ hello }').toPromise()</code>
+        <div id="codeUrql"></div>
         <div style="padding: .4rem;">
           <button id="queryUrql">Execute</button>
         </div>
+        
         <h4>Using Graphyne#graphql</h4>
-        <code class="code">navigator.serviceWorker.addEventListener('message', writeResult);
-navigator.serviceWorker.controller.postMessage({
-  query: '{ hello }'
-});
-
-// worker.js
-addEventListener('message', ev => {
-  graphyne
-    .graphql({
-      source: ev.data.query,
-      contextValue: { world: "world" },
-    })
-    .then((result) => {
-      ev.source.postMessage(result);
-    });
-})</code>
+        <div id="codeMessage"></div>
+      
         <div style="padding: .4rem;">
           <button id="queryMessage">Execute</button>
         </div>
       </div>
-      <div style="flex: 1; padding: 0.5rem;">
+      <div class="side" style="padding: 0.5rem;">
         <div style="position: sticky; top: 0;">
           <h3>Result</h3>
-          <textarea
-            rows="8"
-            cols="50"
-            style="display: block; resize: none; margin: 1rem auto; padding: 2rem;"
-            id="result"
-          ></textarea>
-          <p style="text-align: left; color: cornflowerblue;">Executed in ~<span id="result-ms"></span> ms</p>
+          <div id="result"></div>
+          <p style="color: cornflowerblue;">Executed in ~<span id="result-ms"></span> ms</p>
         </div>
       </div>
     </div>
-    <h2>How does it works?</h2>
-    <p>
+    <h2 style="text-align: center;">How does it works?</h2>
+    <p style="text-align: center;">
       After registering <code>worker.js</code> as a service worker, it will
       intercept all <code>fetch</code> events:
     </p>
-    <div style="padding: 1rem;">
-      <code class="code">const graphyne = new Graphyne({ schema });
+    <textarea id="codeHowWork">const graphyne = new Graphyne({ schema });
         
 addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
@@ -88,8 +93,7 @@ addEventListener('fetch', (event) => {
     return event.respondWith(
       handleRequest(graphyne, event.request, options)
     );
-});</code>
-    </div>
+});</textarea>
     <p>
       For requests to <a href="/graphql">/graphql</a>, we
       <code>responseWith</code> the (promise) result from
@@ -107,5 +111,8 @@ addEventListener('fetch', (event) => {
       <br />
       <code>status code 200 <b>(from ServiceWorker)</b></code>
     </p>
+    <footer style="border-top: 1px #efefef solid; color: #999;">
+      <small>Pokémon data provided by <a href="https://pokeapi.co/">PokéAPI</a></small>
+    </footer>
   </body>
 </html>
