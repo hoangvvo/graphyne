@@ -133,6 +133,7 @@ window.onload = async () => {
     lineNumbers: true,
     lint: { schema },
     hintOptions: { schema },
+    extraKeys: { 'Ctrl-Space': 'autocomplete' },
   }).on('change', (instance) => {
     setQuery(instance.getValue(), variables);
   });
