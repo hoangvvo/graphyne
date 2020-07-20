@@ -24,6 +24,7 @@ app.all(
     context: (req) => ({ hello: 'world' }),
   })
 );
+app.use(express.static('public'));
 
 app.listen(4000, () => {
   console.log('Running a GraphQL API server at http://localhost:4000/graphql');
