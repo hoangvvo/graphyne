@@ -1,7 +1,7 @@
 const http = require('http');
 const { Graphyne, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
-const { typeDefs, resolvers } = require('../common/pokemon-graphql');
+const { typeDefs, resolvers } = require('pokemon-graphql-schema');
 
 global.fetch = require('node-fetch');
 
