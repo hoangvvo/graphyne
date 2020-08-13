@@ -167,20 +167,6 @@ wsHandler(graphyne, wss, {
 });
 ```
 
-## Framework integration
-
-Framework integration is not a concern of `graphyne-ws` but one of [`ws`](https://github.com/websockets/ws). As long as a [`WebSocket.Server`](https://github.com/websockets/ws/blob/master/doc/ws.md#class-websocketserver) is supplied, you're good to go.
-
-For example, if you use [`fastify-websocket`](https://github.com/fastify/fastify-websocket) package, the [`WebSocket.Server`](https://github.com/websockets/ws/blob/master/doc/ws.md#class-websocketserver) instance can be found at `fastify.websocketServer`.
-
-```javascript
-// https://github.com/fastify/fastify-websocket#usage
-const fastify = require('fastify')();
-
-fastify.register(require('fastify-websocket'), { handle, options });
-// The above "decorate" WebSocket.Server at fastify.
-```
-
 ## Contributing
 
 Please see my [contributing.md](/CONTRIBUTING.md).
