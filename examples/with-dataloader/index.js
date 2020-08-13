@@ -90,3 +90,14 @@ app.use(express.static('public'));
 app.listen(4000, () => {
   console.log('Running a GraphQL API server at http://localhost:4000/graphql');
 });
+
+// It is not only helpful in httpHandler but also in GraphQL#graphql
+// The example below creates a new loader inside the function to avoid stale data
+// function getUserWithGraphQL(id) {
+//   const context = {
+//     loaders: createLoaders(),
+//   }
+//   GQL.graphql({
+//     query: userQuery, variableValues: { id }, contextValue: context
+//   })
+// }
