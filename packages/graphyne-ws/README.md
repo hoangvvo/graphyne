@@ -27,6 +27,8 @@ yarn add graphyne-ws ws
 
 Create a [WebSocket.Server](https://github.com/websockets/ws/blob/master/doc/ws.md#class-websocketserver) instance and uses `wsHandler` to handle its `connection` event.
 
+### With `graphyne-server`
+
 ```javascript
 const http = require('http');
 const { Graphyne, httpHandler } = require('graphyne-server');
@@ -46,6 +48,26 @@ wss.on('connection', wsHandler(graphyne, options));
 server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);
 });
+```
+
+### Without `graphyne-server`
+
+`graphyne-ws` also exports `Graphyne` class to be used without `graphyne-server`.
+
+```javascript
+const { Graphyne, wsHandler } = require('graphyne-ws');
+
+// Create a Graphyne instance
+const graphyne = new Graphyne(options);
+
+// Create a WebSocket.Server from the `ws` package (Use options.port to create a HTTP server internally)
+const wss = new WebSocket.Server({ path: '/graphql', port: 3000 }, () => {
+  console.log(`🚀  WebSocket Server ready at ws://localhost:3000/graphql`);
+})
+
+// Attach wsHandler to WebSocket.Server `connection` event
+// See https://github.com/websockets/ws/blob/master/doc/ws.md#event-connection
+wss.on('connection', wsHandler(graphyne, options));
 ```
 
 See more examples [here](/examples/).
@@ -143,20 +165,6 @@ wsHandler(graphyne, wss, {
 
   },
 });
-```
-
-## Framework integration
-
-Framework integration is not a concern of `graphyne-ws` but one of [`ws`](https://github.com/websockets/ws). As long as a [`WebSocket.Server`](https://github.com/websockets/ws/blob/master/doc/ws.md#class-websocketserver) is supplied, you're good to go.
-
-For example, if you use [`fastify-websocket`](https://github.com/fastify/fastify-websocket) package, the [`WebSocket.Server`](https://github.com/websockets/ws/blob/master/doc/ws.md#class-websocketserver) instance can be found at `fastify.websocketServer`.
-
-```javascript
-// https://github.com/fastify/fastify-websocket#usage
-const fastify = require('fastify')();
-
-fastify.register(require('fastify-websocket'), { handle, options });
-// The above "decorate" WebSocket.Server at fastify.
 ```
 
 ## Contributing
