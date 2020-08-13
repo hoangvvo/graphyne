@@ -1,6 +1,6 @@
 {
   "name": "graphyne-worker",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Graphyne GraphQL Execution for Web Workers",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -25,7 +25,7 @@
   "homepage": "https://github.com/hoangvvo/graphyne#readme",
   "license": "MIT",
   "dependencies": {
-    "graphyne-core": "^0.16.0"
+    "graphyne-core": "^0.17.0"
   },
   "peerDependencies": {
     "graphql": "^14.0.0 || ^15.0.0"
