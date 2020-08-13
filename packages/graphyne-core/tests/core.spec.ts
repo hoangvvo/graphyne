@@ -7,7 +7,7 @@ import {
   FormattedExecutionResult,
   runHttpQuery,
 } from '../src';
-import { Config, QueryCache } from '../src/types';
+import { Config, QueryCache, HttpQueryRequest } from '../src/types';
 import { Lru } from 'tiny-lru';
 
 const schema = makeExecutableSchema({
@@ -70,7 +70,7 @@ describe('graphyne-core: Graphyne', () => {
 describe('graphyne-core: runHttpQuery', () => {
   type ExpectedBodyFn = (str: string) => void;
 
-  function testHttp(
+  async function testHttp(
     queryRequest: GraphQLParams & {
       context?: Record<string, any>;
       httpMethod?: string;
@@ -84,34 +84,31 @@ describe('graphyne-core: runHttpQuery', () => {
   ) {
     if (!queryRequest.context) queryRequest.context = {};
     if (!queryRequest.httpMethod) queryRequest.httpMethod = 'POST';
-    return new Promise((resolve, reject) => {
+
+    const result = await runHttpQuery(
       new Graphyne({
         schema,
         ...options,
-        // @ts-ignore
-      }).runHttpQuery(queryRequest, (result) => {
-        if (typeof expected.body === 'function') {
-          // check using custom function
-          expected.body(result.body);
-          // already check body, no longer need
-          delete expected.body;
-          delete result.body;
-        }
-        try {
-          deepStrictEqual(
-            {
-              headers: { 'content-type': 'application/json' },
-              status: 200,
-              ...expected,
-            },
-            result
-          );
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
+      }),
+      queryRequest as HttpQueryRequest
+    );
+
+    if (typeof expected.body === 'function') {
+      // check using custom function
+      expected.body(result.body);
+      // already check body, no longer need
+      delete expected.body;
+      delete result.body;
+    }
+
+    deepStrictEqual(
+      {
+        headers: { 'content-type': 'application/json' },
+        status: 200,
+        ...expected,
+      },
+      result
+    );
   }
 
   it('allows simple request', () => {
