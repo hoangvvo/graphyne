@@ -54,7 +54,8 @@ export class Graphyne {
     query: string,
     operationName?: string | null
   ): QueryCache | ExecutionResult {
-    const cached = this.lru.get(query);
+    const key = query + (operationName ? `:${operationName}` : '');
+    const cached = this.lru.get(key);
 
     if (cached) {
       return cached;
@@ -95,13 +96,11 @@ export class Graphyne {
 
       // Cache the compiled query
       // TODO: We are not caching multi document query right now
-      if (this.lru && !operationName) {
-        this.lru.set(query, {
-          document,
-          jit,
-          operation,
-        });
-      }
+      this.lru.set(key, {
+        document,
+        jit,
+        operation,
+      });
 
       return { operation, jit, document };
     }
