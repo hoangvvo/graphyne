@@ -126,7 +126,7 @@ You can use the packages from [graphql-playground](https://github.com/prisma-lab
 
 ### Dataloader and N+1 Problem
 
-A guide on how to integrate [dataloader](https://github.com/graphql/dataloader) to solve GraphQL N+1 Problem is covered in [#23](https://github.com/hoangvvo/graphyne/issues/23). Also check out an [example](/examples/with-dataloader).
+To integrate [dataloader](https://github.com/graphql/dataloader) to solve GraphQL N+1 Problem, see [this example](/examples/with-dataloader).
 
 ## Contributing
 
