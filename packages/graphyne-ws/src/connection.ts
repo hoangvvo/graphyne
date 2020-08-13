@@ -4,6 +4,7 @@ import {
   Graphyne,
   FormattedExecutionResult,
   TContext,
+  ValueOrPromise,
 } from 'graphyne-core';
 import * as WebSocket from 'ws';
 import { isAsyncIterable, forAwaitEach, createAsyncIterator } from 'iterall';
@@ -51,7 +52,8 @@ export interface SubscriptionConnection {
 
 export class SubscriptionConnection extends EventEmitter {
   private operations: Map<string, AsyncIterator<ExecutionResult>> = new Map();
-  contextPromise: Promise<TContext>;
+  // contextPromise because GQL_START may run right after GQL_CONNECTION_INIT
+  contextPromise: ValueOrPromise<TContext> = {};
   constructor(
     public socket: WebSocket,
     public request: IncomingMessage,
@@ -59,10 +61,9 @@ export class SubscriptionConnection extends EventEmitter {
     private options: GraphyneWSOptions
   ) {
     super();
-    this.contextPromise = Promise.resolve({});
   }
 
-  async handleMessage(message: string) {
+  handleMessage(message: string) {
     let data: OperationMessage;
     try {
       data = JSON.parse(message);
@@ -87,7 +88,7 @@ export class SubscriptionConnection extends EventEmitter {
     }
   }
 
-  async handleConnectionInit(data: OperationMessage) {
+  handleConnectionInit(data: OperationMessage) {
     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init
     const initContext: InitContext = {
       request: this.request,
@@ -97,11 +98,10 @@ export class SubscriptionConnection extends EventEmitter {
     try {
       // resolve context
       if (this.options.context) {
-        this.contextPromise = Promise.resolve(
+        this.contextPromise =
           typeof this.options.context === 'function'
             ? this.options.context(initContext)
-            : this.options.context
-        );
+            : this.options.context;
       }
       this.sendMessage(GQL_CONNECTION_ACK);
       // Emit
