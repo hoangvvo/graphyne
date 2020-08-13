@@ -1,5 +1,5 @@
 const express = require('express');
-const { Graphyne, httpHandler } = require('graphyne-server');
+const { GraphQL, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const expressPlayground = require('graphql-playground-middleware-express')
   .default;
@@ -13,14 +13,14 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new Graphyne({ schema });
+const GQL = new GraphQL({ schema });
 
 const app = express();
 
 app.get('/playground', expressPlayground({ endpoint: '/graphql' }));
 app.all(
   '/graphql',
-  httpHandler(graphyne, {
+  httpHandler(GQL, {
     context: (req) => ({ hello: 'world' }),
   })
 );

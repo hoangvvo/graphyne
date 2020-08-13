@@ -22,7 +22,7 @@ export function createHandler(gql: GraphQL, options: HandlerConfig = {}) {
       headers: { 'content-type': 'application/json' },
     });
   }
-  return function graphyneHandler(
+  return function handler(
     req: IncomingMessage & { path?: string },
     res: ServerResponse
   ) {

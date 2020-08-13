@@ -33,16 +33,16 @@ yarn add graphyne-worker graphql
 This assumes basic understanding of service worker. If not, you can learn how to register the service worker [here](https://developers.google.com/web/fundamentals/primers/service-workers/registration).
 
 ```javascript
-import { Graphyne, handleRequest } from 'graphyne-worker';
+import { GraphQL, handleRequest } from 'graphyne-worker';
 
-// Creating an instance of Graphyne
-const graphyne = new Graphyne(options);
+// Creating an instance of GraphQL
+const GQL = new GraphQL(options);
 
 addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.pathname === '/graphql')
     return event.respondWith(
-      handleRequest(graphyne, event.request, handlerOptions)
+      handleRequest(GQL, event.request, handlerOptions)
     );
 });
 ```
@@ -55,9 +55,9 @@ See [Using Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Wor
 
 ## API
 
-### `new Graphyne(options)`
+### `new GraphQL(options)`
 
-Constructing a Graphyne instance. It accepts the following options:
+Constructing a `GraphQL` instance. It accepts the following options:
 
 | options | description | default |
 |---------|-------------|---------|
@@ -65,9 +65,9 @@ Constructing a Graphyne instance. It accepts the following options:
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
 
-**Looking for `options.context`?** It is in `handleRequest` or `Graphyne#graphql`.
+**Looking for `options.context`?** It is in `handleRequest` or `GraphQL#graphql`.
 
-### `Graphyne#graphql({ source, contextValue, variableValues, operationName })`
+### `GraphQL#graphql({ source, contextValue, variableValues, operationName })`
 
 Execute the GraphQL query with:
 
@@ -78,9 +78,9 @@ Execute the GraphQL query with:
 
 The function returns a never-rejected promise of the execution result, which is an object of `data` and `errors`.
 
-### `handleRequest(graphyne, request, handlerOptions)`
+### `handleRequest(GQL, request, handlerOptions)`
 
-`graphyne` is an instance of [`Graphyne`](#new-graphyneoptions).
+`GQL` is an instance of [`GraphQL`](#new-graphqloptions).
 
 Handles the [FetchEvent.request](https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent/request) (`request`) and returns a promise of [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) to be used in `event.respondWith`.
 

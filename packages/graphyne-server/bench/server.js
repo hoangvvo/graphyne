@@ -1,11 +1,11 @@
 const http = require('http');
-const { Graphyne, httpHandler } = require('graphyne-server');
+const { GraphQL, httpHandler } = require('graphyne-server');
 const { schema } = require('./schema');
 
-const graphyne = new Graphyne({
+const GQL = new GraphQL({
   schema: schema(),
 });
 
-const server = http.createServer(httpHandler(graphyne));
+const server = http.createServer(httpHandler(GQL));
 
 server.listen(4001);

@@ -1,4 +1,4 @@
-const { Graphyne, httpHandler } = require('graphyne-server');
+const { GraphQL, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const { typeDefs, resolvers } = require('pokemon-graphql-schema');
 
@@ -10,9 +10,9 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new Graphyne({ schema });
+const GQL = new GraphQL({ schema });
 
-module.exports = httpHandler(graphyne, {
+module.exports = httpHandler(GQL, {
   context: (req) => ({ hello: 'world' }),
   path: '/graphql',
 });

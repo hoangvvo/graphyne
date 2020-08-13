@@ -46,7 +46,7 @@ function getMessageCode(q, v) {
 
 // worker.js
 addEventListener("message", (ev) =>
-  graphyne
+  GQL
     .graphql({
       source: ev.data.query,
     })

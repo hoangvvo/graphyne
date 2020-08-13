@@ -31,19 +31,19 @@ Create a [WebSocket.Server](https://github.com/websockets/ws/blob/master/doc/ws.
 
 ```javascript
 const http = require('http');
-const { Graphyne, httpHandler } = require('graphyne-server');
+const { GraphQL, httpHandler } = require('graphyne-server');
 const { wsHandler } = require('graphyne-ws');
 
 // Create a Graphyne instance
-const graphyne = new Graphyne(options);
-const server = http.createServer(httpHandler(graphyne));
+const GQL = new GraphQL(options);
+const server = http.createServer(httpHandler(GQL));
 
 // Create a WebSocket.Server from the `ws` package
 const wss = new WebSocket.Server({ path: '/graphql', server });
 
 // Attach wsHandler to WebSocket.Server `connection` event
 // See https://github.com/websockets/ws/blob/master/doc/ws.md#event-connection
-wss.on('connection', wsHandler(graphyne, options));
+wss.on('connection', wsHandler(GQL, options));
 
 server.listen(3000, () => {
   console.log(`🚀  Server ready at http://localhost:3000/graphql`);
@@ -52,13 +52,13 @@ server.listen(3000, () => {
 
 ### Without `graphyne-server`
 
-`graphyne-ws` also exports `Graphyne` class to be used without `graphyne-server`.
+`graphyne-ws` also exports `GraphQL` constructor to be used without `graphyne-server`.
 
 ```javascript
-const { Graphyne, wsHandler } = require('graphyne-ws');
+const { GraphQL, wsHandler } = require('graphyne-ws');
 
 // Create a Graphyne instance
-const graphyne = new Graphyne(options);
+const GQL = new GraphQL(options);
 
 // Create a WebSocket.Server from the `ws` package (Use options.port to create a HTTP server internally)
 const wss = new WebSocket.Server({ path: '/graphql', port: 3000 }, () => {
@@ -67,18 +67,18 @@ const wss = new WebSocket.Server({ path: '/graphql', port: 3000 }, () => {
 
 // Attach wsHandler to WebSocket.Server `connection` event
 // See https://github.com/websockets/ws/blob/master/doc/ws.md#event-connection
-wss.on('connection', wsHandler(graphyne, options));
+wss.on('connection', wsHandler(GQL, options));
 ```
 
 See more examples [here](/examples/).
 
 ## API
 
-### wsHandler(graphyne, options)
+### wsHandler(GQL, options)
 
 Create a handler for incoming WebSocket connection (from `wss.on('connection')`) and execute GraphQL based on [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
 
-`graphyne` is an instance of [`Graphyne`](/packages/graphyne-server#new-graphyneoptions).
+`GQL` is an instance of [`GraphQL`](/packages/graphyne-server#new-graphqloptions).
 
 `options` accepts the following:
 
@@ -105,7 +105,7 @@ const HEARTBEAT_INTERVAL = 10000; // 10 sec
 
 const wss = new WebSocket.Server({ path: '/graphql', server });
 
-wss.on('connection', wsHandler(graphyne, {
+wss.on('connection', wsHandler(GQL, {
   onSubscriptionConnection: (connection) => {
     connection.socket.isAlive = true;
     connection.socket.on('pong', () => {
@@ -139,7 +139,7 @@ It emits several events upon connection acknowledged, subscription started or st
 ```javascript
 import { wsHandler } from "graphyne-ws";
 
-wsHandler(graphyne, wss, {
+wsHandler(GQL, wss, {
   onSubscriptionConnection: (connection) => {
     // called after the connection is initialized and acknowledged
     connection.on('connection_init', (connectionParams) => {

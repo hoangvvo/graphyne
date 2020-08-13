@@ -1,5 +1,5 @@
 const http = require('http');
-const { Graphyne, httpHandler } = require('graphyne-server');
+const { GraphQL, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const { typeDefs, resolvers } = require('pokemon-graphql-schema');
 
@@ -10,10 +10,10 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new Graphyne({ schema });
+const GQL = new GraphQL({ schema });
 
 const server = http.createServer(
-  httpHandler(graphyne, {
+  httpHandler(GQL, {
     path: '/graphql',
     context: (req) => ({ hello: 'world' }),
   })
