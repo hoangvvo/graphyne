@@ -3,7 +3,7 @@ import request from 'supertest';
 import { Config } from 'graphyne-core/src/types';
 import { strict as assert } from 'assert';
 import { createServer } from 'http';
-import { Graphyne, httpHandler } from '../src';
+import { GraphQL, httpHandler } from '../src';
 import { parseBody } from '../src/http/parseBody';
 import { HandlerConfig } from '../src/http/types';
 
@@ -25,11 +25,11 @@ function createGQLServer(
       typeDefs: typeDefs as string,
       resolvers,
     });
-  const graphyne = new Graphyne({
+  const gql = new GraphQL({
     schema,
     ...options,
   });
-  return createServer(httpHandler(graphyne, handlerOpts));
+  return createServer(httpHandler(gql, handlerOpts));
 }
 
 const schema = makeExecutableSchema({
@@ -51,10 +51,10 @@ const schema = makeExecutableSchema({
 
 describe('graphyne-server/http: httpHandler', () => {
   it('runs simple request', () => {
-    const graphyne = new Graphyne({
+    const gql = new GraphQL({
       schema,
     });
-    const server = createServer(httpHandler(graphyne));
+    const server = createServer(httpHandler(gql));
     return request(server)
       .post('/graphql')
       .send({
@@ -64,10 +64,10 @@ describe('graphyne-server/http: httpHandler', () => {
       .expect(JSON.stringify({ data: { hello: 'world' } }));
   });
   it('runs simple request with async resolver', () => {
-    const graphyne = new Graphyne({
+    const gql = new GraphQL({
       schema,
     });
-    const server = createServer(httpHandler(graphyne));
+    const server = createServer(httpHandler(gql));
     return request(server)
       .post('/graphql')
       .send({
@@ -77,10 +77,10 @@ describe('graphyne-server/http: httpHandler', () => {
       .expect(JSON.stringify({ data: { helloAsync: 'world' } }));
   });
   it('returns 400 on body parsing error', async () => {
-    const graphyne = new Graphyne({
+    const gql = new GraphQL({
       schema,
     });
-    const server = createServer(httpHandler(graphyne));
+    const server = createServer(httpHandler(gql));
     await request(server)
       .post('/graphql')
       .set('content-type', 'application/json')
@@ -134,16 +134,16 @@ describe('graphyne-server/http: httpHandler', () => {
     });
   });
   describe('sends 404 response accordingly if options.path is set', () => {
-    const graphyne = new Graphyne({ schema });
+    const gql = new GraphQL({ schema });
     it('by checking against req.url', async () => {
-      const server = createServer(httpHandler(graphyne, { path: '/api' }));
+      const server = createServer(httpHandler(gql, { path: '/api' }));
       await request(server).get('/api?query={hello}').expect(200);
       await request(server).get('/graphql?query={hello}').expect(404);
     });
     it('by checking against req.path when available', async () => {
       const server = createServer((req, res) => {
         (req as any).path = req.url.substring(0, req.url.indexOf('?'));
-        httpHandler(graphyne, { path: '/api' })(req, res);
+        httpHandler(gql, { path: '/api' })(req, res);
       });
       await request(server).get('/api?query={hello}').expect(200);
       await request(server).get('/graphql?query={hello}').expect(404);

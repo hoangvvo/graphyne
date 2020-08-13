@@ -1,5 +1,5 @@
 import {
-  Graphyne,
+  GraphQL,
   parseBodyByContentType,
   getGraphQLParams,
   HttpQueryRequest,
@@ -9,7 +9,7 @@ import {
 import { HandlerConfig } from './types';
 
 export async function handleRequest(
-  graphyne: Graphyne,
+  gql: GraphQL,
   request: Request,
   options: HandlerConfig = {}
 ): Promise<Response> {
@@ -21,7 +21,7 @@ export async function handleRequest(
   } catch (err) {
     err.message = `Context creation failed: ${err.message}`;
     return new Response(
-      JSON.stringify(graphyne.formatExecutionResult({ errors: [err] })),
+      JSON.stringify(gql.formatExecutionResult({ errors: [err] })),
       {
         status: err.status || 500,
         headers: { 'content-type': 'application/json' },
@@ -56,7 +56,7 @@ export async function handleRequest(
   params.httpMethod = request.method;
   params.context = context;
 
-  const { status, body, headers } = await runHttpQuery(graphyne, params);
+  const { status, body, headers } = await runHttpQuery(gql, params);
 
   return new Response(body, { status, headers });
 }

@@ -2,7 +2,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { GraphQLSchema, GraphQLArgs } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
 import {
-  Graphyne,
+  GraphQL,
   GraphQLParams,
   FormattedExecutionResult,
   runHttpQuery,
@@ -51,16 +51,16 @@ const schema = makeExecutableSchema({
   },
 });
 
-describe('graphyne-core: Graphyne', () => {
+describe('graphyne-core: GraphQL', () => {
   it('throws if initializing instance with no option', () => {
     assert.throws(() => {
       // @ts-expect-error
-      new Graphyne();
+      new GraphQL();
     });
   });
   it('throws if schema is invalid', () => {
     assert.throws(() => {
-      new Graphyne({
+      new GraphQL({
         schema: new GraphQLSchema({ directives: [null] }),
       });
     });
@@ -86,7 +86,7 @@ describe('graphyne-core: runHttpQuery', () => {
     if (!queryRequest.httpMethod) queryRequest.httpMethod = 'POST';
 
     const result = await runHttpQuery(
-      new Graphyne({
+      new GraphQL({
         schema,
         ...options,
       }),
@@ -363,11 +363,11 @@ describe('graphyne-core: runHttpQuery', () => {
     });
   });
   it('saves compiled query to cache', async () => {
-    const graphyne = new Graphyne({
+    const GQL = new GraphQL({
       schema,
     });
-    const lru: Lru<QueryCache> = (graphyne as any).lru;
-    await runHttpQuery(graphyne, {
+    const lru: Lru<QueryCache> = (GQL as any).lru;
+    await runHttpQuery(GQL, {
       query: '{ helloWorld }',
       httpMethod: 'GET',
       context: {},
@@ -375,10 +375,10 @@ describe('graphyne-core: runHttpQuery', () => {
     assert(lru.has('{ helloWorld }'));
   });
   it('uses compiled query from cache', async () => {
-    const graphyne = new Graphyne({
+    const GQL = new GraphQL({
       schema,
     });
-    const lru: Lru<QueryCache> = (graphyne as any).lru;
+    const lru: Lru<QueryCache> = (GQL as any).lru;
     lru.set('{ helloWorld }', {
       jit: {
         query: () => ({ data: { cached: true } }),
@@ -387,7 +387,7 @@ describe('graphyne-core: runHttpQuery', () => {
       operation: 'query',
       document: '' as any,
     });
-    const { body } = await runHttpQuery(graphyne, {
+    const { body } = await runHttpQuery(GQL, {
       query: '{ helloWorld }',
       httpMethod: 'GET',
       context: {},
@@ -395,11 +395,11 @@ describe('graphyne-core: runHttpQuery', () => {
     assert.deepStrictEqual(body, JSON.stringify({ data: { cached: true } }));
   });
   it('does not cache bad query', async () => {
-    const graphyne = new Graphyne({
+    const GQL = new GraphQL({
       schema,
     });
-    const lru: Lru<QueryCache> = (graphyne as any).lru;
-    await runHttpQuery(graphyne, {
+    const lru: Lru<QueryCache> = (GQL as any).lru;
+    await runHttpQuery(GQL, {
       query: '{ watt }',
       httpMethod: 'GET',
       context: {},
@@ -408,7 +408,7 @@ describe('graphyne-core: runHttpQuery', () => {
   });
 });
 
-describe('graphyne-core: Graphyne#graphql', () => {
+describe('graphyne-core: GraphQL#graphql', () => {
   type ExpectedResultFn = (res: FormattedExecutionResult) => void;
   async function testGQL(
     args: Pick<
@@ -420,7 +420,7 @@ describe('graphyne-core: Graphyne#graphql', () => {
     expected: FormattedExecutionResult | ExpectedResultFn,
     options?: Partial<Config>
   ) {
-    const result = await new Graphyne({
+    const result = await new GraphQL({
       schema,
       ...options,
     }).graphql(args);

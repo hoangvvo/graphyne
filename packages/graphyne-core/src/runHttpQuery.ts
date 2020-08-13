@@ -1,10 +1,10 @@
-import { Graphyne } from './core';
+import { GraphQL } from './core';
 import { ValueOrPromise, HttpQueryRequest, HttpQueryResponse } from './types';
 import flatstr from 'flatstr';
 import { ExecutionResult } from 'graphql';
 
 function createResponse(
-  graphyne: Graphyne,
+  gql: GraphQL,
   code: number,
   obj: ExecutionResult | string,
   stringify = JSON.stringify,
@@ -16,42 +16,42 @@ function createResponse(
     body:
       typeof obj === 'string'
         ? obj
-        : flatstr(stringify(graphyne.formatExecutionResult(obj))),
+        : flatstr(stringify(gql.formatExecutionResult(obj))),
     status: code,
     headers,
   };
 }
 
 export function runHttpQuery(
-  graphyne: Graphyne,
+  gql: GraphQL,
   { query, variables, operationName, context, httpMethod }: HttpQueryRequest
 ): ValueOrPromise<HttpQueryResponse> {
   if (!query) {
-    return createResponse(graphyne, 400, 'Must provide query string.');
+    return createResponse(gql, 400, 'Must provide query string.');
   }
 
-  const cachedOrResult = graphyne.getCachedGQL(query, operationName);
+  const cachedOrResult = gql.getCachedGQL(query, operationName);
 
   if (!('document' in cachedOrResult)) {
-    return createResponse(graphyne, 400, cachedOrResult);
+    return createResponse(gql, 400, cachedOrResult);
   }
 
   const { document, operation, jit } = cachedOrResult;
 
   if (httpMethod !== 'POST' && httpMethod !== 'GET')
     return createResponse(
-      graphyne,
+      gql,
       405,
       `GraphQL only supports GET and POST requests.`
     );
   if (httpMethod === 'GET' && operation !== 'query')
     return createResponse(
-      graphyne,
+      gql,
       405,
       `Operation ${operation} cannot be performed via a GET request.`
     );
 
-  const result = graphyne.execute({
+  const result = gql.execute({
     jit,
     document: document,
     contextValue: context,
@@ -60,7 +60,7 @@ export function runHttpQuery(
 
   return 'then' in result
     ? result.then((resolvedResult) =>
-        createResponse(graphyne, 200, resolvedResult, jit.stringify)
+        createResponse(gql, 200, resolvedResult, jit.stringify)
       )
-    : createResponse(graphyne, 200, result, jit.stringify);
+    : createResponse(gql, 200, result, jit.stringify);
 }

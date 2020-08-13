@@ -1,7 +1,7 @@
 import { ExecutionResult } from 'graphql';
 import {
   GraphQLParams,
-  Graphyne,
+  GraphQL,
   FormattedExecutionResult,
   TContext,
   ValueOrPromise,
@@ -57,7 +57,7 @@ export class SubscriptionConnection extends EventEmitter {
   constructor(
     public socket: WebSocket,
     public request: IncomingMessage,
-    private graphyne: Graphyne,
+    private gql: GraphQL,
     private options: GraphyneWSOptions
   ) {
     super();
@@ -124,12 +124,12 @@ export class SubscriptionConnection extends EventEmitter {
       return this.sendError(data.id, new Error('Must provide query string.'));
     }
 
-    const cachedOrResult = this.graphyne.getCachedGQL(query, operationName);
+    const cachedOrResult = this.gql.getCachedGQL(query, operationName);
 
     const context = await this.contextPromise;
     const executionResult =
       'document' in cachedOrResult
-        ? await this.graphyne[
+        ? await this.gql[
             cachedOrResult.operation === 'subscription'
               ? 'subscribe'
               : 'execute'
@@ -143,7 +143,8 @@ export class SubscriptionConnection extends EventEmitter {
         : cachedOrResult;
 
     const executionIterable = isAsyncIterable(executionResult)
-      ? (executionResult as AsyncIterator<ExecutionResult>)
+      ? //@ts-ignore
+        (executionResult as AsyncIterator<ExecutionResult>)
       : createAsyncIterator<ExecutionResult>([
           executionResult as ExecutionResult,
         ]);
@@ -202,7 +203,7 @@ export class SubscriptionConnection extends EventEmitter {
 
   sendMessage(type: string, id?: string | null, result?: ExecutionResult) {
     const payload: FormattedExecutionResult | null = result
-      ? this.graphyne.formatExecutionResult(result)
+      ? this.gql.formatExecutionResult(result)
       : null;
     this.socket.send(
       JSON.stringify({ type, ...(id && { id }), ...(payload && { payload }) })
