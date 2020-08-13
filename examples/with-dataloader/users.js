@@ -4,14 +4,15 @@ function sleep(ms) {
 
 const users = [
   {
-    id: 1,
+    id: '1',
     name: 'Jane',
     age: 17,
-    friends: [2, 3, 4],
+    friends: ['2', '3', '4'],
   },
-  { id: 2, name: 'John', age: 16, friends: [1, 4] },
-  { id: 3, name: 'Alex', age: 18, friends: [1, 2, 4] },
-  { id: 4, name: 'Jessie', age: 21, friends: [] },
+  { id: '2', name: 'John', age: 16, friends: ['1', '4'] },
+  { id: '3', name: 'Alex', age: 18, friends: ['1', '2', '4'] },
+  { id: '4', name: 'Jessie', age: 21, friends: ['2', '3'] },
+  { id: '5', name: 'Billy', age: 19, friends: [] },
 ];
 
 const getUser = async (id) => {
@@ -21,9 +22,7 @@ const getUser = async (id) => {
 };
 
 const getBatchUsers = async (ids) => {
-  await Promise.all(ids.map((id) => getUser()));
-  // Do a database batch queries here
-  return ids.map((id) => users[id] || null);
+  return await Promise.all(ids.map((id) => getUser(id)));
 };
 
 exports.getUser = getUser;

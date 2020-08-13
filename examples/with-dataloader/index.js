@@ -18,7 +18,7 @@ const typeDefs = `
     id: ID!
     name: String!
     age: Int!
-    friends: [User!]
+    friends: [User]!
   }
   type Query {
     user(id: ID!): User
@@ -27,7 +27,7 @@ const typeDefs = `
 
 const resolvers = {
   User: {
-    friends: (parent) => {
+    friends: (parent, variables, context) => {
       return context.loaders.users.loadMany(parent.friends);
     },
   },
