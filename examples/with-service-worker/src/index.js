@@ -21,21 +21,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-function getFetchCode(q, v) {
-  return `fetch('/graphql', {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: \`${JSON.stringify({ query: q, variables: v }, undefined, 2)}\`
-  }).then((res) => res.json())`;
-}
-function getUrqlCode(q, v) {
-  return `client.query(\`${q}\`, ${JSON.stringify(
-    v,
-    undefined,
-    2
-  )}).toPromise();`;
-}
-
 let query = `query pokemon($id: ID, $name: String) { 
   pokemon(id: $id, name: $name) {
     id
@@ -46,18 +31,24 @@ let variables = { id: 1 };
 
 window.onload = async () => {
   // Code sections
-  const fetchCM = CodeMirror(document.querySelector('#codeFetch'), {
+  CodeMirror(document.querySelector('#codeFetch'), {
     theme: 'base16-light',
     lineNumbers: true,
     readOnly: true,
-    value: getFetchCode(query, variables),
+    value: `await fetch('/graphql', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ query, variables }),
+})`
   });
-  const urqlCM = CodeMirror(document.querySelector('#codeUrql'), {
+  
+  CodeMirror(document.querySelector('#codeUrql'), {
     theme: 'base16-light',
     lineNumbers: true,
     readOnly: true,
-    value: getUrqlCode(query, variables),
+    value: `await urqlClient.query(query, variables).toPromise()`,
   });
+
   CodeMirror.fromTextArea(document.querySelector('#codeHowWork'), {
     mode: { name: 'javascript', json: true },
     theme: 'base16-light',
@@ -71,17 +62,12 @@ window.onload = async () => {
         v = JSON.parse(v);
       } catch (e) {
         // noop
-        console.log(v);
         return;
       }
     }
 
     query = q;
     variables = v;
-
-    fetchCM.setValue(getFetchCode(q, v));
-
-    urqlCM.setValue(getUrqlCode(q, v));
   }
 
   // Initial
