@@ -23,12 +23,9 @@ import lru, { Lru } from 'tiny-lru';
 import {
   Config,
   QueryCache,
-  HttpQueryRequest,
-  HttpQueryResponse,
   FormattedExecutionResult,
   ValueOrPromise,
 } from './types';
-import flatstr from 'flatstr';
 import { isAsyncIterable } from './utils';
 
 export class Graphyne {
@@ -108,64 +105,6 @@ export class Graphyne {
 
       return { operation, jit, document };
     }
-  }
-
-  public runHttpQuery(
-    { query, variables, operationName, context, httpMethod }: HttpQueryRequest,
-    cb: (result: HttpQueryResponse) => void
-  ): void {
-    const createResponse = (
-      code: number,
-      obj: ExecutionResult | string,
-      stringify = JSON.stringify,
-      headers: Record<string, string> = typeof obj === 'string'
-        ? { 'content-type': 'text/plain' }
-        : { 'content-type': 'application/json' }
-    ) =>
-      cb({
-        body:
-          typeof obj === 'string'
-            ? obj
-            : flatstr(stringify(this.formatExecutionResult(obj))),
-        status: code,
-        headers,
-      });
-
-    if (!query) {
-      return createResponse(400, 'Must provide query string.');
-    }
-
-    const cachedOrResult = this.getCachedGQL(query, operationName);
-
-    if (!('document' in cachedOrResult)) {
-      return createResponse(400, cachedOrResult);
-    }
-
-    const { document, operation, jit } = cachedOrResult;
-
-    if (httpMethod !== 'POST' && httpMethod !== 'GET')
-      return createResponse(
-        405,
-        `GraphQL only supports GET and POST requests.`
-      );
-    if (httpMethod === 'GET' && operation !== 'query')
-      return createResponse(
-        405,
-        `Operation ${operation} cannot be performed via a GET request.`
-      );
-
-    const result = this.execute({
-      jit,
-      document: document,
-      contextValue: context,
-      variableValues: variables,
-    });
-
-    'then' in result
-      ? result.then((resolvedResult) =>
-          createResponse(200, resolvedResult, jit.stringify)
-        )
-      : createResponse(200, result, jit.stringify);
   }
 
   formatExecutionResult(result: ExecutionResult): FormattedExecutionResult {

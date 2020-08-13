@@ -4,6 +4,7 @@ import {
   HttpQueryResponse,
   HttpQueryRequest,
   TContext,
+  runHttpQuery,
 } from 'graphyne-core';
 import { parseBody } from './parseBody';
 import parseUrl from '@polka/url';
@@ -30,6 +31,12 @@ export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
       (req.path || parseUrl(req, true).pathname) !== options.path
     )
       return sendResponse(res, { status: 404, body: 'not found', headers: {} });
+    const runWithParams = (params: HttpQueryRequest) => {
+      const result = runHttpQuery(graphyne, params);
+      'then' in result
+        ? result.then((resolved) => sendResponse(res, resolved))
+        : sendResponse(res, result);
+    };
     parseBody(req, (err, body) => {
       if (err) return sendErrorResponse(res, err);
       const params = getGraphQLParams({
@@ -47,18 +54,14 @@ export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
           ? (params.context as Promise<TContext>).then(
               (resolvedCtx) => {
                 params.context = resolvedCtx;
-                graphyne.runHttpQuery(params, (result) =>
-                  sendResponse(res, result)
-                );
+                runWithParams(params);
               },
               (error) => {
                 error.message = `Context creation failed: ${error.message}`;
                 sendErrorResponse(res, error);
               }
             )
-          : graphyne.runHttpQuery(params, (result) =>
-              sendResponse(res, result)
-            );
+          : runWithParams(params);
       } catch (error) {
         error.message = `Context creation failed: ${error.message}`;
         sendErrorResponse(res, error);

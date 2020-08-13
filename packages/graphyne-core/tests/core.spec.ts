@@ -1,7 +1,12 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { GraphQLSchema, GraphQLArgs } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
-import { Graphyne, GraphQLParams, FormattedExecutionResult } from '../src';
+import {
+  Graphyne,
+  GraphQLParams,
+  FormattedExecutionResult,
+  runHttpQuery,
+} from '../src';
 import { Config, QueryCache } from '../src/types';
 import { Lru } from 'tiny-lru';
 
@@ -62,7 +67,7 @@ describe('graphyne-core: Graphyne', () => {
   });
 });
 
-describe('graphyne-core: Graphyne#runHttpQuery', () => {
+describe('graphyne-core: runHttpQuery', () => {
   type ExpectedBodyFn = (str: string) => void;
 
   function testHttp(
@@ -365,15 +370,10 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       schema,
     });
     const lru: Lru<QueryCache> = (graphyne as any).lru;
-    await new Promise((resolve) => {
-      graphyne.runHttpQuery(
-        {
-          query: '{ helloWorld }',
-          httpMethod: 'GET',
-          context: {},
-        },
-        resolve
-      );
+    await runHttpQuery(graphyne, {
+      query: '{ helloWorld }',
+      httpMethod: 'GET',
+      context: {},
     });
     assert(lru.has('{ helloWorld }'));
   });
@@ -390,15 +390,10 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       operation: 'query',
       document: '' as any,
     });
-    const { body } = await new Promise((resolve) => {
-      graphyne.runHttpQuery(
-        {
-          query: '{ helloWorld }',
-          httpMethod: 'GET',
-          context: {},
-        },
-        resolve
-      );
+    const { body } = await runHttpQuery(graphyne, {
+      query: '{ helloWorld }',
+      httpMethod: 'GET',
+      context: {},
     });
     assert.deepStrictEqual(body, JSON.stringify({ data: { cached: true } }));
   });
@@ -407,15 +402,10 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       schema,
     });
     const lru: Lru<QueryCache> = (graphyne as any).lru;
-    await new Promise((resolve) => {
-      graphyne.runHttpQuery(
-        {
-          query: '{ watt }',
-          httpMethod: 'GET',
-          context: {},
-        },
-        resolve
-      );
+    await runHttpQuery(graphyne, {
+      query: '{ watt }',
+      httpMethod: 'GET',
+      context: {},
     });
     assert(lru.has('{ watt }') !== true);
   });

@@ -10,7 +10,7 @@ import {
 } from '../src';
 import { GraphyneWSOptions } from '../src/types';
 import { SubscriptionConnection } from '../src/connection';
-import { Graphyne } from '../../graphyne-core/src';
+import { Graphyne, runHttpQuery } from '../../graphyne-core/src';
 import { Config as GraphyneConfig } from '../../graphyne-core/src/types';
 import { parseBody } from '../../graphyne-server/src/http/parseBody';
 import WebSocket from 'ws';
@@ -85,17 +85,14 @@ async function startServer(
   const graphyne = new Graphyne({ schema, ...graphyneOpts });
   const server = createServer((req, res) => {
     parseBody(req, async (err, body) => {
-      graphyne.runHttpQuery(
-        {
-          query: body.query,
-          variables: body.variables,
-          operationName: body.operationName,
-          context: {},
-          httpMethod: req.method as string,
-        },
-        (result) =>
-          res.writeHead(result.status, result.headers).end(result.body)
-      );
+      const result = await runHttpQuery(graphyne, {
+        query: body.query,
+        variables: body.variables,
+        operationName: body.operationName,
+        context: {},
+        httpMethod: req.method as string,
+      });
+      res.writeHead(result.status, result.headers).end(result.body);
     });
   });
   const wss = new WebSocket.Server({ server });
