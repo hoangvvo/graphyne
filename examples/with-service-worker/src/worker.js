@@ -1,9 +1,9 @@
-import { Graphyne, handleRequest } from 'graphyne-worker';
+import { GraphQL, handleRequest } from 'graphyne-worker';
 import { typeDefs, resolvers } from 'pokemon-graphql-schema';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 
 const schema = makeExecutableSchema({ typeDefs, resolvers });
-const graphyne = new Graphyne({ schema });
+const GQL = new GraphQL({ schema });
 
 addEventListener('install', function (event) {
   event.waitUntil(self.skipWaiting()); // Activate worker immediately
@@ -18,7 +18,7 @@ addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.pathname === '/graphql')
     return event.respondWith(
-      handleRequest(graphyne, event.request, {
+      handleRequest(GQL, event.request, {
         context: () => ({ hello: 'world' }),
       })
     );
@@ -26,13 +26,11 @@ addEventListener('fetch', (event) => {
 
 // Execution via postMessage
 addEventListener('message', (ev) => {
-  graphyne
-    .graphql({
-      source: ev.data.query,
-      variableValues: ev.data.variables,
-      contextValue: { hello: 'world' },
-    })
-    .then((result) => {
-      ev.source.postMessage(result);
-    });
+  GQL.graphql({
+    source: ev.data.query,
+    variableValues: ev.data.variables,
+    contextValue: { hello: 'world' },
+  }).then((result) => {
+    ev.source.postMessage(result);
+  });
 });

@@ -1,5 +1,5 @@
 import {
-  Graphyne,
+  GraphQL,
   getGraphQLParams,
   HttpQueryResponse,
   HttpQueryRequest,
@@ -11,18 +11,18 @@ import parseUrl from '@polka/url';
 import { HandlerConfig } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
 
-export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
+export function createHandler(gql: GraphQL, options: HandlerConfig = {}) {
   function sendResponse(res: ServerResponse, result: HttpQueryResponse) {
     res.writeHead(result.status, result.headers).end(result.body);
   }
   function sendErrorResponse(res: ServerResponse, error: any) {
     sendResponse(res, {
       status: error.status || 500,
-      body: JSON.stringify(graphyne.formatExecutionResult({ errors: [error] })),
+      body: JSON.stringify(gql.formatExecutionResult({ errors: [error] })),
       headers: { 'content-type': 'application/json' },
     });
   }
-  return function graphyneHandler(
+  return function handler(
     req: IncomingMessage & { path?: string },
     res: ServerResponse
   ) {
@@ -32,7 +32,7 @@ export function createHandler(graphyne: Graphyne, options: HandlerConfig = {}) {
     )
       return sendResponse(res, { status: 404, body: 'not found', headers: {} });
     const runWithParams = (params: HttpQueryRequest) => {
-      const result = runHttpQuery(graphyne, params);
+      const result = runHttpQuery(gql, params);
       'then' in result
         ? result.then((resolved) => sendResponse(res, resolved))
         : sendResponse(res, result);

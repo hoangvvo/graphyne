@@ -8,10 +8,10 @@ import {
   GQL_STOP,
   GQL_CONNECTION_TERMINATE,
 } from '../src';
-import { GraphyneWSOptions } from '../src/types';
+import { HandlerConfig } from '../src/types';
 import { SubscriptionConnection } from '../src/connection';
-import { Graphyne, runHttpQuery } from '../../graphyne-core/src';
-import { Config as GraphyneConfig } from '../../graphyne-core/src/types';
+import { GraphQL, runHttpQuery } from '../../graphyne-core/src';
+import { Config as GraphQLConfig } from '../../graphyne-core/src/types';
 import { parseBody } from '../../graphyne-server/src/http/parseBody';
 import WebSocket from 'ws';
 import { strict as assert } from 'assert';
@@ -78,14 +78,14 @@ let serverInit;
 
 async function startServer(
   options: { ws?: WebSocket } = {},
-  graphyneOpts: Omit<GraphyneConfig, 'schema'> = {},
-  graphyneWsOptions?: GraphyneWSOptions
+  gqlOpts: Omit<GraphQLConfig, 'schema'> = {},
+  handlerConfig?: HandlerConfig
 ) {
   const ws = options.ws || new WebSocket('ws://localhost:4000', 'graphql-ws');
-  const graphyne = new Graphyne({ schema, ...graphyneOpts });
+  const gql = new GraphQL({ schema, ...gqlOpts });
   const server = createServer((req, res) => {
     parseBody(req, async (err, body) => {
-      const result = await runHttpQuery(graphyne, {
+      const result = await runHttpQuery(gql, {
         query: body.query,
         variables: body.variables,
         operationName: body.operationName,
@@ -98,7 +98,7 @@ async function startServer(
   const wss = new WebSocket.Server({ server });
   // We cross test different packages
   // @ts-ignore
-  wss.on('connection', wsHandler(graphyne, graphyneWsOptions));
+  wss.on('connection', wsHandler(gql, handlerConfig));
   const client = WebSocket.createWebSocketStream(ws, {
     encoding: 'utf8',
     objectMode: true,

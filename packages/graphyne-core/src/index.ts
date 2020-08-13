@@ -1,4 +1,4 @@
-export { Graphyne } from './core';
+export { GraphQL } from './core';
 export {
   GraphQLParams,
   HttpQueryRequest,

@@ -21,14 +21,14 @@ yarn add graphyne-server graphql
 
 ## Usage
 
-Start out by creating an instance of `Graphyne` and create a HTTP handler using that instance.
+Start out by creating an `GraphQL` instance from `graphyne-server` and create a HTTP handler using that instance.
 
 ```javascript
-const { Graphyne, httpHandler } = require("graphyne-server");
+const { GraphQL, httpHandler } = require("graphyne-server");
 
-const graphyne = new Graphyne(options);
+const GQL = new GraphQL(options);
 
-const gqlHandle = httpHandler(graphyne, handlerOptions);
+const gqlHandle = httpHandler(GQL, handlerOptions);
 // Define `handlerOptions.path` if you want `gqlHandle` to run on specific path and respond with 404 otherwise
 ```
 
@@ -70,9 +70,9 @@ module.exports = gqlHandle;
 
 ## API
 
-### `new Graphyne(options)`
+### `new GraphQL(options)`
 
-Constructing a Graphyne instance. It accepts the following options:
+Constructing a `GraphQL` instance. It accepts the following options:
 
 | options | description | default |
 |---------|-------------|---------|
@@ -80,9 +80,9 @@ Constructing a Graphyne instance. It accepts the following options:
 | rootValue | A value or function called with the parsed `Document` that creates the root value passed to the GraphQL executor. | `{}` |
 | formatError | An optional function which will be used to format any errors from GraphQL execution result. | [`formatError`](https://github.com/graphql/graphql-js/blob/master/src/error/formatError.js) |
 
-**Looking for `options.context`?** It is in `httpHandler` or `Graphyne#graphql`.
+**Looking for `options.context`?** It is in `httpHandler` or `GraphQL#graphql`.
 
-### `Graphyne#graphql({ source, contextValue, variableValues, operationName })`
+### `GraphQL#graphql({ source, contextValue, variableValues, operationName })`
 
 Execute the GraphQL query with:
 
@@ -93,11 +93,11 @@ Execute the GraphQL query with:
 
 The function returns a never-rejected promise of the execution result, which is an object of `data` and `errors`.
 
-### `httpHandler(graphyne, handlerOptions)`
+### `httpHandler(GQL, handlerOptions)`
 
 Create a handling function for incoming HTTP requests.
 
-`graphyne` is an instance of [`Graphyne`](#new-graphyneoptions).
+`GQL` is an instance of [`GraphQL`](#new-graphqloptions).
 
 `handlerOptions` accepts the following:
 

@@ -2,7 +2,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import * as fetch from 'node-fetch';
 import { strict as assert } from 'assert';
 import { HttpQueryResponse } from 'graphyne-core/src';
-import { Graphyne, handleRequest } from '../src';
+import { GraphQL, handleRequest } from '../src';
 
 const schema = makeExecutableSchema({
   typeDefs: `
@@ -27,7 +27,7 @@ async function testRequest(
   expected: Partial<HttpQueryResponse> | null,
   handlerOptions = {}
 ) {
-  const graphyne = new Graphyne({ schema });
+  const gql = new GraphQL({ schema });
   return new Promise((resolve, reject) => {
     const fetchEvent = {
       request: new fetch.Request(
@@ -37,7 +37,7 @@ async function testRequest(
     };
     // @ts-ignore
     // Mock Web Request using node-fetch Request
-    handleRequest(graphyne, fetchEvent.request as Request, handlerOptions).then(
+    handleRequest(gql, fetchEvent.request as Request, handlerOptions).then(
       async (response) => {
         if (expected.body)
           assert.strictEqual(expected.body, await response.text());

@@ -28,7 +28,7 @@ import {
 } from './types';
 import { isAsyncIterable } from './utils';
 
-export class Graphyne {
+export class GraphQL {
   private lru: Lru<QueryCache>;
   public schema: GraphQLSchema;
   protected options: Config;
@@ -36,7 +36,7 @@ export class Graphyne {
   constructor(options: Config) {
     // validate options
     if (!options) {
-      throw new TypeError('Graphyne server must be initialized with options');
+      throw new TypeError('GQL must be initialized with options');
     }
     this.options = options;
     // build cache

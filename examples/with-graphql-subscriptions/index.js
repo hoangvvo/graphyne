@@ -1,6 +1,6 @@
 const http = require('http');
 const WebSocket = require('ws');
-const { Graphyne, httpHandler } = require('graphyne-server');
+const { GraphQL, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const { PubSub } = require('graphql-subscriptions');
 const { wsHandler } = require('graphyne-ws');
@@ -63,15 +63,15 @@ var schema = makeExecutableSchema({
   resolvers,
 });
 
-const graphyne = new Graphyne({ schema });
+const GQL = new GraphQL({ schema });
 
-const server = http.createServer(httpHandler(graphyne, { path: '/graphql' }));
+const server = http.createServer(httpHandler(GQL, { path: '/graphql' }));
 
 const wss = new WebSocket.Server({ path: '/graphql', server });
 
 wss.on(
   'connection',
-  wsHandler(graphyne, {
+  wsHandler(GQL, {
     context: ({
       connectionParams, // ConnectionParams such as in apollo-link-ws
       socket, // WebSocket
