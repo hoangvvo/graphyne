@@ -23,14 +23,3 @@ addEventListener('fetch', (event) => {
       })
     );
 });
-
-// Execution via postMessage
-addEventListener('message', (ev) => {
-  GQL.graphql({
-    source: ev.data.query,
-    variableValues: ev.data.variables,
-    contextValue: { hello: 'world' },
-  }).then((result) => {
-    ev.source.postMessage(result);
-  });
-});

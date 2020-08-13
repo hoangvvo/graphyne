@@ -35,23 +35,6 @@ function getUrqlCode(q, v) {
     2
   )}).toPromise();`;
 }
-function getMessageCode(q, v) {
-  return `navigator.serviceWorker.controller.postMessage({
-  query: \`${q}\`,
-  variables: ${JSON.stringify(v, undefined, 2)}
-});
-
-// worker.js
-addEventListener("message", (ev) =>
-  GQL
-    .graphql({
-      source: ev.data.query,
-    })
-    .then((result) => {
-      ev.source.postMessage(result);
-    })
-);`;
-}
 
 let query = `query pokemon($id: ID, $name: String) { 
   pokemon(id: $id, name: $name) {
@@ -74,12 +57,6 @@ window.onload = async () => {
     lineNumbers: true,
     readOnly: true,
     value: getUrqlCode(query, variables),
-  });
-  const messageCM = CodeMirror(document.querySelector('#codeMessage'), {
-    theme: 'base16-light',
-    lineNumbers: true,
-    readOnly: true,
-    value: getMessageCode(query, variables),
   });
   CodeMirror.fromTextArea(document.querySelector('#codeHowWork'), {
     mode: { name: 'javascript', json: true },
@@ -105,8 +82,6 @@ window.onload = async () => {
     fetchCM.setValue(getFetchCode(q, v));
 
     urqlCM.setValue(getUrqlCode(q, v));
-
-    messageCM.setValue(getMessageCode(q, v));
   }
 
   // Initial
@@ -173,17 +148,5 @@ window.onload = async () => {
     const t0 = performance.now();
     const result = await urqlClient.query(query, variables).toPromise();
     printResult({ data: result.data }, performance.now() - t0);
-  };
-  // Via service worker postMessage
-
-  document.querySelector('#queryMessage').onclick = () => {
-    let t0 = 0;
-    const listenToResult = (event) => {
-      printResult(event.data, performance.now() - t0);
-      navigator.serviceWorker.removeEventListener('message', listenToResult);
-    };
-    t0 = performance.now();
-    navigator.serviceWorker.addEventListener('message', listenToResult);
-    navigator.serviceWorker.controller.postMessage({ query, variables });
   };
 };
