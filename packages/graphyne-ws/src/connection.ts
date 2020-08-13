@@ -124,11 +124,10 @@ export class SubscriptionConnection extends EventEmitter {
       return this.sendError(data.id, new Error('Must provide query string.'));
     }
 
-    const {
-      document,
-      compiledQuery,
-      operation,
-    } = this.graphyne.getCompiledQuery(query, operationName);
+    const { document, jit, operation } = this.graphyne.getCachedGQL(
+      query,
+      operationName
+    );
 
     const context = await this.contextPromise;
     const executionResult = await this.graphyne[
@@ -138,7 +137,7 @@ export class SubscriptionConnection extends EventEmitter {
       contextValue: context,
       variableValues: variables,
       operationName,
-      compiledQuery,
+      jit,
     });
 
     const executionIterable = isAsyncIterable(executionResult)

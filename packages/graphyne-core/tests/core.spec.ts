@@ -383,7 +383,7 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
     });
     const lru: Lru<QueryCache> = (graphyne as any).lru;
     lru.set('{ helloWorld }', {
-      compiledQuery: {
+      jit: {
         query: () => ({ data: { cached: true } }),
         stringify: JSON.stringify,
       },

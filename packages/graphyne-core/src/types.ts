@@ -36,7 +36,7 @@ export interface HttpQueryResponse {
 export interface QueryCache {
   operation: string;
   document: DocumentNode;
-  compiledQuery: CompiledQuery;
+  jit: CompiledQuery;
 }
 
 // Can be replaced with `FormattedExecutionResult` from 5.3.0
