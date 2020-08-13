@@ -1,4 +1,4 @@
-import { ExecutionResult, DocumentNode } from 'graphql';
+import { ExecutionResult } from 'graphql';
 import {
   GraphQLParams,
   Graphyne,
@@ -124,21 +124,23 @@ export class SubscriptionConnection extends EventEmitter {
       return this.sendError(data.id, new Error('Must provide query string.'));
     }
 
-    const { document, jit, operation } = this.graphyne.getCachedGQL(
-      query,
-      operationName
-    );
+    const cachedOrResult = this.graphyne.getCachedGQL(query, operationName);
 
     const context = await this.contextPromise;
-    const executionResult = await this.graphyne[
-      operation === 'subscription' ? 'subscribe' : 'execute'
-    ]({
-      document: document as DocumentNode,
-      contextValue: context,
-      variableValues: variables,
-      operationName,
-      jit,
-    });
+    const executionResult =
+      'document' in cachedOrResult
+        ? await this.graphyne[
+            cachedOrResult.operation === 'subscription'
+              ? 'subscribe'
+              : 'execute'
+          ]({
+            document: cachedOrResult.document,
+            contextValue: context,
+            variableValues: variables,
+            operationName,
+            jit: cachedOrResult.jit,
+          })
+        : cachedOrResult;
 
     const executionIterable = isAsyncIterable(executionResult)
       ? (executionResult as AsyncIterator<ExecutionResult>)
