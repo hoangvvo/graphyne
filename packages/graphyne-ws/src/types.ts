@@ -17,7 +17,7 @@ export interface InitContext {
   request: IncomingMessage;
 }
 
-export interface GraphyneWSOptions {
+export interface HandlerConfig {
   context?: TContext | ((initContext: InitContext) => ValueOrPromise<TContext>);
   onSubscriptionConnection?: (connection: SubscriptionConnection) => void;
 }

@@ -25,7 +25,7 @@ import {
   ConnectionParams,
   OperationMessage,
   InitContext,
-  GraphyneWSOptions,
+  HandlerConfig,
 } from './types';
 
 export interface SubscriptionConnection {
@@ -58,7 +58,7 @@ export class SubscriptionConnection extends EventEmitter {
     public socket: WebSocket,
     public request: IncomingMessage,
     private gql: GraphQL,
-    private options: GraphyneWSOptions
+    private options: HandlerConfig
   ) {
     super();
   }
