@@ -5,7 +5,7 @@ import { strict as assert } from 'assert';
 import { createServer } from 'http';
 import { Graphyne, httpHandler } from '../src';
 import { parseBody } from '../src/http/parseBody';
-import { HandlerConfig } from '../src/types';
+import { HandlerConfig } from '../src/http/types';
 
 function createGQLServer(
   {
@@ -37,17 +37,45 @@ const schema = makeExecutableSchema({
     type Query {
       hello: String
       helloMe: String
+      helloAsync: String
     }
   `,
   resolvers: {
     Query: {
       hello: () => 'world',
+      helloAsync: async () => 'world',
       helloMe: (obj, args, context) => context.me,
     },
   },
 });
 
 describe('graphyne-server/http: httpHandler', () => {
+  it('runs simple request', () => {
+    const graphyne = new Graphyne({
+      schema,
+    });
+    const server = createServer(httpHandler(graphyne));
+    return request(server)
+      .post('/graphql')
+      .send({
+        query: 'query { hello }',
+      })
+      .expect(200)
+      .expect(JSON.stringify({ data: { hello: 'world' } }));
+  });
+  it('runs simple request with async resolver', () => {
+    const graphyne = new Graphyne({
+      schema,
+    });
+    const server = createServer(httpHandler(graphyne));
+    return request(server)
+      .post('/graphql')
+      .send({
+        query: 'query { helloAsync }',
+      })
+      .expect(200)
+      .expect(JSON.stringify({ data: { helloAsync: 'world' } }));
+  });
   it('returns 400 on body parsing error', async () => {
     const graphyne = new Graphyne({
       schema,
