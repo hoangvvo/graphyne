@@ -1,38 +1,65 @@
-const http = require('http');
+const express = require('express');
 const { GraphQL, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
+const expressPlayground = require('graphql-playground-middleware-express')
+  .default;
 const DataLoader = require('dataloader');
-const { getUsers } = require('./users');
+const { getUser, getBatchUsers } = require('./users');
 
 function createLoaders() {
   return {
-    users: new DataLoader(getUsers),
+    users: new DataLoader(getBatchUsers),
     // Add more models here
   };
 }
 
 const typeDefs = `
   type User {
-    id: ID
-    name: String
-    age: Int
+    id: ID!
+    name: String!
+    age: Int!
+    friends: [User]!
+    bestFriend: User
   }
+
+  type UserNoLoader {
+    id: ID!
+    name: String!
+    age: Int!
+    friends: [UserNoLoader]!
+    bestFriend: User
+  }
+
   type Query {
     user(id: ID!): User
+    userNoLoader(id: ID!): UserNoLoader
   }
 `;
+
 const resolvers = {
   User: {
-    // https://medium.com/paypal-engineering/graphql-resolvers-best-practices-cd36fdbcef55#5284
-    id: ({ id }, variables, { loaders }) =>
-      loaders.users.load(id).then((user) => user && user.id),
-    name: ({ id }, variables, { loaders }) =>
-      loaders.users.load(id).then((user) => user && user.name),
-    age: ({ id }, variables, { loaders }) =>
-      loaders.users.load(id).then((user) => user && user.age),
+    friends: (parent, variables, context) => {
+      return context.loaders.users.loadMany(parent.friendIds);
+    },
+    bestFriend: (parent, variables, context) => {
+      return context.loaders.users.load(parent.bestFriendId);
+    },
+  },
+  UserNoLoader: {
+    friends: (parent, variables, context) => {
+      return getBatchUsers(parent.friendIds);
+    },
+    bestFriend: (parent) => {
+      return getUser(parent.bestFriendId);
+    },
   },
   Query: {
-    user: (obj, variables) => ({ id: variables.id }),
+    user: (obj, variables, context) => {
+      return context.loaders.users.load(variables.id);
+    },
+    userNoLoader: (obj, variables) => {
+      return getUser(variables.id);
+    },
   },
 };
 
@@ -43,16 +70,34 @@ var schema = makeExecutableSchema({
 
 const GQL = new GraphQL({ schema });
 
-const server = http.createServer(
+const app = express();
+
+app.get('/playground', expressPlayground({ endpoint: '/graphql' }));
+app.all(
+  '/graphql',
   httpHandler(GQL, {
-    context: (req) => ({
-      // other contexts
-      loaders: createLoaders(),
-    }),
-    path: '/graphql',
+    context: (req) => {
+      console.log(' --- ');
+      return {
+        // other contexts
+        loaders: createLoaders(),
+      };
+    },
   })
 );
+app.use(express.static('public'));
 
-server.listen(3000, () => {
-  console.log(`🚀  Server ready at http://localhost:3000/graphql`);
+app.listen(4000, () => {
+  console.log('Running a GraphQL API server at http://localhost:4000/graphql');
 });
+
+// It is not only helpful in httpHandler but also in GraphQL#graphql
+// The example below creates a new loader inside the function to avoid stale data
+// function getUserWithGraphQL(id) {
+//   const context = {
+//     loaders: createLoaders(),
+//   }
+//   GQL.graphql({
+//     query: userQuery, variableValues: { id }, contextValue: context
+//   })
+// }
