@@ -6,9 +6,9 @@
     "start": "micro"
   },
   "dependencies": {
-    "@graphql-tools/schema": "^6.0.14",
+    "@graphql-tools/schema": "^6.0.18",
     "graphql": "^15.3.0",
-    "graphyne-server": "^0.14.3",
+    "graphyne-server": "^0.15.0",
     "micro": "^9.3.4",
     "pokemon-graphql-schema": "^0.0.1"
   },
