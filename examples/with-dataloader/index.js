@@ -1,6 +1,8 @@
 const express = require('express');
 const { GraphQL, httpHandler } = require('graphyne-server');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
+const expressPlayground = require('graphql-playground-middleware-express')
+  .default;
 const DataLoader = require('dataloader');
 const { getBatchUsers } = require('./users');
 
@@ -45,6 +47,7 @@ const GQL = new GraphQL({ schema });
 
 const app = express();
 
+app.get('/playground', expressPlayground({ endpoint: '/graphql' }));
 app.all(
   '/graphql',
   httpHandler(GQL, {
