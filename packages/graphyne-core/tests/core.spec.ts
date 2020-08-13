@@ -1,8 +1,13 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { GraphQLSchema, GraphQLArgs } from 'graphql';
 import { strict as assert, deepStrictEqual } from 'assert';
-import { Graphyne, GraphQLParams, FormattedExecutionResult } from '../src';
-import { Config, QueryCache } from '../src/types';
+import {
+  Graphyne,
+  GraphQLParams,
+  FormattedExecutionResult,
+  runHttpQuery,
+} from '../src';
+import { Config, QueryCache, HttpQueryRequest } from '../src/types';
 import { Lru } from 'tiny-lru';
 
 const schema = makeExecutableSchema({
@@ -62,10 +67,10 @@ describe('graphyne-core: Graphyne', () => {
   });
 });
 
-describe('graphyne-core: Graphyne#runHttpQuery', () => {
+describe('graphyne-core: runHttpQuery', () => {
   type ExpectedBodyFn = (str: string) => void;
 
-  function testHttp(
+  async function testHttp(
     queryRequest: GraphQLParams & {
       context?: Record<string, any>;
       httpMethod?: string;
@@ -79,34 +84,31 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
   ) {
     if (!queryRequest.context) queryRequest.context = {};
     if (!queryRequest.httpMethod) queryRequest.httpMethod = 'POST';
-    return new Promise((resolve, reject) => {
+
+    const result = await runHttpQuery(
       new Graphyne({
         schema,
         ...options,
-        // @ts-ignore
-      }).runHttpQuery(queryRequest, (result) => {
-        if (typeof expected.body === 'function') {
-          // check using custom function
-          expected.body(result.body);
-          // already check body, no longer need
-          delete expected.body;
-          delete result.body;
-        }
-        try {
-          deepStrictEqual(
-            {
-              headers: { 'content-type': 'application/json' },
-              status: 200,
-              ...expected,
-            },
-            result
-          );
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
+      }),
+      queryRequest as HttpQueryRequest
+    );
+
+    if (typeof expected.body === 'function') {
+      // check using custom function
+      expected.body(result.body);
+      // already check body, no longer need
+      delete expected.body;
+      delete result.body;
+    }
+
+    deepStrictEqual(
+      {
+        headers: { 'content-type': 'application/json' },
+        status: 200,
+        ...expected,
+      },
+      result
+    );
   }
 
   it('allows simple request', () => {
@@ -365,15 +367,10 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       schema,
     });
     const lru: Lru<QueryCache> = (graphyne as any).lru;
-    await new Promise((resolve) => {
-      graphyne.runHttpQuery(
-        {
-          query: '{ helloWorld }',
-          httpMethod: 'GET',
-          context: {},
-        },
-        resolve
-      );
+    await runHttpQuery(graphyne, {
+      query: '{ helloWorld }',
+      httpMethod: 'GET',
+      context: {},
     });
     assert(lru.has('{ helloWorld }'));
   });
@@ -383,22 +380,17 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
     });
     const lru: Lru<QueryCache> = (graphyne as any).lru;
     lru.set('{ helloWorld }', {
-      compiledQuery: {
+      jit: {
         query: () => ({ data: { cached: true } }),
         stringify: JSON.stringify,
       },
       operation: 'query',
       document: '' as any,
     });
-    const { body } = await new Promise((resolve) => {
-      graphyne.runHttpQuery(
-        {
-          query: '{ helloWorld }',
-          httpMethod: 'GET',
-          context: {},
-        },
-        resolve
-      );
+    const { body } = await runHttpQuery(graphyne, {
+      query: '{ helloWorld }',
+      httpMethod: 'GET',
+      context: {},
     });
     assert.deepStrictEqual(body, JSON.stringify({ data: { cached: true } }));
   });
@@ -407,15 +399,10 @@ describe('graphyne-core: Graphyne#runHttpQuery', () => {
       schema,
     });
     const lru: Lru<QueryCache> = (graphyne as any).lru;
-    await new Promise((resolve) => {
-      graphyne.runHttpQuery(
-        {
-          query: '{ watt }',
-          httpMethod: 'GET',
-          context: {},
-        },
-        resolve
-      );
+    await runHttpQuery(graphyne, {
+      query: '{ watt }',
+      httpMethod: 'GET',
+      context: {},
     });
     assert(lru.has('{ watt }') !== true);
   });

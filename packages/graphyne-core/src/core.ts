@@ -6,7 +6,6 @@ import {
   GraphQLError,
   GraphQLSchema,
   ExecutionResult,
-  DocumentNode,
   formatError,
   createSourceEventStream,
   SubscriptionArgs,
@@ -24,12 +23,9 @@ import lru, { Lru } from 'tiny-lru';
 import {
   Config,
   QueryCache,
-  HttpQueryRequest,
-  HttpQueryResponse,
   FormattedExecutionResult,
   ValueOrPromise,
 } from './types';
-import flatstr from 'flatstr';
 import { isAsyncIterable } from './utils';
 
 export class Graphyne {
@@ -53,15 +49,13 @@ export class Graphyne {
     }
   }
 
-  public getCompiledQuery(
+  // This API is internal even if it is defined as public
+  public getCachedGQL(
     query: string,
     operationName?: string | null
-  ): {
-    document?: DocumentNode;
-    compiledQuery: CompiledQuery | ExecutionResult;
-    operation?: string;
-  } {
-    const cached = this.lru.get(query);
+  ): QueryCache | ExecutionResult {
+    const key = query + (operationName ? `:${operationName}` : '');
+    const cached = this.lru.get(key);
 
     if (cached) {
       return cached;
@@ -71,113 +65,45 @@ export class Graphyne {
         document = parse(query);
       } catch (syntaxErr) {
         return {
-          compiledQuery: {
-            errors: [syntaxErr],
-          },
+          errors: [syntaxErr],
         };
       }
 
       const validationErrors = validate(this.schema, document);
       if (validationErrors.length > 0) {
         return {
-          document,
-          compiledQuery: {
-            errors: validationErrors,
-          },
+          errors: validationErrors,
         };
       }
 
       const operation = getOperationAST(document, operationName)?.operation;
       if (!operation)
         return {
-          document,
-          compiledQuery: {
-            errors: [
-              new GraphQLError(
-                'Must provide operation name if query contains multiple operations.'
-              ),
-            ],
-          },
+          errors: [
+            new GraphQLError(
+              'Must provide operation name if query contains multiple operations.'
+            ),
+          ],
         };
 
-      const compiledQuery = compileQuery(
+      const jit = compileQuery(
         this.schema,
         document,
         operationName || undefined
       );
 
+      if (!isCompiledQuery(jit)) return jit;
+
       // Cache the compiled query
       // TODO: We are not caching multi document query right now
-      if (this.lru && isCompiledQuery(compiledQuery) && !operationName) {
-        this.lru.set(query, {
-          document,
-          compiledQuery,
-          operation,
-        });
-      }
-
-      return { operation, compiledQuery, document };
-    }
-  }
-
-  public runHttpQuery(
-    { query, variables, operationName, context, httpMethod }: HttpQueryRequest,
-    cb: (result: HttpQueryResponse) => void
-  ): void {
-    const createResponse = (
-      code: number,
-      obj: ExecutionResult | string,
-      stringify = JSON.stringify,
-      headers: Record<string, string> = typeof obj === 'string'
-        ? { 'content-type': 'text/plain' }
-        : { 'content-type': 'application/json' }
-    ) =>
-      cb({
-        body:
-          typeof obj === 'string'
-            ? obj
-            : flatstr(stringify(this.formatExecutionResult(obj))),
-        status: code,
-        headers,
+      this.lru.set(key, {
+        document,
+        jit,
+        operation,
       });
 
-    if (!query) {
-      return createResponse(400, 'Must provide query string.');
+      return { operation, jit, document };
     }
-
-    const { document, operation, compiledQuery } = this.getCompiledQuery(
-      query,
-      operationName
-    );
-
-    if (!isCompiledQuery(compiledQuery)) {
-      // Syntax errors or validation errors
-      return createResponse(400, compiledQuery);
-    }
-
-    if (httpMethod !== 'POST' && httpMethod !== 'GET')
-      return createResponse(
-        405,
-        `GraphQL only supports GET and POST requests.`
-      );
-    if (httpMethod === 'GET' && operation !== 'query')
-      return createResponse(
-        405,
-        `Operation ${operation} cannot be performed via a GET request.`
-      );
-
-    const result = this.execute({
-      compiledQuery,
-      document: document as DocumentNode,
-      contextValue: context,
-      variableValues: variables,
-    });
-
-    'then' in result
-      ? result.then((resolvedResult) =>
-          createResponse(200, resolvedResult, compiledQuery.stringify)
-        )
-      : createResponse(200, result, compiledQuery.stringify);
   }
 
   formatExecutionResult(result: ExecutionResult): FormattedExecutionResult {
@@ -196,33 +122,31 @@ export class Graphyne {
   }: Pick<GraphQLArgs, 'contextValue' | 'variableValues' | 'operationName'> & {
     source: string;
   }): Promise<FormattedExecutionResult> {
-    const { document, compiledQuery } = this.getCompiledQuery(
-      source,
-      operationName
-    );
+    const cachedOrResult = this.getCachedGQL(source, operationName);
     return this.formatExecutionResult(
-      await this.execute({
-        compiledQuery,
-        document: document as DocumentNode,
-        contextValue,
-        variableValues,
-      })
+      'document' in cachedOrResult
+        ? await this.execute({
+            jit: cachedOrResult.jit,
+            document: cachedOrResult.document,
+            contextValue,
+            variableValues,
+          })
+        : cachedOrResult
     );
   }
 
   // Reimplements graphql/execution/execute but using jit
   execute({
-    compiledQuery,
+    jit,
     document,
     contextValue,
     variableValues,
   }: Pick<ExecutionArgs, 'document' | 'contextValue' | 'variableValues'> & {
-    compiledQuery: CompiledQuery | ExecutionResult;
+    jit: CompiledQuery;
   }): ValueOrPromise<ExecutionResult> {
-    if (!isCompiledQuery(compiledQuery)) return compiledQuery;
-    return compiledQuery.query(
+    return jit.query(
       typeof this.options.rootValue === 'function'
-        ? this.options.rootValue(document as DocumentNode)
+        ? this.options.rootValue(document)
         : this.options.rootValue || {},
       contextValue,
       variableValues
@@ -235,17 +159,16 @@ export class Graphyne {
     contextValue,
     variableValues,
     operationName,
-    compiledQuery,
+    jit,
   }: Pick<
     SubscriptionArgs,
     'document' | 'contextValue' | 'variableValues' | 'operationName'
   > & {
-    compiledQuery: CompiledQuery | ExecutionResult;
+    jit: CompiledQuery;
   }): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
-    if (!isCompiledQuery(compiledQuery)) return compiledQuery;
     const resultOrStream = await createSourceEventStream(
       this.schema,
-      document as DocumentNode,
+      document,
       // FIXME: Add rootValue
       {},
       contextValue,
@@ -256,8 +179,7 @@ export class Graphyne {
     return isAsyncIterable(resultOrStream)
       ? mapAsyncIterator<any, ExecutionResult>(
           resultOrStream,
-          (payload) =>
-            compiledQuery.query(payload, contextValue, variableValues),
+          (payload) => jit.query(payload, contextValue, variableValues),
           (error) => {
             if (error instanceof GraphQLError) return { errors: [error] };
             throw error;

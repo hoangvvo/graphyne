@@ -4,6 +4,7 @@ import {
   getGraphQLParams,
   HttpQueryRequest,
   TContext,
+  runHttpQuery,
 } from 'graphyne-core';
 import { HandlerConfig } from './types';
 
@@ -27,13 +28,13 @@ export async function handleRequest(
       }
     );
   }
-  let body: Record<string, any> | null = null;
+  let requestBody: Record<string, any> | null = null;
 
   if (request.method === 'POST') {
     const oCtype = request.headers.get('content-type');
     if (oCtype) {
       try {
-        body = parseBodyByContentType(await request.text(), oCtype);
+        requestBody = parseBodyByContentType(await request.text(), oCtype);
       } catch (err) {
         return new Response(err.message, {
           status: 400,
@@ -50,14 +51,12 @@ export async function handleRequest(
 
   const params = getGraphQLParams({
     queryParams,
-    body,
+    body: requestBody,
   }) as HttpQueryRequest;
   params.httpMethod = request.method;
   params.context = context;
 
-  return new Promise((resolve) => {
-    graphyne.runHttpQuery(params, ({ status, body, headers }) =>
-      resolve(new Response(body, { status, headers }))
-    );
-  });
+  const { status, body, headers } = await runHttpQuery(graphyne, params);
+
+  return new Response(body, { status, headers });
 }

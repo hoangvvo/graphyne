@@ -8,3 +8,4 @@ export {
   TContext,
 } from './types';
 export { parseBodyByContentType, getGraphQLParams } from './utils';
+export { runHttpQuery } from './runHttpQuery';
