@@ -1,5 +1,5 @@
 import { GraphQL } from './core';
-import { ValueOrPromise, HttpQueryRequest, HttpQueryResponse } from './types';
+import { HttpQueryRequest, HttpQueryResponse } from './types';
 import flatstr from 'flatstr';
 import { ExecutionResult } from 'graphql';
 
@@ -22,10 +22,10 @@ function createResponse(
   };
 }
 
-export function runHttpQuery(
+export async function runHttpQuery(
   gql: GraphQL,
   { query, variables, operationName, context, httpMethod }: HttpQueryRequest
-): ValueOrPromise<HttpQueryResponse> {
+): Promise<HttpQueryResponse> {
   if (!query) {
     return createResponse(gql, 400, 'Must provide query string.');
   }
@@ -36,31 +36,27 @@ export function runHttpQuery(
     return createResponse(gql, 400, cachedOrResult);
   }
 
-  const { document, operation, jit } = cachedOrResult;
-
   if (httpMethod !== 'POST' && httpMethod !== 'GET')
     return createResponse(
       gql,
       405,
       `GraphQL only supports GET and POST requests.`
     );
-  if (httpMethod === 'GET' && operation !== 'query')
+  if (httpMethod === 'GET' && cachedOrResult.operation !== 'query')
     return createResponse(
       gql,
       405,
-      `Operation ${operation} cannot be performed via a GET request.`
+      `Operation ${cachedOrResult.operation} cannot be performed via a GET request.`
     );
 
-  const result = gql.execute({
-    jit,
-    document: document,
-    contextValue: context,
-    variableValues: variables,
-  });
-
-  return 'then' in result
-    ? result.then((resolvedResult) =>
-        createResponse(gql, 200, resolvedResult, jit.stringify)
-      )
-    : createResponse(gql, 200, result, jit.stringify);
+  return createResponse(
+    gql,
+    200,
+    await gql.execute({
+      jit: cachedOrResult.jit,
+      document: cachedOrResult.document,
+      contextValue: context,
+      variableValues: variables,
+    })
+  );
 }

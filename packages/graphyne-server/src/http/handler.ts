@@ -3,7 +3,6 @@ import {
   getGraphQLParams,
   HttpQueryResponse,
   HttpQueryRequest,
-  TContext,
   runHttpQuery,
 } from 'graphyne-core';
 import { parseBody } from './parseBody';
@@ -31,13 +30,7 @@ export function createHandler(gql: GraphQL, options: HandlerConfig = {}) {
       (req.path || parseUrl(req, true).pathname) !== options.path
     )
       return sendResponse(res, { status: 404, body: 'not found', headers: {} });
-    const runWithParams = (params: HttpQueryRequest) => {
-      const result = runHttpQuery(gql, params);
-      'then' in result
-        ? result.then((resolved) => sendResponse(res, resolved))
-        : sendResponse(res, result);
-    };
-    parseBody(req, (err, body) => {
+    parseBody(req, async (err, body) => {
       if (err) return sendErrorResponse(res, err);
       const params = getGraphQLParams({
         queryParams: parseUrl(req, true).query || {},
@@ -47,25 +40,13 @@ export function createHandler(gql: GraphQL, options: HandlerConfig = {}) {
       try {
         params.context =
           typeof options.context === 'function'
-            ? options.context(req)
+            ? await options.context(req)
             : options.context || {};
-        // If performance gain is little, consider doing `await`
-        typeof params.context.then === 'function'
-          ? (params.context as Promise<TContext>).then(
-              (resolvedCtx) => {
-                params.context = resolvedCtx;
-                runWithParams(params);
-              },
-              (error) => {
-                error.message = `Context creation failed: ${error.message}`;
-                sendErrorResponse(res, error);
-              }
-            )
-          : runWithParams(params);
       } catch (error) {
         error.message = `Context creation failed: ${error.message}`;
         sendErrorResponse(res, error);
       }
+      sendResponse(res, await runHttpQuery(gql, params));
     });
   };
 }
