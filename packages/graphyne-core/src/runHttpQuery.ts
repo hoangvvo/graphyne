@@ -1,5 +1,5 @@
 import { GraphQL } from './core';
-import { ValueOrPromise, HttpQueryRequest, HttpQueryResponse } from './types';
+import { HttpQueryRequest, HttpQueryResponse } from './types';
 import flatstr from 'flatstr';
 import { ExecutionResult } from 'graphql';
 
@@ -22,10 +22,10 @@ function createResponse(
   };
 }
 
-export function runHttpQuery(
+export async function runHttpQuery(
   gql: GraphQL,
   { query, variables, operationName, context, httpMethod }: HttpQueryRequest
-): ValueOrPromise<HttpQueryResponse> {
+): Promise<HttpQueryResponse> {
   if (!query) {
     return createResponse(gql, 400, 'Must provide query string.');
   }
@@ -51,16 +51,12 @@ export function runHttpQuery(
       `Operation ${operation} cannot be performed via a GET request.`
     );
 
-  const result = gql.execute({
+  const result = await gql.execute({
     jit,
     document: document,
     contextValue: context,
     variableValues: variables,
   });
 
-  return 'then' in result
-    ? result.then((resolvedResult) =>
-        createResponse(gql, 200, resolvedResult, jit.stringify)
-      )
-    : createResponse(gql, 200, result, jit.stringify);
+  return createResponse(gql, 200, result, jit.stringify);
 }
