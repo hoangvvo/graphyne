@@ -3,7 +3,6 @@ import {
   parseBodyByContentType,
   getGraphQLParams,
   HttpQueryRequest,
-  TContext,
   runHttpQuery,
 } from 'graphyne-core';
 import { HandlerConfig } from './types';
@@ -13,21 +12,6 @@ export async function handleRequest(
   request: Request,
   options: HandlerConfig = {}
 ): Promise<Response> {
-  let context: TContext;
-  try {
-    const contextFn = options.context || {};
-    context =
-      typeof contextFn === 'function' ? await contextFn(request) : contextFn;
-  } catch (err) {
-    err.message = `Context creation failed: ${err.message}`;
-    return new Response(
-      JSON.stringify(gql.formatExecutionResult({ errors: [err] })),
-      {
-        status: err.status || 500,
-        headers: { 'content-type': 'application/json' },
-      }
-    );
-  }
   let requestBody: Record<string, any> | null = null;
 
   if (request.method === 'POST') {
@@ -45,6 +29,7 @@ export async function handleRequest(
   }
 
   const queryParams: { [key: string]: string } = {};
+
   new URLSearchParams(request.url.slice(request.url.indexOf('?'))).forEach(
     (value, key) => (queryParams[key] = value)
   );
@@ -54,7 +39,22 @@ export async function handleRequest(
     body: requestBody,
   }) as HttpQueryRequest;
   params.httpMethod = request.method;
-  params.context = context;
+
+  try {
+    params.context =
+      typeof options.context === 'function'
+        ? await options.context(request)
+        : options.context || {};
+  } catch (err) {
+    err.message = `Context creation failed: ${err.message}`;
+    return new Response(
+      JSON.stringify(gql.formatExecutionResult({ errors: [err] })),
+      {
+        status: err.status || 500,
+        headers: { 'content-type': 'application/json' },
+      }
+    );
+  }
 
   const { status, body, headers } = await runHttpQuery(gql, params);
 

@@ -42,11 +42,11 @@ export function createHandler(gql: GraphQL, options: HandlerConfig = {}) {
           typeof options.context === 'function'
             ? await options.context(req)
             : options.context || {};
-        sendResponse(res, await runHttpQuery(gql, params));
       } catch (error) {
         error.message = `Context creation failed: ${error.message}`;
         sendErrorResponse(res, error);
       }
+      sendResponse(res, await runHttpQuery(gql, params));
     });
   };
 }
