@@ -1,3 +1,5 @@
+> # This project has been renamed to `benzene`. https://github.com/hoangvvo/benzene 
+
 # Graphyne
 
 ![ci](https://github.com/hoangvvo/graphyne/workflows/Test%20and%20coverage/badge.svg)
